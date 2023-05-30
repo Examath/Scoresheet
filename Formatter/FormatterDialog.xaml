@@ -1,0 +1,24 @@
+﻿<Window x:Class="Scoresheet.Formatter.FormatterDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Scoresheet.Formatter"
+        xmlns:c="clr-namespace:Examath.Core.Controls;assembly=Examath.Core"
+        mc:Ignorable="d"
+        Title="Formatter" Height="450" Width="800" Style="{StaticResource ContrastWindowStyle}">
+    <Window.DataContext>
+        <local:FormatterVM/>
+    </Window.DataContext>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="351*"/>
+            <ColumnDefinition Width="449*"/>
+        </Grid.ColumnDefinitions>
+        <ListBox Style="{StaticResource ControlPanelListBoxStyle}">
+            <c:FilePicker FileName="{Binding GuidelineLocation}"></c:FilePicker>
+            <TextBlock Text="{Binding Guideline, FallbackValue={}{Null or error}}"/>
+            <Button Content="wefef"/>
+        </ListBox>
+    </Grid>
+</Window>

@@ -10,24 +10,18 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
-using Examath.Core.Environment;
-using Scoresheet.Formatter;
 
-namespace Scoresheet
+namespace Scoresheet.Formatter
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Interaction logic for FormatterDialog.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class FormatterDialog : Window
     {
-        public MainWindow()
+        public FormatterDialog()
         {
             InitializeComponent();
-
-            Formatter.FormatterDialog formatterDialog = new();
-            formatterDialog.Show();
         }
     }
 }

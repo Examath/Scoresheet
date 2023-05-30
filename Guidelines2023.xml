@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Guideline>
+	<Teams>
+		<Team Name="St Euphrasia"/>
+		<Team Name="St Antony"/>
+	</Teams>
+	<LevelDefinitions>
+		<LevelDefinition Code="SJ" Name="Sub Junior" LowerBound="1" UpperBound="3" />
+		<LevelDefinition Code="J" Name="Junior" LowerBound="4" UpperBound="6" />
+		<LevelDefinition Code="S" Name="Senior" LowerBound="7" UpperBound="12" />
+	</LevelDefinitions>
+	<CompetitionItems>
+		<CompetitionItem ItemType="NonStage" Code="Painting/J"/>
+		<CompetitionItem ItemType="NonStage" Code="Painting/S"/>
+		<CompetitionItem ItemType="NonStage" Code="Colouring/SJ"/>
+	</CompetitionItems>
+</Guideline>

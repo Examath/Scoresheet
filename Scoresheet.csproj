@@ -7,4 +7,8 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Examath\Examath.Core\Examath.Core.csproj" />
+  </ItemGroup>
+
 </Project>
