@@ -16,9 +16,14 @@
             <ColumnDefinition Width="449*"/>
         </Grid.ColumnDefinitions>
         <ListBox Style="{StaticResource ControlPanelListBoxStyle}">
-            <c:FilePicker FileName="{Binding GuidelineLocation}"></c:FilePicker>
-            <TextBlock Text="{Binding Guideline, FallbackValue={}{Null or error}}"/>
+            <c:FilePicker FileName="{Binding GuidelineLocation}" Tag="Guideline" ToolTip="An .xml file containing the the valid team names, levels and competition items."></c:FilePicker>
+            <Label Style="{StaticResource OutputTextLabel}" Content="{Binding Path=Guideline, FallbackValue='Not loaded'}"/>
+            <c:FilePicker FileName="{Binding ParticipantListFileLocation}" Tag="Team List"></c:FilePicker>
+            <Label Style="{StaticResource OutputTextLabel}" Content="{Binding Path=IndividualParticipants.Count}"/>
             <Button Content="wefef"/>
+        </ListBox>
+        <ListBox Grid.Column="1" ItemsSource="{Binding IndividualParticipants}">
+            
         </ListBox>
     </Grid>
 </Window>
