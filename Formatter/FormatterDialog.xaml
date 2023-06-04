@@ -6,23 +6,29 @@
         xmlns:local="clr-namespace:Scoresheet.Formatter"
         xmlns:c="clr-namespace:Examath.Core.Controls;assembly=Examath.Core"
         mc:Ignorable="d"
-        Title="Formatter" Height="450" Width="800" Style="{StaticResource ContrastWindowStyle}">
+        Title="Formatter" Height="700" Width="1200" Style="{StaticResource ContrastWindowStyle}" Loaded="Window_Loaded">
     <Window.DataContext>
         <local:FormatterVM/>
     </Window.DataContext>
-    <Grid>
+    <Window.Resources>
+        <CollectionViewSource Source="{Binding IndividualParticipants}" x:Key="IndividualParticipantsSource">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="YearLevel"/>
+                <PropertyGroupDescription PropertyName="Team"/>
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+    </Window.Resources>
+    <Grid Margin="6">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="351*"/>
-            <ColumnDefinition Width="449*"/>
+            <ColumnDefinition Width="7*"/>
+            <ColumnDefinition Width="10*"/>
+            <ColumnDefinition Width="8*"/>
         </Grid.ColumnDefinitions>
         <ListBox Style="{StaticResource ControlPanelListBoxStyle}">
-            <c:FilePicker FileName="{Binding GuidelineLocation}" Tag="Guideline" ToolTip="An .xml file containing the the valid team names, levels and competition items."></c:FilePicker>
-            <Label Style="{StaticResource OutputTextLabel}" Content="{Binding Path=Guideline, FallbackValue='Not loaded'}"/>
-            <c:FilePicker FileName="{Binding ParticipantListFileLocation}" Tag="Team List"></c:FilePicker>
-            <Label Style="{StaticResource OutputTextLabel}" Content="{Binding Path=IndividualParticipants.Count}"/>
-            <Button Content="wefef"/>
+            <c:FilePicker Tag="Export .dss to" IsEnabled="False"/>
+            <Button Content="Export" IsEnabled="False"/>
         </ListBox>
-        <ListBox Grid.Column="1" ItemsSource="{Binding IndividualParticipants}">
+        <ListBox Grid.Column="1" ItemsSource="{Binding Source={StaticResource IndividualParticipantsSource}}" d:ItemsSource="{d:SampleData ItemCount=50}">
             
         </ListBox>
     </Grid>

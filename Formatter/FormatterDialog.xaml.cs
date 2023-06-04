@@ -19,9 +19,22 @@ namespace Scoresheet.Formatter
     /// </summary>
     public partial class FormatterDialog : Window
     {
+
+
         public FormatterDialog()
         {
             InitializeComponent();
+        }
+
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            FormatterVM formatterVM = (FormatterVM)DataContext;
+            if (!formatterVM.IsTeamsListLoaded) Close();
         }
     }
 }

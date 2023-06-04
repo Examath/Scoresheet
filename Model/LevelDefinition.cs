@@ -43,7 +43,7 @@ namespace Scoresheet.Model
 
         internal bool Within(int yearLevel)
         {
-            return LowerBound >= yearLevel && UpperBound <= yearLevel;
+            return LowerBound <= yearLevel && UpperBound >= yearLevel;
         }
     }
 }
