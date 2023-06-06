@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Windows.Media;
 using System.Xml.Serialization;
 
 namespace Scoresheet.Model
@@ -16,7 +18,34 @@ namespace Scoresheet.Model
         /// Gets or sets the name of the team
         /// </summary>
         [XmlAttribute]
-        public string Name { get; set; } = "";
+        public string Name { get; set; } = ""; 
+        
+        private Color _Colour;
+        /// <summary>
+        /// Gets or sets the highlight colour of this project
+        /// </summary>
+        [XmlIgnore]
+        public Color Colour
+        {
+            get => _Colour;
+            set => _Colour = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the highlight colour of this project as a four channel hexadecimal string
+        /// </summary>
+        [XmlAttribute(AttributeName = "Colour")]
+        public string HexColour
+        {
+            get
+            {
+                return _Colour.ToString();
+            }
+            set
+            {
+                _Colour = (Color)ColorConverter.ConvertFromString(value);
+            }
+        }
 
         /// <summary>
         /// Returns the name of the team

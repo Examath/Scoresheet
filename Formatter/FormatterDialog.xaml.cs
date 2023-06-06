@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Scoresheet.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,10 +20,11 @@ namespace Scoresheet.Formatter
     /// </summary>
     public partial class FormatterDialog : Window
     {
+        //FormatterVM FormatterVM;
 
-
-        public FormatterDialog()
+        public FormatterDialog(Guideline guideline)
         {
+            
             InitializeComponent();
         }
 
@@ -33,8 +35,7 @@ namespace Scoresheet.Formatter
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            FormatterVM formatterVM = (FormatterVM)DataContext;
-            if (!formatterVM.IsTeamsListLoaded) Close();
+            //if (!FormatterVM.IsLoaded) DialogResult = false;
         }
     }
 }

@@ -43,7 +43,11 @@ namespace Scoresheet.Model
 
         public string Team_Name { get; set; } = "";
 
-        public void Initialize(List<Team> teams)
+        /// <summary>
+        /// Find the participant's <see cref="Team"/> from <paramref name="teams"/>
+        /// </summary>
+        /// <param name="teams"></param>
+        protected void Initialize(List<Team> teams)
         {
             Team = teams.Find((x) => x.Name == Team_Name);
         }

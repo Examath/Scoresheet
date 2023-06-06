@@ -45,21 +45,36 @@ namespace Scoresheet.Model
 
         }
 
-        public IndividualParticipant(string[] parameters, List<Team> teams, List<LevelDefinition> levelDefinitions)
+        public IndividualParticipant(string[] parameters, int[,] chestNumberMatrix, List<Team> teams, List<LevelDefinition> levelDefinitions)
         {
             _FullName = parameters[0];
             Team_Name = parameters[1];
             if (int.TryParse(parameters[2], out int yearLevel)) 
             {
                 _YearLevel = yearLevel;
-                Level = levelDefinitions.Find(x => x.Within(yearLevel));
             };
+
+            Initialize(teams, levelDefinitions);
+
+            // Assign Chest Number
+            if (Level != null && Team != null)
+            {
+                int levelIndex = levelDefinitions.IndexOf(Level);
+                int teamIndex = teams.IndexOf(Team);
+                ChestNumber = chestNumberMatrix[levelIndex, teamIndex] + 1;
+                chestNumberMatrix[levelIndex, teamIndex] = ChestNumber;
+            }
+        }
+
+        public void Initialize(List<Team> teams, List<LevelDefinition> levelDefinitions)
+        {
             Initialize(teams);
+            Level = levelDefinitions.Find(x => x.Within(_YearLevel));
         }
 
         public override string ToString()
         {
-            return ((ChestNumber != 0) ? $"#{ChestNumber} " : $"({FullName}) ") + $"{Level} - {YearLevel} - {Team}";
+            return $"#{ChestNumber}\t{Level?.Code} {YearLevel}\t{Team}\t{FullName}";
         }
     }
 }

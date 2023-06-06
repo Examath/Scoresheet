@@ -15,6 +15,8 @@ namespace Scoresheet.Model
     /// </remarks>
     public class Guideline
     {
+        public const string Extension = ".ssgl";
+
         /// <summary>
         /// Gets or sets the list of <see cref="Team"/>s in this competition
         /// </summary>

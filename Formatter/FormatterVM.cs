@@ -10,64 +10,20 @@ namespace Scoresheet.Formatter
 {
     public partial class FormatterVM : ObservableObject
     {
-        public bool IsGuidelineLoaded { get; set; } = false;
-        public bool IsTeamsListLoaded { get; set; } = false;
+        public bool IsLoaded { get; set; }
 
         public FormatterVM()
         {
-            LoadGuidelineAndTeamList();
+            Guideline = new();
         }
 
-        private async void LoadGuidelineAndTeamList()
+        public FormatterVM(Guideline guideline)
         {
-            while (!IsGuidelineLoaded)
-            {
-                System.Windows.Forms.OpenFileDialog openFileDialog = new()
-                {
-                    Title = "Open Guideline file",
-                    Filter = "Guideline (.ssgl)|*.ssgl|All|*.*",
-                };
+            Guideline = guideline;
 
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    try
-                    {
-                        Guideline? data = await Examath.Core.Utils.XML.LoadAsync<Guideline>(openFileDialog.FileName);
-                        if (data == null)
-                        {
-                            if (Messager.Out("Want to try again", "Guideline is null", yesButtonText: "Try Again", isCancelButtonVisible: true) == DialogResult.Yes)
-                                continue;
-                            else
-                                return;
-                        }
-                        DialogResult dialogResult = Messager.Out(data.ToString() ?? "null", $"Check Guideline",
-                            isCancelButtonVisible: true, noButtonText: "Try Again", yesButtonText: "Continue");
-                        switch (dialogResult)
-                        {
-                            case DialogResult.Yes:
-                                Guideline = data;
-                                IsGuidelineLoaded = true;
-                                break;
-                            case DialogResult.No:
-                                continue;
-                            default:
-                                return;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        if (Messager.OutException(e, yesButtonText: "Try Again", isCancelButtonVisible: true) == DialogResult.Yes)
-                            continue;
-                        else
-                            return;
-                    }
-                }
-                else return;
-            }
-
-            while (!IsTeamsListLoaded)
+            while (!IsLoaded)
             {
-                System.Windows.Forms.OpenFileDialog openFileDialog = new()
+                OpenFileDialog openFileDialog = new()
                 {
                     Title = "Open Teams List file",
                     Filter = "Teams List (.sstl)|*.sstl|All|*.*",
@@ -77,10 +33,11 @@ namespace Scoresheet.Formatter
                 {
                     try
                     {
-
                         List<IndividualParticipant> individualParticipants = new();
-                        string[] rdata = await File.ReadAllLinesAsync(openFileDialog.FileName);
+                        string[] rdata = File.ReadAllLines(openFileDialog.FileName);
                         string[] buffer = new string[3];
+
+                        int[,] chestNumberMatrix = getChestNumberMatrix();
 
                         foreach (string line in rdata)
                         {
@@ -95,23 +52,23 @@ namespace Scoresheet.Formatter
 
                             if (!string.IsNullOrWhiteSpace(entry[0]))
                             {
-                                individualParticipants.Add(new(buffer, Guideline.Teams, Guideline.LevelDefinitions));
+                                individualParticipants.Add(new(buffer, chestNumberMatrix, Guideline.Teams, Guideline.LevelDefinitions));
                             }
                         }
                         if (individualParticipants.Count < 1)
                         {
-                            if (Messager.Out("Want to try again", "Teams list is empty", yesButtonText: "Try Again", isCancelButtonVisible: true) == DialogResult.Yes)
+                            if (Messager.Out("Want to try loading the teams list again", "Teams list is empty", yesButtonText: "Try Again", isCancelButtonVisible: true) == DialogResult.Yes)
                                 continue;
                             else
                                 return;
                         }
-                        DialogResult dialogResult = Messager.Out(individualParticipants.Count + "\n" + individualParticipants[0], $"Check Teams List",
+                        DialogResult dialogResult = Messager.Out($"Count: {individualParticipants.Count}\n\n{string.Join('\n',individualParticipants)}", $"Check Teams List",
                         isCancelButtonVisible: true, noButtonText: "Try Again", yesButtonText: "Continue");
                         switch (dialogResult)
                         {
                             case DialogResult.Yes:
                                 IndividualParticipants = individualParticipants;
-                                IsTeamsListLoaded = true;
+                                IsLoaded = true;
                                 break;
                             case DialogResult.No:
                                 continue;
@@ -129,11 +86,26 @@ namespace Scoresheet.Formatter
                 }
                 else return;
             }
+
+            int[,] getChestNumberMatrix()
+            {
+                int [,] chestNumberMatrix = new int[Guideline.LevelDefinitions.Count, Guideline.Teams.Count];
+
+                for (int levelIndex = 0; levelIndex < chestNumberMatrix.GetLength(0); levelIndex++)
+                {
+                    for (int teamIndex = 0; teamIndex < chestNumberMatrix.GetLength(1); teamIndex++)
+                    {
+                        chestNumberMatrix[levelIndex,teamIndex] = (levelIndex * Guideline.Teams.Count + teamIndex + 1) * 100;
+                    }
+                }
+
+                return chestNumberMatrix;
+            }
         }
 
         #region Guideline Object
 
-        public Guideline Guideline { get; set; } = new();
+        public Guideline Guideline { get; set; }
 
         #endregion
 

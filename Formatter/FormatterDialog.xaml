@@ -4,32 +4,62 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Scoresheet.Formatter"
+        xmlns:model="clr-namespace:Scoresheet.Model"
         xmlns:c="clr-namespace:Examath.Core.Controls;assembly=Examath.Core"
         mc:Ignorable="d"
-        Title="Formatter" Height="700" Width="1200" Style="{StaticResource ContrastWindowStyle}" Loaded="Window_Loaded">
+        Title="Formatter" Height="700" Width="1200" Style="{StaticResource ContrastWindowStyle}" Loaded="Window_Loaded" WindowState="Maximized">
     <Window.DataContext>
         <local:FormatterVM/>
     </Window.DataContext>
     <Window.Resources>
         <CollectionViewSource Source="{Binding IndividualParticipants}" x:Key="IndividualParticipantsSource">
             <CollectionViewSource.GroupDescriptions>
-                <PropertyGroupDescription PropertyName="YearLevel"/>
-                <PropertyGroupDescription PropertyName="Team"/>
+                <PropertyGroupDescription PropertyName="Level"/>
             </CollectionViewSource.GroupDescriptions>
         </CollectionViewSource>
     </Window.Resources>
     <Grid Margin="6">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="1*"/>
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="7*"/>
+            <ColumnDefinition Width="13*"/>
             <ColumnDefinition Width="10*"/>
-            <ColumnDefinition Width="8*"/>
         </Grid.ColumnDefinitions>
-        <ListBox Style="{StaticResource ControlPanelListBoxStyle}">
-            <c:FilePicker Tag="Export .dss to" IsEnabled="False"/>
+        <ListBox Style="{StaticResource ControlPanelHorizontalListBoxStyle}" Grid.ColumnSpan="2">
+            <ItemsControl Tag="Teams" Background="Red"/>
             <Button Content="Export" IsEnabled="False"/>
         </ListBox>
-        <ListBox Grid.Column="1" ItemsSource="{Binding Source={StaticResource IndividualParticipantsSource}}" d:ItemsSource="{d:SampleData ItemCount=50}">
-            
+        <ListBox Grid.Row="1" ItemsSource="{Binding Source={StaticResource IndividualParticipantsSource}}"
+                 d:ItemsSource="{d:SampleData ItemCount=50}" Style="{StaticResource ContrastListBoxStyle}">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="model:IndividualParticipant">
+                    <WrapPanel>
+                        <TextBlock Text="{Binding ChestNumber}" FontWeight="Bold" Padding="4 2">
+                            <TextBlock.Background>
+                                <SolidColorBrush Color="{Binding Team.Colour}"/>
+                            </TextBlock.Background>
+                        </TextBlock>
+                        <TextBlock Text="{Binding YearLevel, StringFormat={}y{0}}" Padding="8 2 4 2"/>
+                        <TextBlock Text="{Binding FullName}" Padding="4 2"/>
+                    </WrapPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.GroupStyle>
+                <GroupStyle>
+                    <GroupStyle.Panel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </GroupStyle.Panel>
+                    <GroupStyle.HeaderTemplate>
+                        <DataTemplate DataType="GroupItem">
+                            <Label Content="{Binding Name}" TextElement.FontWeight="Bold"/>
+                        </DataTemplate>
+                    </GroupStyle.HeaderTemplate>
+                </GroupStyle>
+            </ListBox.GroupStyle>
         </ListBox>
     </Grid>
 </Window>

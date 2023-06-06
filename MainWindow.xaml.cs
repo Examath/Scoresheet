@@ -1,19 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Examath.Core.Environment;
+﻿using Examath.Core.Environment;
 using Scoresheet.Formatter;
+using Scoresheet.Model;
+using System;
+using System.IO;
+using System.Windows;
 
 namespace Scoresheet
 {
@@ -25,9 +15,90 @@ namespace Scoresheet
         public MainWindow()
         {
             InitializeComponent();
-
-            Formatter.FormatterDialog formatterDialog = new();
-            formatterDialog.Show();
+            LoadDataAsync();
         }
+
+        public async void LoadDataAsync()
+        {
+            bool isLoaded = false;
+            bool isLoadingFromAppSelect = false;
+            string fileLocation = string.Empty;
+
+            if (((App)Application.Current).Args?.Length >= 1) // File selected
+            {
+                fileLocation = ((App)Application.Current).Args[0];
+                isLoadingFromAppSelect = true;
+            }
+
+            while (!isLoaded)
+            {
+                // Pick file location
+                if (isLoadingFromAppSelect)
+                {
+                    isLoadingFromAppSelect = false; // So that runs only once
+                }
+                else
+                {
+                    System.Windows.Forms.OpenFileDialog openFileDialog = new()
+                    {
+                        Title = "Open Guideline or Scoresheet file",
+                        Filter = "Scoresheet data|*.ssgl;*.ss|Scoresheet (.ss)|*.ss|Guideline (.ssgl)|*.ssgl|All|*.*",
+                    };
+
+                    if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) fileLocation = openFileDialog.FileName;
+                    else break;
+                }
+
+                // Try Load data
+                try
+                {
+                    if (Path.GetExtension(fileLocation) == Guideline.Extension)
+                    {
+                        Guideline? guideline = await Examath.Core.Utils.XML.LoadAsync<Guideline>(fileLocation);
+
+                        if (guideline == null)
+                        {
+                            if (Messager.Out("Want to try again", "Guideline is null", yesButtonText: "Try Again", isCancelButtonVisible: true) == System.Windows.Forms.DialogResult.Yes)
+                                continue;
+                            else
+                                break;
+                        }
+
+                        System.Windows.Forms.DialogResult dialogResult = Messager.Out(guideline.ToString() ?? "null", $"Check Guideline",
+                            isCancelButtonVisible: true, noButtonText: "Try Again", yesButtonText: "Continue");
+
+                        switch (dialogResult)
+                        {
+                            case System.Windows.Forms.DialogResult.Yes:
+                                FormatterVM formatterVM = new(guideline);
+                                if (!formatterVM.IsLoaded) break;
+                                Formatter.FormatterDialog formatterDialog = new(guideline)
+                                {
+                                    Owner = this,
+                                    DataContext = formatterVM
+                                };
+                                formatterDialog.ShowDialog();
+                                break;
+                            case System.Windows.Forms.DialogResult.No:
+                                continue;
+                            default:
+                                return;
+                        }
+                    }
+
+                }
+                catch (Exception e)
+                {
+                    if (Messager.OutException(e, yesButtonText: "Try Again", isCancelButtonVisible: true) == System.Windows.Forms.DialogResult.Yes)
+                        continue;
+                    else
+                        break;
+                }
+            }
+
+            if (!isLoaded) Close();
+        }
+
     }
 }
+
