@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,15 +14,9 @@ namespace Scoresheet.Model
     /// <remarks>
     /// Must be initialised when loaded from XML
     /// </remarks>
-    public class CompetitionItem
+    public partial class CompetitionItem : ObservableObject
     {
         private string _Code = "";
-
-        /// <summary>
-        /// The <see cref="ItemType"/> of this item, whether group, solo or non-stage.
-        /// </summary>
-        [XmlAttribute]
-        public ItemType ItemType { get; set; } = ItemType.NonStage;
 
         /// <summary>
         /// The unique code for this item.
@@ -45,6 +40,11 @@ namespace Scoresheet.Model
         /// </summary>
         [XmlIgnore]
         public string Name { get; private set; } = "";
+
+        /// <summary>
+        /// Gets or sets the time limit (excluding changeover) for each attempt at this item
+        /// </summary>
+        public TimeSpan Duration { get; set; }
 
         /// <summary>
         /// Gets the <see cref="LevelDefinition"/> of this item, if any.

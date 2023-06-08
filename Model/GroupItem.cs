@@ -6,10 +6,8 @@ using System.Threading.Tasks;
 
 namespace Scoresheet.Model
 {
-    public enum ItemType
+    public partial class GroupItem : CompetitionItem
     {
-        NonStage,
-        StageSolo,
-        StageGroup
+
     }
 }

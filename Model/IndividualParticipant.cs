@@ -24,6 +24,12 @@ namespace Scoresheet.Model
             set => SetProperty(ref _FullName, value);
         }
 
+        /// <summary>
+        /// Gets the <see cref="string.ToUpperInvariant"/> form of <see cref="FullName"/>
+        /// </summary>
+        [XmlIgnore]
+        public string SearchName { get; private set; } = "";
+
         private int _YearLevel = 0;
         /// <summary>
         /// Gets or sets the year level of this person
@@ -38,7 +44,20 @@ namespace Scoresheet.Model
         /// <summary>
         /// Gets the <see cref="LevelDefinition"/> this individual is in
         /// </summary>
+        [XmlIgnore]
         public LevelDefinition? Level { get;set; }
+
+        private DateTime _SubmissionTimeStamp;
+        /// <summary>
+        /// Gets or sets 
+        /// </summary>
+        public DateTime SubmissionTimeStamp
+        {
+            get => _SubmissionTimeStamp;
+            set { if (SetProperty(ref _SubmissionTimeStamp, value)) OnPropertyChanged(nameof(IsFormSubmitted)); }
+        }
+
+        public bool IsFormSubmitted { get => SubmissionTimeStamp != default; }
 
         public IndividualParticipant()
         {
@@ -70,6 +89,7 @@ namespace Scoresheet.Model
         {
             Initialize(teams);
             Level = levelDefinitions.Find(x => x.Within(_YearLevel));
+            SearchName = _FullName.ToUpperInvariant();
         }
 
         public override string ToString()

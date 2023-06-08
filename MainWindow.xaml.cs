@@ -2,7 +2,6 @@
 using Scoresheet.Formatter;
 using Scoresheet.Model;
 using System;
-using System.IO;
 using System.Windows;
 
 namespace Scoresheet
@@ -41,8 +40,8 @@ namespace Scoresheet
                 {
                     System.Windows.Forms.OpenFileDialog openFileDialog = new()
                     {
-                        Title = "Open Guideline or Scoresheet file",
-                        Filter = "Scoresheet data|*.ssgl;*.ss|Scoresheet (.ss)|*.ss|Guideline (.ssgl)|*.ssgl|All|*.*",
+                        Title = "Open Scoresheet file",
+                        Filter = "Scoresheet (.ssf)|*.ssf|All|*.*",
                     };
 
                     if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) fileLocation = openFileDialog.FileName;
@@ -52,38 +51,41 @@ namespace Scoresheet
                 // Try Load data
                 try
                 {
-                    if (Path.GetExtension(fileLocation) == Guideline.Extension)
+                    Model.ScoresheetFile? guideline = await Examath.Core.Utils.XML.LoadAsync<Model.ScoresheetFile>(fileLocation);
+
+                    if (guideline == null)
                     {
-                        Guideline? guideline = await Examath.Core.Utils.XML.LoadAsync<Guideline>(fileLocation);
+                        if (Messager.Out("Want to try again", "Scoresheet is null, an error may have occurred",
+                            yesButtonText: "Try Again", isCancelButtonVisible: true) == System.Windows.Forms.DialogResult.Yes)
+                            continue;
+                        else
+                            break;
+                    }
 
-                        if (guideline == null)
-                        {
-                            if (Messager.Out("Want to try again", "Guideline is null", yesButtonText: "Try Again", isCancelButtonVisible: true) == System.Windows.Forms.DialogResult.Yes)
-                                continue;
-                            else
-                                break;
-                        }
+                    System.Windows.Forms.DialogResult dialogResult = Messager.Out(guideline.ToString() ?? "null", $"Check Guideline",
+                        isCancelButtonVisible: true, noButtonText: "Try Again", yesButtonText: "Continue");
 
-                        System.Windows.Forms.DialogResult dialogResult = Messager.Out(guideline.ToString() ?? "null", $"Check Guideline",
-                            isCancelButtonVisible: true, noButtonText: "Try Again", yesButtonText: "Continue");
-
-                        switch (dialogResult)
-                        {
-                            case System.Windows.Forms.DialogResult.Yes:
+                    switch (dialogResult)
+                    {
+                        case System.Windows.Forms.DialogResult.Yes:
+                            if (!guideline.IsFormatted)
+                            {
                                 FormatterVM formatterVM = new(guideline);
                                 if (!formatterVM.IsLoaded) break;
-                                Formatter.FormatterDialog formatterDialog = new(guideline)
+                                FormatterDialog formatterDialog = new(guideline)
                                 {
                                     Owner = this,
                                     DataContext = formatterVM
                                 };
                                 formatterDialog.ShowDialog();
-                                break;
-                            case System.Windows.Forms.DialogResult.No:
-                                continue;
-                            default:
-                                return;
-                        }
+                                if (!guideline.IsFormatted) break;
+                            }
+
+                            break;
+                        case System.Windows.Forms.DialogResult.No:
+                            continue;
+                        default:
+                            return;
                     }
 
                 }

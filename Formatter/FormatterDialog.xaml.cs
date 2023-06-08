@@ -20,9 +20,9 @@ namespace Scoresheet.Formatter
     /// </summary>
     public partial class FormatterDialog : Window
     {
-        //FormatterVM FormatterVM;
+        FormatterVM? FormatterVM;
 
-        public FormatterDialog(Guideline guideline)
+        public FormatterDialog(Model.ScoresheetFile guideline)
         {
             
             InitializeComponent();
@@ -31,11 +31,42 @@ namespace Scoresheet.Formatter
         protected override void OnActivated(EventArgs e)
         {
             base.OnActivated(e);
+            FormatterVM = (FormatterVM)DataContext;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             //if (!FormatterVM.IsLoaded) DialogResult = false;
+        }
+
+        private void ParticipantsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ParticipantsListBox.SelectedItem is IndividualParticipant participant)
+            {
+                if (participant.IsFormSubmitted && FormatterVM != null)
+                {
+                    foreach (FormSubmission formSubmission in FormatterVM.PendingFormSubmissions)
+                    {
+                        if (formSubmission.TimeStamp == participant.SubmissionTimeStamp)
+                        {
+                            FormsList.SelectedItem = formSubmission;
+                            break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+
+            }
+        }
+
+        private void FormsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (FormsList.SelectedItem is FormSubmission formSubmission)
+            {
+                FormsList.sele
+            }
         }
     }
 }

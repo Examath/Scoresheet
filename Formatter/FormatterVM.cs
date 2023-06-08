@@ -1,25 +1,46 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Examath.Core.Environment;
 using Scoresheet.Model;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Scoresheet.Formatter
 {
     public partial class FormatterVM : ObservableObject
     {
+        #region Properties
+
         public bool IsLoaded { get; set; }
+
+        private double _Progress = 0;
+        /// <summary>
+        /// Gets or sets the progress whilst doing a task
+        /// </summary>
+        public double Progress
+        {
+            get => _Progress;
+            private set => SetProperty(ref _Progress, value);
+        }
+
+        #endregion
+
+        #region Initializers
 
         public FormatterVM()
         {
-            Guideline = new();
+            ScoresheetFile = new();
         }
 
-        public FormatterVM(Guideline guideline)
+        public FormatterVM(ScoresheetFile scoresheetFile)
         {
-            Guideline = guideline;
+            ScoresheetFile = scoresheetFile;
+
+            // Todo if contains participants return
 
             while (!IsLoaded)
             {
@@ -52,7 +73,7 @@ namespace Scoresheet.Formatter
 
                             if (!string.IsNullOrWhiteSpace(entry[0]))
                             {
-                                individualParticipants.Add(new(buffer, chestNumberMatrix, Guideline.Teams, Guideline.LevelDefinitions));
+                                individualParticipants.Add(new(buffer, chestNumberMatrix, ScoresheetFile.Teams, ScoresheetFile.LevelDefinitions));
                             }
                         }
                         if (individualParticipants.Count < 1)
@@ -62,12 +83,12 @@ namespace Scoresheet.Formatter
                             else
                                 return;
                         }
-                        DialogResult dialogResult = Messager.Out($"Count: {individualParticipants.Count}\n\n{string.Join('\n',individualParticipants)}", $"Check Teams List",
+                        DialogResult dialogResult = Messager.Out($"Count: {individualParticipants.Count}\n\n{string.Join('\n', individualParticipants)}", $"Check Teams List",
                         isCancelButtonVisible: true, noButtonText: "Try Again", yesButtonText: "Continue");
                         switch (dialogResult)
                         {
                             case DialogResult.Yes:
-                                IndividualParticipants = individualParticipants;
+                                ScoresheetFile.IndividualParticipants = individualParticipants;
                                 IsLoaded = true;
                                 break;
                             case DialogResult.No:
@@ -89,13 +110,13 @@ namespace Scoresheet.Formatter
 
             int[,] getChestNumberMatrix()
             {
-                int [,] chestNumberMatrix = new int[Guideline.LevelDefinitions.Count, Guideline.Teams.Count];
+                int[,] chestNumberMatrix = new int[ScoresheetFile.LevelDefinitions.Count, ScoresheetFile.Teams.Count];
 
                 for (int levelIndex = 0; levelIndex < chestNumberMatrix.GetLength(0); levelIndex++)
                 {
                     for (int teamIndex = 0; teamIndex < chestNumberMatrix.GetLength(1); teamIndex++)
                     {
-                        chestNumberMatrix[levelIndex,teamIndex] = (levelIndex * Guideline.Teams.Count + teamIndex + 1) * 100;
+                        chestNumberMatrix[levelIndex, teamIndex] = (levelIndex * ScoresheetFile.Teams.Count + teamIndex + 1) * 100;
                     }
                 }
 
@@ -103,22 +124,52 @@ namespace Scoresheet.Formatter
             }
         }
 
-        #region Guideline Object
+        #endregion
 
-        public Guideline Guideline { get; set; }
+        #region Scoresheet Object
+
+        public Model.ScoresheetFile ScoresheetFile { get; set; }
 
         #endregion
 
-        #region Participant List Object
+        #region Importer
 
-        private List<IndividualParticipant> _IndividualParticipants = new();
-        /// <summary>
-        /// Gets or sets the list of individual participants
-        /// </summary>
-        public List<IndividualParticipant> IndividualParticipants
+        [RelayCommand]
+        public async Task Import()
         {
-            get => _IndividualParticipants;
-            set => SetProperty(ref _IndividualParticipants, value);
+            Progress = 0.01;
+
+            OpenFileDialog openFileDialog = new()
+            {
+                Title = "Open submissions from Google forms",
+                Filter = "csv|*.csv|All|*.*",
+            };
+
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                string[] data = await File.ReadAllLinesAsync(openFileDialog.FileName);
+
+                Progress = 0.1;
+
+                for (int i = 1; i < data.Length; i++)
+                {
+                    Progress = 0.9 * i / data.Length + 0.1;
+                    FormSubmission formSubmission = await Task.Run<FormSubmission>(() => new(data[i], ScoresheetFile));
+                    PendingFormSubmissions.Add(formSubmission);
+                }
+            }
+
+            Progress = 0;
+        }
+
+        private ObservableCollection<FormSubmission> _PendingFormSubmissions = new();
+        /// <summary>
+        /// Gets or sets the list of invalid submissions that need to be corrected
+        /// </summary>
+        public ObservableCollection<FormSubmission> PendingFormSubmissions
+        {
+            get => _PendingFormSubmissions;
+            set { if (SetProperty(ref _PendingFormSubmissions, value)) return; }
         }
 
         #endregion
