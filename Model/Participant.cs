@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +17,8 @@ namespace Scoresheet.Model
     /// </remarks>
     public partial class Participant : ObservableObject
     {
+        #region Identity
+
         private int _ChestNumber = 0;
         /// <summary>
         /// Gets or sets the unique chest number of this participant
@@ -41,15 +44,18 @@ namespace Scoresheet.Model
             set { if (SetProperty(ref _Team, value) && value != null) Team_Name = value.Name; }
         }
 
+        [XmlAttribute]
         public string Team_Name { get; set; } = "";
+
+        #endregion
 
         /// <summary>
         /// Find the participant's <see cref="Team"/> from <paramref name="teams"/>
         /// </summary>
         /// <param name="teams"></param>
-        protected void Initialize(List<Team> teams)
+        public virtual void Initialize(ScoresheetFile scoresheetFile)
         {
-            Team = teams.Find((x) => x.Name == Team_Name);
+            Team = scoresheetFile.Teams.Find((x) => x.Name == Team_Name);
         }
     }
 }

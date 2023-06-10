@@ -26,7 +26,7 @@
             <Setter Property="Orientation" Value="Horizontal"/>
             <Setter Property="Margin" Value="8 4"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="MinWidth" Value="200"/>
+            <Setter Property="MinWidth" Value="300"/>
         </Style>
     </Window.Resources>
     <Window.InputBindings>
@@ -66,6 +66,18 @@
                 <ContentPresenter ContentTemplate="{StaticResource ParticipantBox}"/>
                 <TextBlock Text="{Binding YearLevel, StringFormat={}y{0}, FallbackValue=y?}" Padding="8 0 4 0"/>
                 <TextBlock Text="{Binding FullName, FallbackValue=Name?}" Padding="4 0"/>
+                <ItemsControl ItemsSource="{Binding CompetitionItems}" d:ItemsSource="{d:SampleData ItemCount=2}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="model:CompetitionItem">
+                            <TextBlock Foreground="{StaticResource ForegroundMinorColourKey}" Text="{Binding ShortCode}" Padding="4,0" ToolTip="{Binding Code}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </StackPanel>
             <Button Tag="Fix (Press F)" Width="100" Content="{Binding FixSuggestion}" Command="{Binding FixCommand}" Foreground="{StaticResource NewColourKey}"/>
             <StackPanel Tag="Submission Details" DataContext="{Binding SelectedSubmission}"  Style="{StaticResource ResourceKey=DetailsBox}">
@@ -77,7 +89,7 @@
                 <TextBlock Text="{Binding YearLevel, StringFormat={}y{0}, FallbackValue=y?}" Padding="8 0 4 0"/>
                 <TextBlock Text="{Binding FullName, FallbackValue=Name?}" Padding="4 0"/>
             </StackPanel>
-            <Button Content="Export" IsEnabled="False" />
+            <Button x:Name="CreateButton" Content="Export" Click="CreateButton_Click" />
         </ListBox>
         <ListBox x:Name="ParticipantsListBox"
                  Grid.Row="1" ItemsSource="{Binding Source={StaticResource IndividualParticipantsSource}}"

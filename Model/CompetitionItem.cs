@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ namespace Scoresheet.Model
     /// </remarks>
     public partial class CompetitionItem : ObservableObject
     {
+        #region MyRegion
         private string _Code = "";
 
         /// <summary>
@@ -27,12 +29,12 @@ namespace Scoresheet.Model
         [XmlAttribute]
         public string Code
         {
-            get => _Code; 
+            get => _Code;
             set
             {
                 _Code = value;
                 string[] parameters = value.Split('/');
-                Name = parameters[0]; 
+                Name = parameters[0];
                 foreach (string word in parameters[0].Split(' '))
                 {
                     ShortCode += word[..Math.Min(word.Length, 2)];
@@ -60,13 +62,24 @@ namespace Scoresheet.Model
         /// <summary>
         /// Gets or sets the time limit (excluding changeover) for each attempt at this item
         /// </summary>
-        public TimeSpan Duration { get; set; }
+        //[XmlAttribute]
+        //public TimeSpan Duration { get; set; }
+
+        /// <summary>
+        /// Gets or sets the list of <see cref="IndividualParticipants"/> participating
+        /// in this item
+        /// </summary>
+        [XmlIgnore]
+        public ObservableCollection<IndividualParticipant> IndividualParticipants { get; set; } = new();
 
         /// <summary>
         /// Gets the <see cref="LevelDefinition"/> of this item, if any.
         /// </summary>
         [XmlIgnore]
         public LevelDefinition? Level { get; set; }
+
+        #endregion
+
 
         /// <summary>
         /// Initialises <see cref="Level"/>

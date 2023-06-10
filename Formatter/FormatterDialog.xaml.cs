@@ -1,4 +1,5 @@
-﻿using Scoresheet.Model;
+﻿using Examath.Core.Utils;
+using Scoresheet.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,6 +38,28 @@ namespace Scoresheet.Formatter
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             //if (!FormatterVM.IsLoaded) DialogResult = false;
+        }
+
+        private async void CreateButton_Click(object sender, RoutedEventArgs e)
+        {
+            CreateButton.IsEnabled = false;
+            if (FormatterVM == null) return;
+
+            System.Windows.Forms.SaveFileDialog saveFileDialog = new()
+            {
+                Title = "Choose a location to save formatted scoresheet. Do not replace the original.",
+                Filter = "Scoresheet XML File|*.ssf",
+            };
+            if (saveFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                FormatterVM.ScoresheetFile.IsFormatted = true;
+                await XML.SaveAsync(saveFileDialog.FileName, FormatterVM.ScoresheetFile);
+                DialogResult = true;
+            }
+            else
+            {
+                CreateButton.IsEnabled = true;
+            }
         }
     }
 }

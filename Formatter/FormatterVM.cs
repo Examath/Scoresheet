@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Examath.Core.Environment;
+using Examath.Core.Utils;
 using Scoresheet.Model;
 using System;
 using System.Collections.Generic;
@@ -73,7 +74,7 @@ namespace Scoresheet.Formatter
 
                             if (!string.IsNullOrWhiteSpace(entry[0]))
                             {
-                                individualParticipants.Add(new(buffer, chestNumberMatrix, ScoresheetFile.Teams, ScoresheetFile.LevelDefinitions));
+                                individualParticipants.Add(new(buffer, chestNumberMatrix, ScoresheetFile));
                             }
                         }
                         if (individualParticipants.Count < 1)
@@ -295,7 +296,7 @@ namespace Scoresheet.Formatter
 
                 if (ok)
                 {
-                    SelectedSubmission.ApplyMatch(SelectedParticipant);
+                    SelectedSubmission.ApplyMatch(SelectedParticipant, ScoresheetFile);
                     SelectedParticipant_Changed();
 
                     // Find next mismatch to solve
@@ -334,6 +335,10 @@ namespace Scoresheet.Formatter
                 UpdateFixState(false, "Applied");
             }
         }
+
+        #endregion
+
+        #region Create
 
         #endregion
     }

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Linq;
 
 namespace Scoresheet.Formatter
 {
@@ -134,7 +135,7 @@ namespace Scoresheet.Formatter
             {
                 if (IsValidMatch(Match)) // Validity of Submission
                 {
-                    ApplyMatch(Match);
+                    ApplyMatch(Match, scoresheetFile);
                 }
                 else
                 {
@@ -163,13 +164,28 @@ namespace Scoresheet.Formatter
         /// This only applies if this <see cref="FormSubmission"/> is newer than the curent
         /// <see cref="IndividualParticipant.SubmissionTimeStamp"/>
         /// </remarks>
-        public void ApplyMatch(IndividualParticipant match)
+        public void ApplyMatch(IndividualParticipant match, ScoresheetFile scoresheetFile)
         {
-            if (match.SubmissionTimeStamp < TimeStamp)
+            if (Level == null)
+            {
+                SubmissionStatus = SubmissionStatus.Error;
+            }
+            else if (match.SubmissionTimeStamp < TimeStamp)
             {
                 SubmissionStatus = (match.SubmissionTimeStamp == default) ?
                     SubmissionStatus.Assigned : SubmissionStatus.Edited;
+
+                // Prevent older requests from overriding
                 match.SubmissionTimeStamp = TimeStamp;
+
+                // The csv file has 6 coloums: Stage-SJ, Non-stage-SJ, Stage-J and so on
+                // Join solo items from only two columns
+                int specificIndex = ItemsStartI + scoresheetFile.LevelDefinitions.IndexOf(Level) * 2;
+                match.JoinCompetitions(Data[specificIndex].Split(';'), scoresheetFile);
+                match.JoinCompetitions(Data[specificIndex + 1].Split(';'), scoresheetFile);
+
+                // Join group items
+                match.JoinCompetitions(Data[TeamI].Split(';'), scoresheetFile);
             }
             else
             {
@@ -278,5 +294,6 @@ namespace Scoresheet.Formatter
         Edited,
         Assigned,
         Ignored,
+        Error,
     }
 }
