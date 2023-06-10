@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Scoresheet"
+             xmlns:model="clr-namespace:Scoresheet.Model"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
@@ -13,6 +14,16 @@
                 <ResourceDictionary Source="/Examath.Core;component/Parts/ListView.xaml"/>
                 <ResourceDictionary Source="/Examath.Core;component/Parts/Custom.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:Key="ParticipantBox" DataType="model:Participant">
+                <Border CornerRadius="4">
+                    <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber, FallbackValue=---}" FontWeight="Bold" Padding="4 0">
+                    </TextBlock>
+                    <Border.Background>
+                        <SolidColorBrush Color="{Binding Team.Colour, FallbackValue=Gray}"/>
+                    </Border.Background>
+                </Border>
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

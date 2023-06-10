@@ -14,15 +14,24 @@
     <Window.Resources>
         <CollectionViewSource Source="{Binding ScoresheetFile.IndividualParticipants}" x:Key="IndividualParticipantsSource">
             <CollectionViewSource.GroupDescriptions>
-                <PropertyGroupDescription PropertyName="Level"/>
+                <PropertyGroupDescription PropertyName="YearLevel"/>
             </CollectionViewSource.GroupDescriptions>
         </CollectionViewSource>
-        <CollectionViewSource Source="{Binding PendingFormSubmissions}" x:Key="PendingFormSubmissionsSource" IsLiveGroupingRequested="True">
+        <CollectionViewSource Source="{Binding FormSubmissions}" x:Key="FormSubmissionsSource" IsLiveGroupingRequested="True">
             <CollectionViewSource.GroupDescriptions>
                 <PropertyGroupDescription PropertyName="SubmissionStatus"/>
             </CollectionViewSource.GroupDescriptions>
         </CollectionViewSource>
+        <Style TargetType="StackPanel" x:Key="DetailsBox">
+            <Setter Property="Orientation" Value="Horizontal"/>
+            <Setter Property="Margin" Value="8 4"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="MinWidth" Value="200"/>
+        </Style>
     </Window.Resources>
+    <Window.InputBindings>
+        <KeyBinding Key="F" Command="{Binding FixCommand}"/>
+    </Window.InputBindings>
     <Grid Margin="6">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -30,11 +39,11 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="13*"/>
-            <ColumnDefinition Width="8"/>
-            <ColumnDefinition Width="10*"/>
+            <ColumnDefinition Width="12*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="8*"/>
         </Grid.ColumnDefinitions>
-        <ListBox Style="{StaticResource ControlPanelHorizontalListBoxStyle}" Grid.ColumnSpan="2">
+        <ListBox Style="{StaticResource ControlPanelHorizontalListBoxStyle}" Grid.ColumnSpan="3">
             <ItemsControl Tag="Teams" ItemsSource="{Binding ScoresheetFile.Teams}" Margin="4">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -43,35 +52,51 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="model:Team">
-                        <TextBlock Text="{Binding Name}" Padding="4,2" Margin="2">
-                            <TextBlock.Background>
+                        <Border CornerRadius="4" Margin="2">
+                            <TextBlock Text="{Binding Name}" Padding="4,2" />
+                            <Border.Background>
                                 <SolidColorBrush Color="{Binding Colour}"/>
-                            </TextBlock.Background>
-                        </TextBlock>
+                            </Border.Background>
+                        </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
             <Button Content="Import" ToolTip="Import Google forms results" Command="{Binding ImportCommand}"/>
+            <StackPanel Tag="Participant Details" DataContext="{Binding SelectedParticipant}" Style="{StaticResource ResourceKey=DetailsBox}">
+                <ContentPresenter ContentTemplate="{StaticResource ParticipantBox}"/>
+                <TextBlock Text="{Binding YearLevel, StringFormat={}y{0}, FallbackValue=y?}" Padding="8 0 4 0"/>
+                <TextBlock Text="{Binding FullName, FallbackValue=Name?}" Padding="4 0"/>
+            </StackPanel>
+            <Button Tag="Fix (Press F)" Width="100" Content="{Binding FixSuggestion}" Command="{Binding FixCommand}" Foreground="{StaticResource NewColourKey}"/>
+            <StackPanel Tag="Submission Details" DataContext="{Binding SelectedSubmission}"  Style="{StaticResource ResourceKey=DetailsBox}">
+                <Border CornerRadius="4" Width="16">
+                    <Border.Background>
+                        <SolidColorBrush Color="{Binding Team.Colour,FallbackValue=Gray}"/>
+                    </Border.Background>
+                </Border>
+                <TextBlock Text="{Binding YearLevel, StringFormat={}y{0}, FallbackValue=y?}" Padding="8 0 4 0"/>
+                <TextBlock Text="{Binding FullName, FallbackValue=Name?}" Padding="4 0"/>
+            </StackPanel>
             <Button Content="Export" IsEnabled="False" />
-            <Button Tag="Fix (F)" Content="Ok" IsEnabled="False"/>
         </ListBox>
-        <ListBox x:Name="ParticipantsListBox" SelectionChanged="ParticipantsListBox_SelectionChanged"
+        <ListBox x:Name="ParticipantsListBox"
                  Grid.Row="1" ItemsSource="{Binding Source={StaticResource IndividualParticipantsSource}}"
-                 d:ItemsSource="{d:SampleData ItemCount=50}" Style="{StaticResource ContrastListBoxStyle}">
+                 d:ItemsSource="{d:SampleData ItemCount=50}" Style="{StaticResource ContrastListBoxStyle}"
+                 SelectedItem="{Binding SelectedParticipant}" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Select Match" Command="{Binding FindCurrentMatchingSubmissionCommand}"/>
+                </ContextMenu>
+            </ListBox.ContextMenu>
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="model:IndividualParticipant">
-                    <WrapPanel>
-                        <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber}" FontWeight="Bold" Padding="4 0">
-                            <TextBlock.Background>
-                                <SolidColorBrush Color="{Binding Team.Colour}"/>
-                            </TextBlock.Background>
-                        </TextBlock>
-                        <TextBlock Text="{Binding YearLevel, StringFormat={}y{0}}" Padding="8 0 4 0"/>
-                        <TextBlock Text="{Binding FullName}" Padding="4 0"/>
+                    <WrapPanel x:Name="PART_Root">
+                        <ContentPresenter ContentTemplate="{StaticResource ParticipantBox}"/>
+                        <TextBlock Text="{Binding FullName}" Padding="8 0 4 0"/>
                     </WrapPanel>
                     <DataTemplate.Triggers>
                         <DataTrigger Binding="{Binding IsFormSubmitted}" Value="false">
-                            <Setter TargetName="PART_ChestNumberLabel" Property="Opacity" Value="0.3"/>
+                            <Setter TargetName="PART_Root" Property="Opacity" Value="0.3"/>
                         </DataTrigger>
                     </DataTemplate.Triggers>
                 </DataTemplate>
@@ -80,26 +105,27 @@
                 <GroupStyle>
                     <GroupStyle.Panel>
                         <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal"/>
+                            <WrapPanel Orientation="Vertical"/>
                         </ItemsPanelTemplate>
                     </GroupStyle.Panel>
                     <GroupStyle.HeaderTemplate>
                         <DataTemplate DataType="GroupItem">
-                            <Label Content="{Binding Name}" TextElement.FontWeight="Bold"/>
+                            <Label Content="{Binding Name}" ContentStringFormat="Year {0}" TextElement.FontWeight="Bold"/>
                         </DataTemplate>
                     </GroupStyle.HeaderTemplate>
                 </GroupStyle>
             </ListBox.GroupStyle>
         </ListBox>
-        <GridSplitter Grid.Column="1" Grid.Row="1" Width="4"/>
-        <ListView x:Name="FormsList" Grid.Row="1" Grid.Column="2" SelectionChanged="FormsList_SelectionChanged"
-                 ItemsSource="{Binding Source={StaticResource PendingFormSubmissionsSource}}">
+        <GridSplitter Grid.Column="1" Grid.Row="1" Width="4" ResizeBehavior="PreviousAndNext"/>
+        <ListView x:Name="FormsList" Grid.Row="1" Grid.Column="2"
+                 ItemsSource="{Binding Source={StaticResource FormSubmissionsSource}}"
+                  SelectedItem="{Binding SelectedSubmission}">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Year" DisplayMemberBinding="{Binding YearLevel}" Width="30"/>
-                    <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}"/>
+                    <GridViewColumn Header="Name" DisplayMemberBinding="{Binding FullName}"/>
+                    <GridViewColumn Header="Match" DisplayMemberBinding="{Binding Match}"/>
                     <GridViewColumn Header="Email" DisplayMemberBinding="{Binding Email}"/>
-                    <GridViewColumn Header="Match" DisplayMemberBinding="{Binding Match.FullName}"/>
                     <GridViewColumn Header="Timestamp" DisplayMemberBinding="{Binding TimeStamp}"/>
                 </GridView>
             </ListView.View>

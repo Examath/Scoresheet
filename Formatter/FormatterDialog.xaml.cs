@@ -38,35 +38,5 @@ namespace Scoresheet.Formatter
         {
             //if (!FormatterVM.IsLoaded) DialogResult = false;
         }
-
-        private void ParticipantsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (ParticipantsListBox.SelectedItem is IndividualParticipant participant)
-            {
-                if (participant.IsFormSubmitted && FormatterVM != null)
-                {
-                    foreach (FormSubmission formSubmission in FormatterVM.PendingFormSubmissions)
-                    {
-                        if (formSubmission.TimeStamp == participant.SubmissionTimeStamp)
-                        {
-                            FormsList.SelectedItem = formSubmission;
-                            break;
-                        }
-                    }
-                }
-            }
-            else
-            {
-
-            }
-        }
-
-        private void FormsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (FormsList.SelectedItem is FormSubmission formSubmission)
-            {
-                FormsList.sele
-            }
-        }
     }
 }

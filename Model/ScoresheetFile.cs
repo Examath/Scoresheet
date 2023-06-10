@@ -14,6 +14,7 @@ namespace Scoresheet.Model
     /// <remarks>
     /// Must be initialised when loaded from XML
     /// </remarks>
+    [Serializable]
     public partial class ScoresheetFile : ObservableObject
     {
         public const string Extension = ".ssf";
@@ -51,7 +52,7 @@ namespace Scoresheet.Model
         /// <summary>
         /// Gets or sets a list of <see cref="CompetitionItem"/>s in this competition
         /// </summary>
-        [XmlElement("SoloItem",typeof(SoloItem)), XmlElement("GroupItem", typeof(GroupItem))]
+        [XmlArrayItem(typeof(SoloItem)), XmlArrayItem(typeof(GroupItem))]
         public List<CompetitionItem> CompetitionItems { get; set; } = new();
 
         #region Participant List Object

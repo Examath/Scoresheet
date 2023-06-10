@@ -9,6 +9,9 @@ namespace Scoresheet.Formatter
 {
     public partial class FormSubmission : ObservableObject
     {
+        const int SEARCH_CLIP = 15;
+        const double SEARCH_OFACTOR = 0.5;
+
         public string[] Data { get; set; }
 
         private const int TimeStampI = 0;
@@ -28,7 +31,12 @@ namespace Scoresheet.Formatter
         /// <summary>
         /// The full name, combined from Family name and Given name entries
         /// </summary>
-        public string Name { get; set; }
+        public string FullName { get; set; }
+
+        /// <summary>
+        /// Gets the <see cref="string.ToUpperInvariant"/> form of <see cref="FullName"/>
+        /// </summary>
+        public string SearchName { get; private set; }
 
         private const int YearLevelI = 4;
         /// <summary>
@@ -85,8 +93,8 @@ namespace Scoresheet.Formatter
             // Independent properties
             TimeStamp = DateTime.ParseExact(Data[TimeStampI].Replace("GMT", ""), "yyyy/MM/dd h:mm:ss tt zzz", CultureInfo.InvariantCulture);
             Email = Data[EmailI].ToLower();
-            Name = Data[FirstNameI] + " " + Data[FamilyNameI];
-            string searchName = Name.ToUpperInvariant();
+            FullName = Data[FirstNameI] + " " + Data[FamilyNameI];
+            SearchName = FullName.ToUpperInvariant();
 
             // Dependent properties
             if (int.TryParse(Data[YearLevelI], out int yearLevel))
@@ -97,10 +105,10 @@ namespace Scoresheet.Formatter
             Team = scoresheetFile.Teams.Find((x) => x.Name == Data[TeamI]);
 
             // Find match
-            int searchDistance = int.MaxValue;
+            double searchDistance = int.MaxValue;
             foreach (IndividualParticipant individualParticipant in scoresheetFile.IndividualParticipants)
             {
-                if (individualParticipant.SearchName == searchName)
+                if (individualParticipant.SearchName == SearchName)
                 {
                     Match = individualParticipant;
                     searchDistance = 0;
@@ -108,7 +116,12 @@ namespace Scoresheet.Formatter
                 }
                 else
                 {
-                    int currentSearchDistance = DamerauLevenshteinDistance(individualParticipant.SearchName, searchName, 5);
+                    double currentSearchDistance = DamerauLevenshteinDistance(individualParticipant.SearchName, SearchName, 15);
+
+                    // Prefer better matches
+                    if (individualParticipant.Team == Team) currentSearchDistance *= SEARCH_OFACTOR;
+                    if (individualParticipant.YearLevel == YearLevel) currentSearchDistance *= SEARCH_OFACTOR;
+
                     if (currentSearchDistance < searchDistance)
                     {
                         Match = individualParticipant;
@@ -119,18 +132,9 @@ namespace Scoresheet.Formatter
 
             if (Match != null && searchDistance == 0)
             {
-                if (Match.Team == Team && Match.YearLevel == YearLevel) // Validity of Submission
+                if (IsValidMatch(Match)) // Validity of Submission
                 {
-                    if (Match.SubmissionTimeStamp < TimeStamp)
-                    {
-                        _SubmissionStatus = (Match.SubmissionTimeStamp == default) ?
-                            SubmissionStatus.Assigned : SubmissionStatus.Edited;
-                        Match.SubmissionTimeStamp = TimeStamp;
-                    }
-                    else
-                    {
-                        _SubmissionStatus = SubmissionStatus.Ignored;
-                    }
+                    ApplyMatch(Match);
                 }
                 else
                 {
@@ -143,7 +147,37 @@ namespace Scoresheet.Formatter
             }
         }
 
-        public override string ToString() => $"y{YearLevel,-2}\t{Name}\t{TimeStamp:g} @ {Email}";
+        /// <summary>
+        /// Checks whether this <see cref="FormSubmission"/> claims to be in the same year level 
+        /// and the same <see cref="Model.Team"/> as the provided <paramref name="match"/>
+        /// </summary>
+        /// <param name="match">The <see cref="IndividualParticipant"/> to compare to</param>
+        /// <returns>True if they are a valid match, otherwise false</returns>
+        public bool IsValidMatch(IndividualParticipant match) => match.Team == Team && match.YearLevel == YearLevel;
+
+        /// <summary>
+        /// Applies the data from this <see cref="FormSubmission"/> to the <paramref name="match"/>
+        /// </summary>
+        /// <param name="match">The <see cref="IndividualParticipant"/> to apply to</param>
+        /// <remarks>
+        /// This only applies if this <see cref="FormSubmission"/> is newer than the curent
+        /// <see cref="IndividualParticipant.SubmissionTimeStamp"/>
+        /// </remarks>
+        public void ApplyMatch(IndividualParticipant match)
+        {
+            if (match.SubmissionTimeStamp < TimeStamp)
+            {
+                SubmissionStatus = (match.SubmissionTimeStamp == default) ?
+                    SubmissionStatus.Assigned : SubmissionStatus.Edited;
+                match.SubmissionTimeStamp = TimeStamp;
+            }
+            else
+            {
+                SubmissionStatus = SubmissionStatus.Ignored;
+            }
+        }
+
+        public override string ToString() => $"{TimeStamp:dd/MM} {FullName}";
 
         #region Comparison
 

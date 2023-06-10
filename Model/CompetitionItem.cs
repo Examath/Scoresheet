@@ -22,7 +22,7 @@ namespace Scoresheet.Model
         /// The unique code for this item.
         /// </summary>
         /// <remarks>
-        /// Use the format <c>{Name}/{LevelDefinition.Code}</c>
+        /// Use the format <c>{FullName}/{LevelDefinition.Code}</c>
         /// </remarks>
         [XmlAttribute]
         public string Code
@@ -31,7 +31,17 @@ namespace Scoresheet.Model
             set
             {
                 _Code = value;
-                Name = value.Split('/')[0];
+                string[] parameters = value.Split('/');
+                Name = parameters[0]; 
+                foreach (string word in parameters[0].Split(' '))
+                {
+                    ShortCode += word[..Math.Min(word.Length, 2)];
+                };
+                if (parameters.Length >= 2)
+                {
+
+                    ShortCode += "/" + parameters[1];
+                }
             }
         }
 
@@ -40,6 +50,12 @@ namespace Scoresheet.Model
         /// </summary>
         [XmlIgnore]
         public string Name { get; private set; } = "";
+
+        /// <summary>
+        /// Gets a shortened version of the <see cref="Code"/> of this item
+        /// </summary>
+        [XmlIgnore]
+        public string ShortCode { get; private set; } = "";
 
         /// <summary>
         /// Gets or sets the time limit (excluding changeover) for each attempt at this item
@@ -58,12 +74,17 @@ namespace Scoresheet.Model
         public void Initialize(List<LevelDefinition> levelDefinitions)
         {
             string[] codeParameters = Code.Split('/');
+
             if (codeParameters.Length >= 1)
             {
                 Level = levelDefinitions.Find((x) => x.Code == codeParameters[1]);
+                ShortCode += "/" + codeParameters[1];
             }
         }
 
-        public override string ToString() => Code;
+        /// <summary>
+        /// Gets the <see cref="ShortCode"/> of this competition item
+        /// </summary>
+        public override string ToString() => ShortCode;
     }
 }

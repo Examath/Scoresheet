@@ -94,7 +94,7 @@ namespace Scoresheet.Model
 
         public override string ToString()
         {
-            return $"#{ChestNumber}\t{Level?.Code} {YearLevel}\t{Team}\t{FullName}";
+            return $"#{ChestNumber} {FullName}";
         }
     }
 }

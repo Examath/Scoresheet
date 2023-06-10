@@ -5,7 +5,12 @@
     <TargetFramework>net7.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Scoresheet.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Scoresheet.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Examath\Examath.Core\Examath.Core.csproj" />

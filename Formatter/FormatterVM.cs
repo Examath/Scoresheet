@@ -155,21 +155,184 @@ namespace Scoresheet.Formatter
                 {
                     Progress = 0.9 * i / data.Length + 0.1;
                     FormSubmission formSubmission = await Task.Run<FormSubmission>(() => new(data[i], ScoresheetFile));
-                    PendingFormSubmissions.Add(formSubmission);
+                    FormSubmissions.Add(formSubmission);
                 }
             }
 
             Progress = 0;
         }
 
-        private ObservableCollection<FormSubmission> _PendingFormSubmissions = new();
+        private ObservableCollection<FormSubmission> _FormSubmissions = new();
         /// <summary>
         /// Gets or sets the list of invalid submissions that need to be corrected
         /// </summary>
-        public ObservableCollection<FormSubmission> PendingFormSubmissions
+        public ObservableCollection<FormSubmission> FormSubmissions
         {
-            get => _PendingFormSubmissions;
-            set { if (SetProperty(ref _PendingFormSubmissions, value)) return; }
+            get => _FormSubmissions;
+            set { if (SetProperty(ref _FormSubmissions, value)) return; }
+        }
+
+        #endregion
+
+        #region Fixer
+
+        private bool _CanFix { get; set; } = false;
+
+        private string _FixSuggestion = "----";
+        /// <summary>
+        /// Gets or sets 
+        /// </summary>
+        public string FixSuggestion
+        {
+            get => _FixSuggestion;
+            set => SetProperty(ref _FixSuggestion, value);
+        }
+
+        private void UpdateFixState(bool canFix, string fixSuggestion)
+        {
+            _CanFix = canFix;
+            fixCommand?.NotifyCanExecuteChanged();
+            if (SelectedParticipant != null && SelectedSubmission != null && !SelectedSubmission.IsValidMatch(SelectedParticipant))
+            {
+                FixSuggestion = fixSuggestion + " *";
+            }
+            else
+            {
+                FixSuggestion = fixSuggestion;
+            }
+        }
+
+        private IndividualParticipant? _SelectedParticipant;
+        /// <summary>
+        /// Gets or sets the selected <see cref="IndividualParticipant"/>
+        /// </summary>
+        public IndividualParticipant? SelectedParticipant
+        {
+            get => _SelectedParticipant;
+            set { if (SetProperty(ref _SelectedParticipant, value)) SelectedParticipant_Changed(); }
+        }
+
+        private void SelectedParticipant_Changed()
+        {
+            FindCurrentMatchingSubmissionCommand?.NotifyCanExecuteChanged();
+            if (SelectedParticipant != null && SelectedSubmission != null) // Then activiate fixer
+            {
+                if (SelectedParticipant.SubmissionTimeStamp == SelectedSubmission.TimeStamp) // Currently set
+                {
+                    UpdateFixState(false, "Applied");
+                }
+                else if (SelectedParticipant.SubmissionTimeStamp > SelectedSubmission.TimeStamp)
+                {
+                    UpdateFixState(true, "Ignore");
+                }
+                else if (SelectedParticipant.SearchName == SelectedSubmission.SearchName) // Fix invalid
+                {
+                    UpdateFixState(true, "Edit");
+                }
+                else // Fix mismatch
+                {
+                    UpdateFixState(true, "Assign");
+                }
+            }
+            else
+            {
+                UpdateFixState(false, "----");
+            }
+        }
+
+        private FormSubmission? _SelectedSubmission;
+        /// <summary>
+        /// Gets or sets the selected <see cref="FormSubmission"/>
+        /// </summary>
+        public FormSubmission? SelectedSubmission
+        {
+            get => _SelectedSubmission;
+            set { if (SetProperty(ref _SelectedSubmission, value)) SelectedSubmission_Changed(); }
+        }
+
+        /// <summary>
+        /// If the selected <see cref="FormSubmission"/> is changed, then select the matching <see cref="IndividualParticipant"/>
+        /// </summary>
+        private void SelectedSubmission_Changed()
+        {
+            if (SelectedSubmission != null) // Then find matching individual
+            {
+                if (SelectedParticipant == null || SelectedSubmission.Match != SelectedParticipant) // Only if match not selected already
+                {
+                    foreach (IndividualParticipant individualParticipant in ScoresheetFile.IndividualParticipants)
+                    {
+                        if (SelectedSubmission.Match == individualParticipant)
+                        {
+                            SelectedParticipant = individualParticipant;
+                            return;
+                        }
+                    }
+
+                    // If not found
+                    UpdateFixState(false, "----");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fixes mismatches and invalid and stuff
+        /// </summary>
+        [RelayCommand(CanExecute = nameof(_CanFix))]
+        public void Fix()
+        {
+            if (SelectedParticipant != null && SelectedSubmission != null)
+            {
+                bool ok = true;
+
+                if (!SelectedSubmission.IsValidMatch(SelectedParticipant))
+                {
+                    ok = Messager.Out("Invalid submission ... merrging is currently not suppored",
+                        "Invalid Submission?",
+                        ConsoleStyle.WarningBlockStyle,
+                        isCancelButtonVisible: true,
+                        yesButtonText: "Apply anyway") == DialogResult.Yes;
+                }
+
+                if (ok)
+                {
+                    SelectedSubmission.ApplyMatch(SelectedParticipant);
+                    SelectedParticipant_Changed();
+
+                    // Find next mismatch to solve
+                    foreach (FormSubmission submission in _FormSubmissions)
+                    {
+                        if (submission.SubmissionStatus == SubmissionStatus.Mismatch || submission.SubmissionStatus == SubmissionStatus.Invalid)
+                        {
+                            SelectedSubmission = submission;
+                        }
+                    }
+                }
+            }
+        }
+
+        private bool CanFindCurrentMatchingSubmission() => SelectedParticipant != null && SelectedParticipant.IsFormSubmitted;
+
+        /// <summary>
+        /// Selects the curent matching submission of the current selected <see cref="IndividualParticipant"/>
+        /// </summary>
+        [RelayCommand(CanExecute = nameof(CanFindCurrentMatchingSubmission))]
+        public void FindCurrentMatchingSubmission()
+        {
+            if (SelectedParticipant != null && SelectedParticipant.IsFormSubmitted) // Then find matching submission
+            {
+                if (SelectedSubmission == null || SelectedSubmission.Match != SelectedParticipant) // Only if match not selected already
+                {
+                    foreach (FormSubmission formSubmission in FormSubmissions)
+                    {
+                        if (formSubmission.TimeStamp == SelectedParticipant.SubmissionTimeStamp)
+                        {
+                            SelectedSubmission = formSubmission;
+                            break;
+                        }
+                    }
+                }
+                UpdateFixState(false, "Applied");
+            }
         }
 
         #endregion
