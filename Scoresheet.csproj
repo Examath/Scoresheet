@@ -9,11 +9,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Splash.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="Scoresheet.ico" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Examath\Examath.Core\Examath.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <SplashScreen Include="Splash.png" />
   </ItemGroup>
 
 </Project>
