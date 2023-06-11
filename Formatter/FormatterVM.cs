@@ -16,6 +16,9 @@ namespace Scoresheet.Formatter
     {
         #region Properties
 
+        /// <summary>
+        /// Set to true when the teams list is loaded into an unformatted scoresheet
+        /// </summary>
         public bool IsLoaded { get; set; }
 
         private double _Progress = 0;

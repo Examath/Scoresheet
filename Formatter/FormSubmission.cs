@@ -15,6 +15,11 @@ namespace Scoresheet.Formatter
 
         public string[] Data { get; set; }
 
+        /// <summary>
+        /// Gets a list of abbreviations for the items this participant seeks to join
+        /// </summary>
+        public string Details { get; private set; }
+
         private const int TimeStampI = 0;
         /// <summary>
         /// The time this form was submitted
@@ -89,6 +94,18 @@ namespace Scoresheet.Formatter
             for (int i = 0; i < rawArray.Length; i++)
             {
                 Data[i] = rawArray[i].Trim(new char[] { '"', ' ' });
+
+                // For Details property
+                if (i >= ItemsStartI && i !=TeamI) // Column that may store items then
+                {
+                    Details += string.Join(' ',                     // Join with space
+                        Data[i].Split(';')                          //  Items separated by semicolon
+                        .Select((x) =>                              //   Select:
+                        string.Join("",                             //    Join with nothing
+                        x.Split(' ')                                //     Words split by space
+                        .Select((y) => y[..Math.Min(y.Length, 2)])  //      Select: first two chars                        
+                        ))) + " ";                                  // Then Append Space
+                }
             }
 
             // Independent properties
@@ -172,8 +189,15 @@ namespace Scoresheet.Formatter
             }
             else if (match.SubmissionTimeStamp < TimeStamp)
             {
-                SubmissionStatus = (match.SubmissionTimeStamp == default) ?
-                    SubmissionStatus.Assigned : SubmissionStatus.Edited;
+                if (match.IsFormSubmitted)
+                {
+                    SubmissionStatus = SubmissionStatus.Edited;
+                    match.UnjoinAllCompetitions();
+                }
+                else
+                {
+                    SubmissionStatus = SubmissionStatus.Assigned;
+                }
 
                 // Prevent older requests from overriding
                 match.SubmissionTimeStamp = TimeStamp;
@@ -181,11 +205,11 @@ namespace Scoresheet.Formatter
                 // The csv file has 6 coloums: Stage-SJ, Non-stage-SJ, Stage-J and so on
                 // Join solo items from only two columns
                 int specificIndex = ItemsStartI + scoresheetFile.LevelDefinitions.IndexOf(Level) * 2;
-                match.JoinCompetitions(Data[specificIndex].Split(';'), scoresheetFile);
-                match.JoinCompetitions(Data[specificIndex + 1].Split(';'), scoresheetFile);
+                match.JoinCompetitions(Data[specificIndex].Split(';'), scoresheetFile, appendLevelToCode: true);
+                match.JoinCompetitions(Data[specificIndex + 1].Split(';'), scoresheetFile, appendLevelToCode: true);
 
                 // Join group items
-                match.JoinCompetitions(Data[TeamI].Split(';'), scoresheetFile);
+                match.JoinCompetitions(Data[TeamI + 1].Split(';'), scoresheetFile);
             }
             else
             {

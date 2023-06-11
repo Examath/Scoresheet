@@ -1,6 +1,5 @@
 ﻿using Examath.Core.Environment;
 using Scoresheet.Formatter;
-using Scoresheet.Model;
 using System;
 using System.Windows;
 
@@ -45,48 +44,57 @@ namespace Scoresheet
                     };
 
                     if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) fileLocation = openFileDialog.FileName;
-                    else break;
+                    else break; // Close app
                 }
 
                 // Try Load data
                 try
                 {
-                    Model.ScoresheetFile? guideline = await Examath.Core.Utils.XML.LoadAsync<Model.ScoresheetFile>(fileLocation);
+                    // Load Scoresheet XML
+                    Model.ScoresheetFile? scoresheet = await Examath.Core.Utils.XML.LoadAsync<Model.ScoresheetFile>(fileLocation);
 
-                    if (guideline == null)
+                    // Check if null
+                    if (scoresheet == null)
                     {
                         if (Messager.Out("Want to try again", "Scoresheet is null, an error may have occurred",
                             yesButtonText: "Try Again", isCancelButtonVisible: true) == System.Windows.Forms.DialogResult.Yes)
-                            continue;
+                            continue; // Restart
                         else
-                            break;
+                            break; // Close app
                     }
 
-                    System.Windows.Forms.DialogResult dialogResult = Messager.Out(guideline.ToString() ?? "null", $"Check Guideline",
-                        isCancelButtonVisible: true, noButtonText: "Try Again", yesButtonText: "Continue");
-
-                    switch (dialogResult)
+                    // Check if not formatted
+                    if (!scoresheet.IsFormatted)
                     {
-                        case System.Windows.Forms.DialogResult.Yes:
-                            if (!guideline.IsFormatted)
-                            {
-                                FormatterVM formatterVM = new(guideline);
-                                if (!formatterVM.IsLoaded) break;
-                                FormatterDialog formatterDialog = new(guideline)
-                                {
-                                    Owner = this,
-                                    DataContext = formatterVM
-                                };
-                                formatterDialog.ShowDialog();
-                                if (!guideline.IsFormatted) break;
-                            }
+                        System.Windows.Forms.DialogResult dialogResult = Messager.Out(scoresheet.ToString() ?? "null", $"New Scoresheet - Please Check Guideline:",
+                            isCancelButtonVisible: true, noButtonText: "Try Again", yesButtonText: "Continue");
 
-                            break;
-                        case System.Windows.Forms.DialogResult.No:
-                            continue;
-                        default:
-                            return;
+                        switch (dialogResult)
+                        {                            
+                            case System.Windows.Forms.DialogResult.Yes: // Guideline is checked
+                                if (!scoresheet.IsFormatted)
+                                {
+                                    FormatterVM formatterVM = new(scoresheet);
+                                    if (!formatterVM.IsLoaded) break; // If teams list is not loaded, close app
+
+                                    FormatterDialog formatterDialog = new(scoresheet)
+                                    {
+                                        Owner = this,
+                                        DataContext = formatterVM
+                                    };
+                                    formatterDialog.ShowDialog();
+                                    if (!scoresheet.IsFormatted) break; // if formatting cancelled, close app
+                                    else; // Load scoresheet into main window
+                                }
+                                break;
+                            case System.Windows.Forms.DialogResult.No: // Try Again
+                                continue;
+                            default: // Close App
+                                return;
+                        }
                     }
+
+
 
                 }
                 catch (Exception e)

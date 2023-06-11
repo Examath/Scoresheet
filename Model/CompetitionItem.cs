@@ -62,8 +62,22 @@ namespace Scoresheet.Model
         /// <summary>
         /// Gets or sets the time limit (excluding changeover) for each attempt at this item
         /// </summary>
-        //[XmlAttribute]
-        //public TimeSpan Duration { get; set; }
+        [XmlIgnore]
+        public TimeSpan Duration { get; set; }
+
+        /// <summary>
+        /// Gets or sets the time limit (excluding changeover) for each attempt at this item in whole minutes
+        /// </summary>
+        /// <remarks>
+        /// For XML serialization and deserialization. Use <see cref="Duration"/> for
+        /// most cases instead.
+        /// </remarks>
+        [XmlAttribute("Duration")]
+        public int DurationInMinutes
+        {
+            get => (int)Duration.TotalMinutes;
+            set => Duration = new TimeSpan(0,value,0);
+        }
 
         /// <summary>
         /// Gets or sets the list of <see cref="IndividualParticipants"/> participating

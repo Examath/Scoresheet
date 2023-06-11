@@ -121,13 +121,16 @@ namespace Scoresheet.Model
         /// </summary>
         /// <param name="codes">Codes for each unique <see cref="CompetitionItem"/></param>
         /// <param name="scoresheetFile">For list of <see cref="CompetitionItem"/></param>
-        public void JoinCompetitions(string[] codes, ScoresheetFile scoresheetFile)
+        /// <exception cref="InvalidOperationException">If <see cref="Level"/> is null</exception>
+        public void JoinCompetitions(string[] codes, ScoresheetFile scoresheetFile, bool appendLevelToCode = false)
         {
+            if (Level == null) throw new InvalidOperationException("Level is null");
             // join from either .ssf cross-link codes or .csv data
             foreach (string code in codes)
             {
                 if (string.IsNullOrEmpty(code)) continue;
-                CompetitionItem? competitionItem = scoresheetFile.CompetitionItems.Find((x) => x.Code == code);
+                string lvlCode = (appendLevelToCode) ? code + "/" + Level.Code : code; // Codes in .csv don't have level abbreviations
+                CompetitionItem? competitionItem = scoresheetFile.CompetitionItems.Find((x) => x.Code == lvlCode);
                 if (competitionItem != null) JoinCompetition(competitionItem);
             }
         }
@@ -137,7 +140,8 @@ namespace Scoresheet.Model
         /// </summary>
         public void UnjoinAllCompetitions()
         {
-            foreach (CompetitionItem competitionItem in CompetitionItems) UnjoinCompetition(competitionItem);
+            foreach (CompetitionItem competitionItem in CompetitionItems) competitionItem.IndividualParticipants.Remove(this);
+            CompetitionItems.Clear();
         }
 
         #endregion

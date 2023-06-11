@@ -22,11 +22,8 @@
                 <PropertyGroupDescription PropertyName="SubmissionStatus"/>
             </CollectionViewSource.GroupDescriptions>
         </CollectionViewSource>
-        <Style TargetType="StackPanel" x:Key="DetailsBox">
-            <Setter Property="Orientation" Value="Horizontal"/>
+        <Style TargetType="WrapPanel" x:Key="DetailsBox">
             <Setter Property="Margin" Value="8 4"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="MinWidth" Value="300"/>
         </Style>
     </Window.Resources>
     <Window.InputBindings>
@@ -35,16 +32,17 @@
     <Grid Margin="6">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="1*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="12*"/>
-            <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="8*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="12*"/>
         </Grid.ColumnDefinitions>
-        <ListBox Style="{StaticResource ControlPanelHorizontalListBoxStyle}" Grid.ColumnSpan="3">
-            <ItemsControl Tag="Teams" ItemsSource="{Binding ScoresheetFile.Teams}" Margin="4">
+        <ListBox Style="{StaticResource ControlPanelHorizontalListBoxStyle}">
+            <ItemsControl Tag="Teams" ItemsSource="{Binding ScoresheetFile.Teams}" Margin="4" d:ItemsSource="{d:SampleData ItemCount=2}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Horizontal"/>
@@ -55,21 +53,25 @@
                         <Border CornerRadius="4" Margin="2">
                             <TextBlock Text="{Binding Name}" Padding="4,2" />
                             <Border.Background>
-                                <SolidColorBrush Color="{Binding Colour}"/>
+                                <SolidColorBrush Color="{Binding Colour, FallbackValue=Gray}"/>
                             </Border.Background>
                         </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <Button Content="Import" ToolTip="Import Google forms results" Command="{Binding ImportCommand}"/>
-            <StackPanel Tag="Participant Details" DataContext="{Binding SelectedParticipant}" Style="{StaticResource ResourceKey=DetailsBox}">
+            <Button Content="Import .csv" ToolTip="Import Google forms results" Command="{Binding ImportCommand}"/>
+            <Button x:Name="CreateButton" Content="Export" Click="CreateButton_Click" />
+            <Button Tag="Fix (Press F)" Width="100" Content="{Binding FixSuggestion}" Command="{Binding FixCommand}" Foreground="{StaticResource NewColourKey}"/>
+        </ListBox>
+        <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Column="0" Grid.Row="1">
+            <WrapPanel Tag="Participant Details" DataContext="{Binding SelectedParticipant}" Style="{StaticResource ResourceKey=DetailsBox}">
                 <ContentPresenter ContentTemplate="{StaticResource ParticipantBox}"/>
                 <TextBlock Text="{Binding YearLevel, StringFormat={}y{0}, FallbackValue=y?}" Padding="8 0 4 0"/>
                 <TextBlock Text="{Binding FullName, FallbackValue=Name?}" Padding="4 0"/>
                 <ItemsControl ItemsSource="{Binding CompetitionItems}" d:ItemsSource="{d:SampleData ItemCount=2}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal"/>
+                            <WrapPanel/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
@@ -78,9 +80,8 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-            </StackPanel>
-            <Button Tag="Fix (Press F)" Width="100" Content="{Binding FixSuggestion}" Command="{Binding FixCommand}" Foreground="{StaticResource NewColourKey}"/>
-            <StackPanel Tag="Submission Details" DataContext="{Binding SelectedSubmission}"  Style="{StaticResource ResourceKey=DetailsBox}">
+            </WrapPanel>
+            <WrapPanel Tag="Submission Details" DataContext="{Binding SelectedSubmission}"  Style="{StaticResource ResourceKey=DetailsBox}">
                 <Border CornerRadius="4" Width="16">
                     <Border.Background>
                         <SolidColorBrush Color="{Binding Team.Colour,FallbackValue=Gray}"/>
@@ -88,11 +89,12 @@
                 </Border>
                 <TextBlock Text="{Binding YearLevel, StringFormat={}y{0}, FallbackValue=y?}" Padding="8 0 4 0"/>
                 <TextBlock Text="{Binding FullName, FallbackValue=Name?}" Padding="4 0"/>
-            </StackPanel>
-            <Button x:Name="CreateButton" Content="Export" Click="CreateButton_Click" />
+                <TextBlock Text="{Binding Details, Mode=OneWay, FallbackValue=Items}" Padding="4 0"/>
+            </WrapPanel>
         </ListBox>
         <ListBox x:Name="ParticipantsListBox"
-                 Grid.Row="1" ItemsSource="{Binding Source={StaticResource IndividualParticipantsSource}}"
+                 Grid.Row="0" Grid.RowSpan="3" Grid.Column="2"
+                 ItemsSource="{Binding Source={StaticResource IndividualParticipantsSource}}"
                  d:ItemsSource="{d:SampleData ItemCount=50}" Style="{StaticResource ContrastListBoxStyle}"
                  SelectedItem="{Binding SelectedParticipant}" ScrollViewer.VerticalScrollBarVisibility="Disabled">
             <ListBox.ContextMenu>
@@ -105,6 +107,7 @@
                     <WrapPanel x:Name="PART_Root">
                         <ContentPresenter ContentTemplate="{StaticResource ParticipantBox}"/>
                         <TextBlock Text="{Binding FullName}" Padding="8 0 4 0"/>
+                        <TextBlock Text="{Binding CompetitionItems.Count, FallbackValue=0, StringFormat=({0})}" Foreground="{StaticResource ForegroundMinorColourKey}" Padding="4 0 4 0"/>
                     </WrapPanel>
                     <DataTemplate.Triggers>
                         <DataTrigger Binding="{Binding IsFormSubmitted}" Value="false">
@@ -128,15 +131,15 @@
                 </GroupStyle>
             </ListBox.GroupStyle>
         </ListBox>
-        <GridSplitter Grid.Column="1" Grid.Row="1" Width="4" ResizeBehavior="PreviousAndNext"/>
-        <ListView x:Name="FormsList" Grid.Row="1" Grid.Column="2"
+        <GridSplitter Grid.Column="1" Grid.RowSpan="3" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center" Margin="0,2,0,2"/>
+        <ListView x:Name="FormsList" Grid.Row="2" Grid.Column="0"
                  ItemsSource="{Binding Source={StaticResource FormSubmissionsSource}}"
-                  SelectedItem="{Binding SelectedSubmission}">
+                  SelectedItem="{Binding SelectedSubmission}" Margin="2,2,2,2">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Year" DisplayMemberBinding="{Binding YearLevel}" Width="30"/>
                     <GridViewColumn Header="Name" DisplayMemberBinding="{Binding FullName}"/>
-                    <GridViewColumn Header="Match" DisplayMemberBinding="{Binding Match}"/>
+                    <GridViewColumn Header="Match" DisplayMemberBinding="{Binding Match.ChestNumber, StringFormat=#{0}}"/>
                     <GridViewColumn Header="Email" DisplayMemberBinding="{Binding Email}"/>
                     <GridViewColumn Header="Timestamp" DisplayMemberBinding="{Binding TimeStamp}"/>
                 </GridView>
@@ -154,6 +157,6 @@
                 </GroupStyle>
             </ListView.GroupStyle>
         </ListView>
-        <ProgressBar Grid.Row="2" Maximum="1" Value="{Binding Progress, Mode=OneWay}" Grid.ColumnSpan="3" BorderBrush="{StaticResource BasegroundColourKey}" Foreground="{StaticResource NewColourKey}" Margin="0,2,0,0"/>
+        <ProgressBar Grid.Row="3" Maximum="1" Value="{Binding Progress, Mode=OneWay}" Grid.ColumnSpan="3" BorderBrush="{StaticResource BasegroundColourKey}" Foreground="{StaticResource NewColourKey}" Margin="0,2,0,0"/>
     </Grid>
 </Window>
