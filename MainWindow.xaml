@@ -3,9 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Scoresheet"
+        xmlns:local="clr-namespace:Scoresheet" 
+        xmlns:model="clr-namespace:Scoresheet.Model"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" Style="{StaticResource ContrastWindowStyle}">
+        Title="{Binding FileName, StringFormat=Scoresheet | {0}}" Height="450" Width="800" Style="{StaticResource ContrastWindowStyle}" WindowState="Maximized">
+    <Window.DataContext>
+        <model:VM/>
+    </Window.DataContext>
     <Grid Margin="6">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -14,5 +18,25 @@
         <DockPanel LastChildFill="False">
             <Button>New</Button>
         </DockPanel>
+        <ListBox Grid.Row="2" Style="{StaticResource ContrastListBoxStyle}" 
+                 ItemsSource="{Binding ScoresheetFile.CompetitionItems}" d:ItemsSource="{d:SampleData}"
+                 ScrollViewer.VerticalScrollBarVisibility="Disabled">
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel Orientation="Vertical"/>
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="model:CompetitionItem">
+                    <StackPanel>
+                        <Label Content="{Binding Code}" FontWeight="Bold"/>
+                        <ItemsControl ItemsSource="{Binding IndividualParticipants}" d:ItemsSource="{d:SampleData}"
+                                  >
+                        </ItemsControl>
+
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
     </Grid>
 </Window>

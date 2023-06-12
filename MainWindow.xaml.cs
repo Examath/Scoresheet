@@ -1,5 +1,6 @@
 ﻿using Examath.Core.Environment;
 using Scoresheet.Formatter;
+using Scoresheet.Model;
 using System;
 using System.Windows;
 
@@ -10,15 +11,21 @@ namespace Scoresheet
     /// </summary>
     public partial class MainWindow : Window
     {
+        private VM? VM;
+
         public MainWindow()
         {
             InitializeComponent();
-            LoadDataAsync();
+        }
+
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);   
+            LoadDataAsync(); 
         }
 
         public async void LoadDataAsync()
         {
-            bool isLoaded = false;
             bool isLoadingFromAppSelect = false;
             string fileLocation = string.Empty;
 
@@ -28,7 +35,7 @@ namespace Scoresheet
                 isLoadingFromAppSelect = true;
             }
 
-            while (!isLoaded)
+            while (VM == null)
             {
                 // Pick file location
                 if (isLoadingFromAppSelect)
@@ -69,33 +76,28 @@ namespace Scoresheet
                         System.Windows.Forms.DialogResult dialogResult = Messager.Out(scoresheet.ToString() ?? "null", $"New Scoresheet - Please Check Guideline:",
                             isCancelButtonVisible: true, noButtonText: "Try Again", yesButtonText: "Continue");
 
-                        switch (dialogResult)
-                        {                            
-                            case System.Windows.Forms.DialogResult.Yes: // Guideline is checked
-                                if (!scoresheet.IsFormatted)
-                                {
-                                    FormatterVM formatterVM = new(scoresheet);
-                                    if (!formatterVM.IsLoaded) break; // If teams list is not loaded, close app
+                        if (dialogResult == System.Windows.Forms.DialogResult.Yes) // If Guideline is checked, then format
+                        {
+                            FormatterVM formatterVM = new(scoresheet);
+                            if (!formatterVM.IsLoaded) break; // If teams list is not loaded, close app
 
-                                    FormatterDialog formatterDialog = new(scoresheet)
-                                    {
-                                        Owner = this,
-                                        DataContext = formatterVM
-                                    };
-                                    formatterDialog.ShowDialog();
-                                    if (!scoresheet.IsFormatted) break; // if formatting cancelled, close app
-                                    else; // Load scoresheet into main window
-                                }
-                                break;
-                            case System.Windows.Forms.DialogResult.No: // Try Again
-                                continue;
-                            default: // Close App
-                                return;
+                            FormatterDialog formatterDialog = new(scoresheet)
+                            {
+                                Owner = this,
+                                DataContext = formatterVM
+                            };
+                            formatterDialog.ShowDialog();
+                            if (!scoresheet.IsFormatted) break; // if formatting cancelled, close app
                         }
+                        else if (dialogResult == System.Windows.Forms.DialogResult.No) continue; // Try Again
+                        else break; // Close App
                     }
 
+                    // Now, Scoresheet is formatted.
+                    // Hence, Load into MainWindow
 
-
+                    VM = new(scoresheet, fileLocation);
+                    DataContext = VM;
                 }
                 catch (Exception e)
                 {
@@ -106,7 +108,7 @@ namespace Scoresheet
                 }
             }
 
-            if (!isLoaded) Close();
+            if (VM == null) Close();
         }
 
     }

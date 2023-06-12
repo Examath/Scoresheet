@@ -37,7 +37,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="8*"/>
+            <ColumnDefinition Width="7*"/>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="12*"/>
         </Grid.ColumnDefinitions>
@@ -65,7 +65,7 @@
         </ListBox>
         <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Column="0" Grid.Row="1">
             <WrapPanel Tag="Participant Details" DataContext="{Binding SelectedParticipant}" Style="{StaticResource ResourceKey=DetailsBox}">
-                <ContentPresenter ContentTemplate="{StaticResource ParticipantBox}"/>
+                <ContentControl ContentTemplate="{StaticResource ParticipantBox}"/>
                 <TextBlock Text="{Binding YearLevel, StringFormat={}y{0}, FallbackValue=y?}" Padding="8 0 4 0"/>
                 <TextBlock Text="{Binding FullName, FallbackValue=Name?}" Padding="4 0"/>
                 <ItemsControl ItemsSource="{Binding CompetitionItems}" d:ItemsSource="{d:SampleData ItemCount=2}">
@@ -105,7 +105,7 @@
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="model:IndividualParticipant">
                     <WrapPanel x:Name="PART_Root">
-                        <ContentPresenter ContentTemplate="{StaticResource ParticipantBox}"/>
+                        <ContentControl ContentTemplate="{StaticResource ParticipantBox}"/>
                         <TextBlock Text="{Binding FullName}" Padding="8 0 4 0"/>
                         <TextBlock Text="{Binding CompetitionItems.Count, FallbackValue=0, StringFormat=({0})}" Foreground="{StaticResource ForegroundMinorColourKey}" Padding="4 0 4 0"/>
                     </WrapPanel>
