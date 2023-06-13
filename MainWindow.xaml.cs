@@ -92,6 +92,10 @@ namespace Scoresheet
                         else if (dialogResult == System.Windows.Forms.DialogResult.No) continue; // Try Again
                         else break; // Close App
                     }
+                    else
+                    {
+                        scoresheet.Initialise();
+                    }
 
                     // Now, Scoresheet is formatted.
                     // Hence, Load into MainWindow

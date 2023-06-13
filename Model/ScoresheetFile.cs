@@ -74,7 +74,8 @@ namespace Scoresheet.Model
         /// </summary>
         public void Initialise()
         {
-            foreach (CompetitionItem CompetitionItem in CompetitionItems) CompetitionItem.Initialize(LevelDefinitions);
+            foreach (CompetitionItem competitionItem in CompetitionItems) competitionItem.Initialize(LevelDefinitions);
+            foreach (IndividualParticipant individualParticipant in IndividualParticipants) individualParticipant.Initialize(this);
         }
 
         public override string ToString()

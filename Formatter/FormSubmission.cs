@@ -11,14 +11,14 @@ namespace Scoresheet.Formatter
     public partial class FormSubmission : ObservableObject
     {
         const int SEARCH_CLIP = 15;
-        const double SEARCH_OFACTOR = 0.5;
+        const double SEARCH_LEVEL_FACTOR = 0.4;
 
         public string[] Data { get; set; }
 
         /// <summary>
         /// Gets a list of abbreviations for the items this participant seeks to join
         /// </summary>
-        public string Details { get; private set; }
+        public string Details { get; private set; } = "";
 
         private const int TimeStampI = 0;
         /// <summary>
@@ -137,8 +137,7 @@ namespace Scoresheet.Formatter
                     double currentSearchDistance = DamerauLevenshteinDistance(individualParticipant.SearchName, SearchName, 15);
 
                     // Prefer better matches
-                    if (individualParticipant.Team == Team) currentSearchDistance *= SEARCH_OFACTOR;
-                    if (individualParticipant.YearLevel == YearLevel) currentSearchDistance *= SEARCH_OFACTOR;
+                    if (individualParticipant.YearLevel == YearLevel) currentSearchDistance *= SEARCH_LEVEL_FACTOR;
 
                     if (currentSearchDistance < searchDistance)
                     {
@@ -201,6 +200,8 @@ namespace Scoresheet.Formatter
 
                 // Prevent older requests from overriding
                 match.SubmissionTimeStamp = TimeStamp;
+
+                match.SubmissionEmail = Email;
 
                 // The csv file has 6 coloums: Stage-SJ, Non-stage-SJ, Stage-J and so on
                 // Join solo items from only two columns

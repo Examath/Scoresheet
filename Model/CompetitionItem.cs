@@ -18,6 +18,7 @@ namespace Scoresheet.Model
     public partial class CompetitionItem : ObservableObject
     {
         #region MyRegion
+
         private string _Code = "";
 
         /// <summary>
@@ -90,10 +91,9 @@ namespace Scoresheet.Model
         /// Gets the <see cref="LevelDefinition"/> of this item, if any.
         /// </summary>
         [XmlIgnore]
-        public LevelDefinition? Level { get; set; }
+        public LevelDefinition Level { get; set; } = LevelDefinition.All;
 
         #endregion
-
 
         /// <summary>
         /// Initialises <see cref="Level"/>
@@ -102,9 +102,9 @@ namespace Scoresheet.Model
         {
             string[] codeParameters = Code.Split('/');
 
-            if (codeParameters.Length >= 1)
+            if (codeParameters.Length >= 2)
             {
-                Level = levelDefinitions.Find((x) => x.Code == codeParameters[1]);
+                Level = levelDefinitions.Find((x) => x.Code == codeParameters[1]) ?? LevelDefinition.All;
                 ShortCode += "/" + codeParameters[1];
             }
         }

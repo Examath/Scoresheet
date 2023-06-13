@@ -49,6 +49,10 @@ namespace Scoresheet.Model
         [XmlIgnore]
         public LevelDefinition? Level { get; set; }
 
+        #endregion
+
+        #region Submission Evidence
+
         private DateTime _SubmissionTimeStamp;
         /// <summary>
         /// Gets or sets the time when a <see cref="Formatter.FormSubmission"/>
@@ -66,6 +70,17 @@ namespace Scoresheet.Model
         /// </summary>
         [XmlIgnore]
         public bool IsFormSubmitted { get => SubmissionTimeStamp != default; }
+
+        private string _SubmissionEmail = "";
+        /// <summary>
+        /// Gets or sets the email used to submit the <see cref="Formatter.FormSubmission"/>
+        /// </summary>
+        [XmlAttribute]
+        public string SubmissionEmail
+        {
+            get => _SubmissionEmail;
+            set => SetProperty(ref _SubmissionEmail, value);
+        }
 
         #endregion
 
@@ -174,12 +189,16 @@ namespace Scoresheet.Model
             }
         }
 
+        /// <summary>
+        /// <inheritdoc/> then finds the matching <see cref="Level"/> and joins needed competitions
+        /// </summary>
+        /// <param name="scoresheetFile"></param>
         public override void Initialize(ScoresheetFile scoresheetFile)
         {
             base.Initialize(scoresheetFile);
             Level = scoresheetFile.LevelDefinitions.Find(x => x.Within(_YearLevel));
             SearchName = _FullName.ToUpperInvariant();
-            JoinCompetitions(CompetitionItemsXML.Split(','), scoresheetFile);
+            JoinCompetitions(_CompetitionItemsFromXML.Split(','), scoresheetFile);
         }
 
         #endregion

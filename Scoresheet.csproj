@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Scoresheet.ico</ApplicationIcon>
+    <Version>0.10.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

@@ -45,5 +45,7 @@ namespace Scoresheet.Model
         {
             return LowerBound <= yearLevel && UpperBound >= yearLevel;
         }
+
+        public static LevelDefinition All { get; private set; } = new() { LowerBound = 0, UpperBound = 12, Code = "A", Name = "All" };
     }
 }
