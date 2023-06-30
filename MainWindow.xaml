@@ -27,7 +27,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
     <Grid Margin="2">
-        <TabControl>
+        <TabControl Margin="2,4,2,2">
             <TabItem Header="Participants">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -40,15 +40,17 @@
                         <ColumnDefinition Width="7*"/>
                     </Grid.ColumnDefinitions>
                     <WrapPanel>
-                        <Button Content="Add New Participant" Foreground="{StaticResource NewColourKey}"/>
-                        <Button>Re-Import from CSV</Button>
+                        <!--<Button Content="Add New Participant" Foreground="{StaticResource NewColourKey}"/>-->
+                        <Button Command="{Binding FormatCommand}">Re-Import from CSV</Button>
                     </WrapPanel>
                     <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Row="1">
-                        <Label FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Content="{Binding SelectedParticipant.FullName, FallbackValue=Name?}"/>
+                        <TextBox FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" 
+                                 Text="{Binding SelectedParticipant.FullName, FallbackValue=Name?}"/>
                         <ContentControl Tag="Team" Content="{Binding SelectedParticipant.Team}" Margin="2" ContentTemplate="{StaticResource TeamBox}" />
                         <Label Tag="Chest Number" Content="{Binding SelectedParticipant.ChestNumber, FallbackValue=000}" ContentStringFormat="#{0}" />
                         <StackPanel Orientation="Horizontal" Tag="Year Level">
-                            <Label Content="{Binding SelectedParticipant.YearLevel, FallbackValue=?}" ContentStringFormat="Year {0}"/>
+                            <Label Content="Year "/>
+                            <TextBox Text="{Binding SelectedParticipant.YearLevel, ValidatesOnNotifyDataErrors=True}"/>
                             <Label Content="{Binding SelectedParticipant.Level, FallbackValue=?}"/>
                         </StackPanel>
                         <Label Tag="Form Submitted at" Content="{Binding SelectedParticipant.SubmissionTimeStamp, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
@@ -63,7 +65,7 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <Button Content="{Binding SelectedParticipant.FullName, FallbackValue=...}" ContentStringFormat="Edit {0}" />
+                        <Button Command="{Binding EditParticipantCommand}" CommandParameter="{Binding SelectedParticipant}" Content="{Binding SelectedParticipant.FullName, FallbackValue=...}" ContentStringFormat="Edit {0}'s Submission" />
                     </ListBox>
                     <GridSplitter Grid.Column="1" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center" Margin="0,2,0,2" Grid.RowSpan="2"/>
                     <ListBox x:Name="ParticipantsListBox"
@@ -96,7 +98,6 @@
             </TabItem>
             <TabItem Header="Items" IsSelected="True">
                 <Grid>
-                    <Button Command="{Binding ExportParticipantListCommand}" VerticalAlignment="Top" HorizontalAlignment="Right">Export Participant List</Button>
                     <ItemsControl Grid.Row="2" Foreground="{StaticResource ForegroundColourKey}"
                                 ItemsSource="{Binding Source={StaticResource CompetitionItemsSource}}" d:ItemsSource="{d:SampleData}"
                                 ItemTemplateSelector="{StaticResource CompetitionItemDataTemplateSelector}"
@@ -197,6 +198,7 @@
                             </DataTemplate>
                         </ItemsControl.Resources>
                     </ItemsControl>
+                    <Button Command="{Binding ExportParticipantListCommand}" VerticalAlignment="Top" HorizontalAlignment="Right">Export Participant List</Button>
                 </Grid>
             </TabItem>
             <TabItem Header="Marking">
@@ -270,8 +272,10 @@
                 </DockPanel>
             </TabItem>
         </TabControl>
-        <DockPanel LastChildFill="False" HorizontalAlignment="Right" VerticalAlignment="Top">
-            <Button>Save</Button>
+        <DockPanel LastChildFill="False" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,0,0.5">
+            <Label Style="{StaticResource OutputLabel}" Content="{Binding LastChange}" Foreground="{StaticResource FileColourKey}"/>
+            <Button Command="{Binding TrySaveCommand}" Foreground="{StaticResource FileColourKey}">Save</Button>
+            <TextBox Text="{Binding UserName}"/>
         </DockPanel>
     </Grid>
 </Window>

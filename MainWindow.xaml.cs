@@ -1,4 +1,5 @@
 ﻿using Examath.Core.Environment;
+using Examath.Core.Utils;
 using Scoresheet.Formatter;
 using Scoresheet.Model;
 using System;
@@ -15,13 +16,17 @@ namespace Scoresheet
 
         public MainWindow()
         {
+            // Crash Handler
+            AppDomain currentDomain = AppDomain.CurrentDomain;
+            currentDomain.UnhandledException += new UnhandledExceptionEventHandler(CrashHandler);
+
             InitializeComponent();
         }
 
         protected override void OnActivated(EventArgs e)
         {
-            base.OnActivated(e);   
-            LoadDataAsync(); 
+            base.OnActivated(e);
+            LoadDataAsync();
         }
 
         public async void LoadDataAsync()
@@ -81,7 +86,7 @@ namespace Scoresheet
                             FormatterVM formatterVM = new(scoresheet);
                             if (!formatterVM.IsLoaded) break; // If teams list is not loaded, close app
 
-                            FormatterDialog formatterDialog = new(scoresheet)
+                            FormatterDialog formatterDialog = new()
                             {
                                 Owner = this,
                                 DataContext = formatterVM
@@ -114,6 +119,44 @@ namespace Scoresheet
 
             if (VM == null) Close();
         }
+
+        #region Crash Handler
+
+        private void CrashHandler(object sender, UnhandledExceptionEventArgs args)
+        {
+#pragma warning disable CS0162 // Unreachable code detected when DEBUG config
+            try
+            {
+                if (VM != null)
+                {
+                    XML.Save(VM.FileLocation + ".crash", VM.ScoresheetFile);
+
+#if DEBUG
+                    return;
+#endif
+
+                    Exception e = (Exception)args.ExceptionObject;
+                    MessageBox.Show($"{e.GetType().Name}: {e.Message}\nThe scoresheet was saved to {VM.FileLocation + ".crash"}. Rename and re-open this to restore. See crash-info.txt fore more info.", " An Unhandled Exception Occurred", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.IO.File.AppendAllLines(System.IO.Path.GetDirectoryName(VM.FileLocation) + "\\crash-info.txt",
+                        new string[] 
+                        {
+                            "______________________________________________________",
+                            $"An unhandled exception occurred at {DateTime.Now:g}",
+                            $"A backup of Scoresheet was saved at {VM.FileLocation}.crashed",
+                            $"Error Message:\t{e.Message}",
+                            $"Stack Trace:\n{e.StackTrace}",
+                        }
+                    );
+                }
+
+            }
+            catch (Exception)
+            {
+                MessageBox.Show($"An exception occurred in the crash-handler. The scoresheet is unlikely to have been saved. Backups of the Scoresheet may be found in the Backups subfolder.", "Dual Unhandled Exception", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+#pragma warning restore CS0162 // Unreachable code detected
+        }
+        #endregion
 
     }
 }

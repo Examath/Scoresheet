@@ -40,11 +40,19 @@ namespace Scoresheet.Formatter
             ScoresheetFile = new();
         }
 
+        /// <summary>
+        /// Creates a new Formatter, and prompts the user to select a teams list if there are no participants.
+        /// </summary>
+        /// <param name="scoresheetFile"></param>
         public FormatterVM(ScoresheetFile scoresheetFile)
         {
             ScoresheetFile = scoresheetFile;
 
-            // Todo if contains participants return
+            if (ScoresheetFile.IndividualParticipants.Count > 0)
+            {
+                IsLoaded = true;
+                return;
+            }
 
             while (!IsLoaded)
             {

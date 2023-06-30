@@ -206,11 +206,11 @@ namespace Scoresheet.Formatter
                 // The csv file has 6 coloums: Stage-SJ, Non-stage-SJ, Stage-J and so on
                 // Join solo items from only two columns
                 int specificIndex = ItemsStartI + scoresheetFile.LevelDefinitions.IndexOf(Level) * 2;
-                match.JoinCompetitions(Data[specificIndex].Split(';'), scoresheetFile, appendLevelToCode: true);
-                match.JoinCompetitions(Data[specificIndex + 1].Split(';'), scoresheetFile, appendLevelToCode: true);
+                match.JoinCompetitions(Data[specificIndex].Split(';'), appendLevelToCode: true);
+                match.JoinCompetitions(Data[specificIndex + 1].Split(';'), appendLevelToCode: true);
 
                 // Join group items
-                match.JoinCompetitions(Data[TeamI + 1].Split(';'), scoresheetFile);
+                match.JoinCompetitions(Data[TeamI + 1].Split(';'));
             }
             else
             {

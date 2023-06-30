@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,8 +16,10 @@ namespace Scoresheet.Model
     /// <remarks>
     /// Must be initialized when loading from XML
     /// </remarks>
-    public partial class Participant : ObservableObject
+    public partial class Participant : ObservableValidator
     {
+        protected ScoresheetFile? _ScoresheetFile;
+
         #region Identity
 
         private int _ChestNumber = 0;
@@ -55,7 +58,14 @@ namespace Scoresheet.Model
         /// <param name="teams"></param>
         public virtual void Initialize(ScoresheetFile scoresheetFile)
         {
+            _ScoresheetFile = scoresheetFile;
             Team = scoresheetFile.Teams.Find((x) => x.Name == Team_Name);
+        }
+
+        protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+        {
+            base.OnPropertyChanged(e);
+            _ScoresheetFile?.OnModified(this);
         }
     }
 }

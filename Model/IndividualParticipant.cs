@@ -1,9 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Windows.Documents;
 using System.Xml.Serialization;
 
 namespace Scoresheet.Model
@@ -20,10 +19,17 @@ namespace Scoresheet.Model
         /// Gets or sets the full name of this person
         /// </summary>
         [XmlAttribute]
+        [Required()]
         public string FullName
         {
             get => _FullName;
-            set => SetProperty(ref _FullName, value);
+            set
+            {
+                if (SetProperty(ref _FullName, value, true))
+                {
+                    SearchName = _FullName.ToUpperInvariant();
+                }
+            }
         }
 
         /// <summary>
@@ -37,17 +43,30 @@ namespace Scoresheet.Model
         /// Gets or sets the year level of this person
         /// </summary>
         [XmlAttribute]
+        [Range(1,12)]
         public int YearLevel
         {
             get => _YearLevel;
-            set => SetProperty(ref _YearLevel, value);
+            set
+            {
+                if (SetProperty(ref _YearLevel, value, true)) InitializeLevel();
+            }
         }
 
         /// <summary>
         /// Gets the <see cref="LevelDefinition"/> this individual is in
         /// </summary>
         [XmlIgnore]
-        public LevelDefinition? Level { get; set; }
+        private LevelDefinition? _Level;
+        /// <summary>
+        /// Gets or sets 
+        /// </summary>
+        public LevelDefinition? Level
+        {
+            get => _Level;
+            set => SetProperty(ref _Level, value);
+        }
+
 
         #endregion
 
@@ -135,17 +154,16 @@ namespace Scoresheet.Model
         /// Initialises the <see cref="CompetitionItems"/> list
         /// </summary>
         /// <param name="codes">Codes for each unique <see cref="CompetitionItem"/></param>
-        /// <param name="scoresheetFile">For list of <see cref="CompetitionItem"/></param>
         /// <exception cref="InvalidOperationException">If <see cref="Level"/> is null</exception>
-        public void JoinCompetitions(string[] codes, ScoresheetFile scoresheetFile, bool appendLevelToCode = false)
+        public void JoinCompetitions(string[] codes, bool appendLevelToCode = false)
         {
-            if (Level == null) throw new InvalidOperationException("Level is null");
+            if (Level == null || _ScoresheetFile == null) throw new InvalidOperationException("Level or Scoresheet parent is null");
             // join from either .ssf cross-link codes or .csv data
             foreach (string code in codes)
             {
                 if (string.IsNullOrEmpty(code)) continue;
                 string lvlCode = (appendLevelToCode) ? code + "/" + Level.Code : code; // Codes in .csv don't have level abbreviations
-                CompetitionItem? competitionItem = scoresheetFile.CompetitionItems.Find((x) => x.Code == lvlCode);
+                CompetitionItem? competitionItem = _ScoresheetFile.CompetitionItems.Find((x) => x.Code == lvlCode);
                 if (competitionItem != null) JoinCompetition(competitionItem);
             }
         }
@@ -196,9 +214,13 @@ namespace Scoresheet.Model
         public override void Initialize(ScoresheetFile scoresheetFile)
         {
             base.Initialize(scoresheetFile);
-            Level = scoresheetFile.LevelDefinitions.Find(x => x.Within(_YearLevel));
-            SearchName = _FullName.ToUpperInvariant();
-            JoinCompetitions(_CompetitionItemsFromXML.Split(','), scoresheetFile);
+            InitializeLevel();
+            JoinCompetitions(_CompetitionItemsFromXML.Split(','));
+        }
+
+        private void InitializeLevel()
+        {
+            Level = _ScoresheetFile?.LevelDefinitions.Find(x => x.Within(_YearLevel));
         }
 
         #endregion

@@ -21,6 +21,10 @@ namespace Scoresheet.Model
 
         public bool IsFormatted { get; set; }
 
+        public DateTime LastSavedTime { get; set; } = DateTime.Now;
+
+        public string LastAuthor { get; set; } = "Null";
+
         private bool _IsOpen;
         /// <summary>
         /// Gets or sets whether this scoresheet is open for adding scores
@@ -39,6 +43,8 @@ namespace Scoresheet.Model
         /// </summary>
         public string Hash { get; set; } = "";
 
+        #region DefinitionObjects
+
         /// <summary>
         /// Gets or sets the list of <see cref="Team"/>s in this competition
         /// </summary>
@@ -54,6 +60,8 @@ namespace Scoresheet.Model
         /// </summary>
         [XmlArrayItem(typeof(SoloItem)), XmlArrayItem(typeof(GroupItem))]
         public List<CompetitionItem> CompetitionItems { get; set; } = new();
+
+        #endregion
 
         #region Participant List Object
 
@@ -83,6 +91,18 @@ namespace Scoresheet.Model
             return $"Teams: {string.Join(", ", Teams)}\n" +
                 $"Levels: {string.Join(", ", LevelDefinitions)}\n" +
                 $"Items: {string.Join(", ", CompetitionItems)}";
+        }
+
+        public event EventHandler? Modified;
+
+        internal void OnModified(object? sender = null)
+        {
+            EventHandler? eventHandler = Modified;
+
+            if (eventHandler != null)
+            {
+                eventHandler(sender ?? this, EventArgs.Empty);
+            }
         }
     }
 }

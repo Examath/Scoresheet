@@ -105,7 +105,6 @@ namespace Scoresheet.Model
             if (codeParameters.Length >= 2)
             {
                 Level = levelDefinitions.Find((x) => x.Code == codeParameters[1]) ?? LevelDefinition.All;
-                ShortCode += "/" + codeParameters[1];
             }
         }
 

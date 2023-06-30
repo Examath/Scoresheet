@@ -52,8 +52,8 @@
                 </ItemsControl.ItemsPanel>
             </ItemsControl>
             <Button Content="Import .csv" ToolTip="Import Google forms results" Command="{Binding ImportCommand}"/>
-            <Button x:Name="CreateButton" Content="Export" Click="CreateButton_Click" />
             <Button Tag="Fix (Press F)" Width="100" Content="{Binding FixSuggestion}" Command="{Binding FixCommand}" Foreground="{StaticResource NewColourKey}"/>
+            <Button x:Name="CreateButton" Content="Export" Click="CreateButton_Click" />
         </ListBox>
         <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Column="0" Grid.Row="1">
             <WrapPanel Tag="Participant Details" DataContext="{Binding SelectedParticipant}" Style="{StaticResource ResourceKey=DetailsBox}">

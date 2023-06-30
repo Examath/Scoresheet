@@ -23,9 +23,11 @@ namespace Scoresheet.Formatter
     {
         FormatterVM? FormatterVM;
 
-        public FormatterDialog(Model.ScoresheetFile guideline)
-        {
-            
+        /// <summary>
+        /// Initialises a new <see cref="FormatterDialog"/> window
+        /// </summary>
+        public FormatterDialog()
+        {            
             InitializeComponent();
         }
 
@@ -33,6 +35,7 @@ namespace Scoresheet.Formatter
         {
             base.OnActivated(e);
             FormatterVM = (FormatterVM)DataContext;
+            if (FormatterVM.ScoresheetFile.IsFormatted) CreateButton.IsEnabled = false;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -53,6 +56,8 @@ namespace Scoresheet.Formatter
             if (saveFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 FormatterVM.ScoresheetFile.IsFormatted = true;
+                FormatterVM.ScoresheetFile.LastSavedTime = DateTime.Now;
+                FormatterVM.ScoresheetFile.LastAuthor = "Formatter";
                 await XML.SaveAsync(saveFileDialog.FileName, FormatterVM.ScoresheetFile);
                 DialogResult = true;
             }
