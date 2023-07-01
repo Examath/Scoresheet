@@ -56,11 +56,11 @@ namespace Scoresheet.Model
         /// <summary>
         /// Gets the <see cref="LevelDefinition"/> this individual is in
         /// </summary>
-        [XmlIgnore]
         private LevelDefinition? _Level;
         /// <summary>
         /// Gets or sets 
         /// </summary>
+        [XmlIgnore]
         public LevelDefinition? Level
         {
             get => _Level;
@@ -99,6 +99,16 @@ namespace Scoresheet.Model
         {
             get => _SubmissionEmail;
             set => SetProperty(ref _SubmissionEmail, value);
+        }
+
+        private string _SubmissionName = "";
+        /// <summary>
+        /// Gets or sets the name in the form used for submission
+        /// </summary>
+        public string SubmissionFullName
+        {
+            get => _SubmissionName;
+            set => SetProperty(ref _SubmissionName, value);
         }
 
         #endregion
@@ -188,11 +198,11 @@ namespace Scoresheet.Model
 
         public IndividualParticipant(string[] parameters, int[,] chestNumberMatrix, ScoresheetFile scoresheetFile)
         {
-            _FullName = parameters[0];
+            FullName = parameters[0];
             Team_Name = parameters[1];
             if (int.TryParse(parameters[2], out int yearLevel))
             {
-                _YearLevel = yearLevel;
+                YearLevel = yearLevel;
             };
 
             Initialize(scoresheetFile);

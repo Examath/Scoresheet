@@ -1,4 +1,5 @@
-﻿using Examath.Core.Utils;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using Examath.Core.Utils;
 using Scoresheet.Model;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,11 @@ namespace Scoresheet.Formatter
     public partial class FormatterDialog : Window
     {
         FormatterVM? FormatterVM;
+
+        /// <summary>
+        /// If the scoresheet was formatted using the Create button, this is set to the location of the new formatted scoresheet
+        /// </summary>
+        public string? FormattedScoresheetFileLocation { get; private set; }
 
         /// <summary>
         /// Initialises a new <see cref="FormatterDialog"/> window
@@ -55,10 +61,20 @@ namespace Scoresheet.Formatter
             };
             if (saveFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
+                FormattedScoresheetFileLocation = saveFileDialog.FileName;
                 FormatterVM.ScoresheetFile.IsFormatted = true;
                 FormatterVM.ScoresheetFile.LastSavedTime = DateTime.Now;
                 FormatterVM.ScoresheetFile.LastAuthor = "Formatter";
-                await XML.SaveAsync(saveFileDialog.FileName, FormatterVM.ScoresheetFile);
+                try
+                {
+                    await XML.SaveAsync(FormattedScoresheetFileLocation, FormatterVM.ScoresheetFile);
+                }
+                catch (Exception ee)
+                {
+                    Examath.Core.Environment.Messager.OutException(ee, "Exporting scoresheet");
+                    CreateButton.IsEnabled = true;
+                    return;
+                }
                 DialogResult = true;
             }
             else

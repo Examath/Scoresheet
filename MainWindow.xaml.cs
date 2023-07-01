@@ -3,6 +3,7 @@ using Examath.Core.Utils;
 using Scoresheet.Formatter;
 using Scoresheet.Model;
 using System;
+using System.ComponentModel;
 using System.Windows;
 
 namespace Scoresheet
@@ -19,16 +20,15 @@ namespace Scoresheet
             // Crash Handler
             AppDomain currentDomain = AppDomain.CurrentDomain;
             currentDomain.UnhandledException += new UnhandledExceptionEventHandler(CrashHandler);
-
             InitializeComponent();
         }
 
-        protected override void OnActivated(EventArgs e)
+        #region Loading
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            base.OnActivated(e);
             LoadDataAsync();
         }
-
         public async void LoadDataAsync()
         {
             bool isLoadingFromAppSelect = false;
@@ -93,6 +93,7 @@ namespace Scoresheet
                             };
                             formatterDialog.ShowDialog();
                             if (!scoresheet.IsFormatted) break; // if formatting cancelled, close app
+                            if (formatterDialog.FormattedScoresheetFileLocation != null) fileLocation = formatterDialog.FormattedScoresheetFileLocation;
                         }
                         else if (dialogResult == System.Windows.Forms.DialogResult.No) continue; // Try Again
                         else break; // Close App
@@ -119,6 +120,57 @@ namespace Scoresheet
 
             if (VM == null) Close();
         }
+
+        #endregion
+
+        #region Closing
+
+        private bool _IsReadyToClose = false;
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            // Avoid Refire
+            if (_IsReadyToClose) return;
+            base.OnClosing(e);
+
+            // If dirty
+            if (VM != null && VM.IsModified)
+            {
+                // Temp cancel Closing
+                e.Cancel = true;
+
+                // Ask to save
+                System.Windows.Forms.DialogResult dialogResult = Messager.Out(
+                    "Would you like to save the scoresheet before closing?",
+                    "Unsaved changes",
+                    ConsoleStyle.WarningBlockStyle,
+                    isCancelButtonVisible: true,
+                    isNoButtonVisible: true);
+
+                if (dialogResult == System.Windows.Forms.DialogResult.Yes)
+                {
+                    try
+                    {
+                        VM.ScoresheetFile.LastSavedTime = DateTime.Now;
+                        VM.ScoresheetFile.LastAuthor = VM.UserName;
+                        XML.Save(VM.FileLocation, VM.ScoresheetFile);
+                        VM.NotifyChange(this);
+                    }
+                    catch (Exception ee)
+                    {
+                        Messager.OutException(ee, "Saving");
+                        return; // Abort closing
+                    }
+                }
+                else if (dialogResult == System.Windows.Forms.DialogResult.Cancel) return; // 'Cancel' pressed - Abort closing
+
+                // Restart closing
+                _IsReadyToClose = true;
+                Application.Current.Shutdown();
+            }
+        }
+
+        #endregion
 
         #region Crash Handler
 

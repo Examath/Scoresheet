@@ -6,9 +6,10 @@
         xmlns:local="clr-namespace:Scoresheet" 
         xmlns:model="clr-namespace:Scoresheet.Model"
         xmlns:view="clr-namespace:Scoresheet.View"
-        xmlns:converters="clr-namespace:Examath.Core.Converters;assembly=Examath.Core" xmlns:controls="clr-namespace:Examath.Core.Controls;assembly=Examath.Core"
         mc:Ignorable="d"
-        Title="{Binding FileName, StringFormat=Scoresheet v0.10 | {0}}" Height="600" Width="1200" Style="{StaticResource ContrastWindowStyle}" WindowState="Maximized">
+        Title="{Binding FileName, StringFormat=Scoresheet v0.12 | {0}}" Height="600" Width="1200" Style="{StaticResource ContrastWindowStyle}" 
+        WindowState="Maximized"
+        Loaded="Window_Loaded">
     <Window.DataContext>
         <model:VM/>
     </Window.DataContext>
@@ -46,15 +47,19 @@
                     <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Row="1">
                         <TextBox FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" 
                                  Text="{Binding SelectedParticipant.FullName, FallbackValue=Name?}"/>
-                        <ContentControl Tag="Team" Content="{Binding SelectedParticipant.Team}" Margin="2" ContentTemplate="{StaticResource TeamBox}" />
+                        <ComboBox Tag="Team" ItemsSource="{Binding ScoresheetFile.Teams}" SelectedItem="{Binding SelectedParticipant.Team}" 
+                                  d:ItemsSource="{d:SampleData ItemCount=2}" d:SelectedIndex="1"
+                                  ItemTemplate="{StaticResource TeamBox}"/>
                         <Label Tag="Chest Number" Content="{Binding SelectedParticipant.ChestNumber, FallbackValue=000}" ContentStringFormat="#{0}" />
                         <StackPanel Orientation="Horizontal" Tag="Year Level">
                             <Label Content="Year "/>
-                            <TextBox Text="{Binding SelectedParticipant.YearLevel, ValidatesOnNotifyDataErrors=True}"/>
-                            <Label Content="{Binding SelectedParticipant.Level, FallbackValue=?}"/>
+                            <TextBox Text="{Binding SelectedParticipant.YearLevel, ValidatesOnNotifyDataErrors=True}" MinWidth="50"/>
+                            <Label Content="{Binding SelectedParticipant.Level, FallbackValue=?}" ContentStringFormat="- {0}"/>
                         </StackPanel>
+                        <Separator/>
                         <Label Tag="Form Submitted at" Content="{Binding SelectedParticipant.SubmissionTimeStamp, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
                         <Label Tag="Form Submitted by" Content="{Binding SelectedParticipant.SubmissionEmail, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
+                        <Label Tag="Name as given in form" Content="{Binding SelectedParticipant.SubmissionFullName, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
                         <ItemsControl Tag="Items" ItemsSource="{Binding SelectedParticipant.CompetitionItems}" d:ItemsSource="{d:SampleData ItemCount=2}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="model:CompetitionItem">

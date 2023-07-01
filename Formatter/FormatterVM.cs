@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Examath.Core.Environment;
-using Examath.Core.Utils;
 using Scoresheet.Model;
 using System;
 using System.Collections.Generic;
@@ -166,7 +165,7 @@ namespace Scoresheet.Formatter
                 for (int i = 1; i < data.Length; i++)
                 {
                     Progress = 0.9 * i / data.Length + 0.1;
-                    FormSubmission formSubmission = await Task.Run<FormSubmission>(() => new(data[i], ScoresheetFile));
+                    FormSubmission formSubmission = await FormSubmission.CreateFormSubmissionAndApplyMatch(data[i], ScoresheetFile);
                     FormSubmissions.Add(formSubmission);
                 }
             }
@@ -204,13 +203,20 @@ namespace Scoresheet.Formatter
         {
             _CanFix = canFix;
             fixCommand?.NotifyCanExecuteChanged();
-            if (SelectedParticipant != null && SelectedSubmission != null && !SelectedSubmission.IsValidMatch(SelectedParticipant))
+            if (SelectedParticipant != null && SelectedSubmission != null)
             {
-                FixSuggestion = fixSuggestion + " *";
+                if (!SelectedSubmission.IsValidMatch(SelectedParticipant))
+                {
+                    FixSuggestion = $"{fixSuggestion} ({SelectedSubmission.MatchScore:P0}**)";
+                }
+                else
+                {
+                    FixSuggestion = $"{fixSuggestion} ({SelectedSubmission.MatchScore:P0})";
+                }
             }
             else
             {
-                FixSuggestion = fixSuggestion;
+                FixSuggestion = $"----";
             }
         }
 
@@ -298,11 +304,34 @@ namespace Scoresheet.Formatter
 
                 if (!SelectedSubmission.IsValidMatch(SelectedParticipant))
                 {
-                    ok = Messager.Out("Invalid submission ... merrging is currently not suppored",
-                        "Invalid Submission?",
-                        ConsoleStyle.WarningBlockStyle,
-                        isCancelButtonVisible: true,
-                        yesButtonText: "Apply anyway") == DialogResult.Yes;
+                    if (SelectedParticipant.Team != SelectedSubmission.Team)
+                    {
+                        DialogResult dialogResult = Messager.Out(
+                            $"{SelectedParticipant.FullName} is in {SelectedParticipant.Team}, per the teams list," +
+                            $" but the team selected ({SelectedSubmission.Team}) in the form does not match. " +
+                            $"When applying submission, do you want to keep the team as in the teams list, or change the team?",
+                            "Invalid Submission",
+                            ConsoleStyle.WarningBlockStyle,
+                            isCancelButtonVisible: true,
+                            yesButtonText: "Keep",
+                            noButtonText: $"Move to {SelectedSubmission.Team}"
+                        );
+                        if (dialogResult == DialogResult.Yes) ok = true;
+                        else if (dialogResult == DialogResult.No) SelectedParticipant.Team = SelectedSubmission.Team;
+                        else ok = false;
+                    }
+                    else if (SelectedParticipant.Level?.Within(SelectedSubmission.YearLevel) ?? false)
+                    {
+                        ok = Messager.Out(
+                            $"{SelectedParticipant.FullName} is a year {SelectedParticipant.YearLevel}, per the teams list," +
+                            $"but the year level selected ({SelectedSubmission.YearLevel}) in the form does not match. " +
+                            $"The competition items the participant wants to join ({SelectedSubmission.Details}) may not apply correctly." +
+                            $"Do you want to try to apply anyway?",
+                            "Invalid Submission",
+                            ConsoleStyle.WarningBlockStyle,
+                            isCancelButtonVisible: true,
+                            yesButtonText: "Apply") == DialogResult.Yes;
+                    }
                 }
 
                 if (ok)

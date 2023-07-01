@@ -14,6 +14,8 @@ using System.Threading.Tasks;
 using Examath.Core.Utils;
 using System.ComponentModel.DataAnnotations;
 using Scoresheet.Properties;
+using System.Diagnostics;
+using Scoresheet.Exporters;
 
 namespace Scoresheet.Model
 {
@@ -64,6 +66,7 @@ namespace Scoresheet.Model
         public VM()
         {
             ScoresheetFile = new ScoresheetFile();
+            _ParticipantListExporter = new(ScoresheetFile);
 
             _UserNameI = new(this, nameof(UserName), label: "Editor Name") { IsFocused = true, HelpText = "Enter your name (or initials) for tracing purposes" };
         }
@@ -73,6 +76,7 @@ namespace Scoresheet.Model
             ScoresheetFile = scoresheetFile;
             ScoresheetFile.Modified += NotifyChange;
             FileLocation = fileLocation;
+            _ParticipantListExporter = new(ScoresheetFile);
             _UserNameI = new(this, nameof(UserName), label: "Editor Name") { IsFocused = true, HelpText = "Enter your name (or initials) for tracing purposes" };
         }
         #endregion
@@ -103,7 +107,6 @@ namespace Scoresheet.Model
         }
 
         #endregion
-
 
         #region Saving
 
@@ -142,79 +145,14 @@ namespace Scoresheet.Model
 
         #endregion
 
-        #region Participant List
+        #region Exporters
+
+        private ParticipantListExporter _ParticipantListExporter; 
 
         [RelayCommand]
         public void ExportParticipantList()
         {
-            SaveFileDialog saveFileDialog = new()
-            {
-                Title = "Export Participant-Items List",
-                Filter = "Rich Text Document |*.rtf"
-            };
-
-            if (saveFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                FlowDocument flowDocument = new(new Paragraph(new Run(DateTime.Now.ToString())))
-                {
-                    FontFamily = new FontFamily("Arial"),
-                };
-
-                foreach (CompetitionItem competitionItem in ScoresheetFile.CompetitionItems)
-                {
-                    Section section = new();
-                    string subTitle = "";
-
-                    if (competitionItem is SoloItem soloItem)
-                    {
-                        subTitle = soloItem.Level.ToString() + ", " +
-                            (soloItem.IsOnStage ? "Stage" : "Non-Stage") + ": ";
-                    }
-
-                    Paragraph header = new(new Run(subTitle))
-                    {
-                        Margin = new Thickness(0, 16, 0, 4),
-                    };
-
-
-                    header.Inlines.Add(new Run(competitionItem.Name) { FontWeight = FontWeights.Bold });
-                    header.FontSize = 22;
-                    section.Blocks.Add(header);
-
-                    Table table = new() { };
-                    TableRowGroup rowGroup = new TableRowGroup();
-
-                    TableRow headerRow = new();
-                    TableRow personsRow = new();
-
-                    foreach (Team team in ScoresheetFile.Teams)
-                    {
-                        table.Columns.Add(new TableColumn() { Width = new GridLength(250) });
-                        headerRow.Cells.Add(new TableCell(new Paragraph(new Run(
-                            team.ToString()
-                            )
-                        { FontWeight = FontWeights.Bold })));
-                        personsRow.Cells.Add(new TableCell());
-                    }
-
-                    foreach (IndividualParticipant individualParticipant in competitionItem.IndividualParticipants)
-                    {
-                        int teamIndex = (individualParticipant.Team != null) ? ScoresheetFile.Teams.IndexOf(individualParticipant.Team) : 0;
-                        personsRow.Cells[teamIndex].Blocks.Add(new Paragraph(new Run(individualParticipant.FullName)));
-                    }
-
-                    rowGroup.Rows.Add(headerRow);
-                    rowGroup.Rows.Add(personsRow);
-                    table.RowGroups.Add(rowGroup);
-
-                    section.Blocks.Add(table);
-                    flowDocument.Blocks.Add(section);
-                }
-
-                using FileStream fileStream = new(saveFileDialog.FileName, FileMode.Create);
-                TextRange textRange = new(flowDocument.ContentStart, flowDocument.ContentEnd);
-                textRange.Save(fileStream, System.Windows.DataFormats.Rtf);
-            }
+            _ParticipantListExporter.Export();
         }
 
         #endregion
@@ -233,7 +171,7 @@ namespace Scoresheet.Model
         }
 
         [RelayCommand]
-        public async Task Format()
+        public void Format()
         {
             FormatterVM formatterVM = new(ScoresheetFile);
 
@@ -243,8 +181,6 @@ namespace Scoresheet.Model
             };
 
             formatterDialog.ShowDialog();
-
-            await TrySaveAsync();
         }
 
         private readonly AskerOptions _EditParticipantAskerOptions = new(title: "Edit Participant", canCancel: true);
@@ -252,6 +188,8 @@ namespace Scoresheet.Model
         [RelayCommand]
         public void EditParticipant(IndividualParticipant individualParticipant)
         {
+            AskerNote note = new($"This dialog creates and applies a new submission to {individualParticipant.FullName}.");
+
             StringQ itemsQ = new(label: "Item Codes", defaultValue: individualParticipant.CompetitionItemsXML)
             {
                 HelpText = "Modify the items here. Each item has a unique code consisting of it's name followed by the level abbreviations, separated by commas. " +
@@ -277,6 +215,7 @@ namespace Scoresheet.Model
                 individualParticipant.UnjoinAllCompetitions();
                 individualParticipant.JoinCompetitions(itemsQ.Value.Split(','));
                 individualParticipant.SubmissionEmail = UserName;
+                individualParticipant.SubmissionFullName = individualParticipant.FullName;
                 individualParticipant.SubmissionTimeStamp = DateTime.Now;
             }
         }

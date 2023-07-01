@@ -5,12 +5,15 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Scoresheet.Formatter
 {
     public partial class FormSubmission : ObservableObject
     {
-        const int SEARCH_CLIP = 15;
+        #region Fields and Properties
+
+        const int SEARCH_CLIP = 20;
         const double SEARCH_LEVEL_FACTOR = 0.4;
 
         public string[] Data { get; set; }
@@ -18,7 +21,7 @@ namespace Scoresheet.Formatter
         /// <summary>
         /// Gets a list of abbreviations for the items this participant seeks to join
         /// </summary>
-        public string Details { get; private set; } = "";
+        public string Details { get; private set; }
 
         private const int TimeStampI = 0;
         /// <summary>
@@ -48,12 +51,12 @@ namespace Scoresheet.Formatter
         /// <summary>
         /// The year level of entrant
         /// </summary>
-        public int YearLevel { get; set; }
+        public int YearLevel { get; private set; }
 
         /// <summary>
         /// Gets the level definition associated with this entrant's claimed year level
         /// </summary>
-        public LevelDefinition? Level { get; set; }
+        public LevelDefinition? Level { get; private set; }
 
         private const int ItemsStartI = 5;
 
@@ -69,6 +72,8 @@ namespace Scoresheet.Formatter
         /// </summary>
         public IndividualParticipant? Match { get; set; }
 
+        public double MatchScore { get; private set; } = 0;
+
         private const int GroupItemsI = 12;
 
         private SubmissionStatus _SubmissionStatus;
@@ -81,16 +86,45 @@ namespace Scoresheet.Formatter
             set => SetProperty(ref _SubmissionStatus, value);
         }
 
+        #endregion
+
+        #region Init
+
+        public static async System.Threading.Tasks.Task<FormSubmission> CreateFormSubmissionAndApplyMatch(string rawData, ScoresheetFile scoresheetFile)
+        {
+            FormSubmission formSubmission = await Task.Run<FormSubmission>(() => new(rawData, scoresheetFile));
+
+            // Apply match
+            if (formSubmission.Match != null && formSubmission.MatchScore >= 1)
+            {
+                if (formSubmission.IsValidMatch(formSubmission.Match)) // Validity of Submission
+                {
+                    formSubmission.ApplyMatch(formSubmission.Match, scoresheetFile);
+                }
+                else
+                {
+                    formSubmission._SubmissionStatus = SubmissionStatus.Invalid;
+                }
+            }
+            else
+            {
+                formSubmission._SubmissionStatus = SubmissionStatus.Mismatch;
+            }
+
+            return formSubmission;
+        }
+
         /// <summary>
         /// Formats the form submission entry and attempts to find the matching <see cref="ScoresheetFile.IndividualParticipants"/>
         /// </summary>
         /// <param name="rawData">The raw csv line for this submission</param>
         /// <param name="scoresheetFile">the scoresheet file for reference and to modify if a match is found</param>
-        public FormSubmission(string rawData, ScoresheetFile scoresheetFile)
+        private FormSubmission(string rawData, ScoresheetFile scoresheetFile)
         {
             // text processing
             string[] rawArray = rawData.Split(',');
             Data = new string[rawArray.Length];
+            Details = "";
             for (int i = 0; i < rawArray.Length; i++)
             {
                 Data[i] = rawArray[i].Trim(new char[] { '"', ' ' });
@@ -123,7 +157,7 @@ namespace Scoresheet.Formatter
             Team = scoresheetFile.Teams.Find((x) => x.Name == Data[TeamI]);
 
             // Find match
-            double searchDistance = int.MaxValue;
+            double searchDistance = SEARCH_CLIP;
             foreach (IndividualParticipant individualParticipant in scoresheetFile.IndividualParticipants)
             {
                 if (individualParticipant.SearchName == SearchName)
@@ -134,7 +168,7 @@ namespace Scoresheet.Formatter
                 }
                 else
                 {
-                    double currentSearchDistance = DamerauLevenshteinDistance(individualParticipant.SearchName, SearchName, 15);
+                    double currentSearchDistance = DamerauLevenshteinDistance(individualParticipant.SearchName, SearchName, SEARCH_CLIP);
 
                     // Prefer better matches
                     if (individualParticipant.YearLevel == YearLevel) currentSearchDistance *= SEARCH_LEVEL_FACTOR;
@@ -147,22 +181,12 @@ namespace Scoresheet.Formatter
                 }
             }
 
-            if (Match != null && searchDistance == 0)
-            {
-                if (IsValidMatch(Match)) // Validity of Submission
-                {
-                    ApplyMatch(Match, scoresheetFile);
-                }
-                else
-                {
-                    _SubmissionStatus = SubmissionStatus.Invalid;
-                }
-            }
-            else
-            {
-                _SubmissionStatus = SubmissionStatus.Mismatch;
-            }
+            MatchScore = Math.Round(1 - (searchDistance / 15), 2);
         }
+
+        #endregion
+
+        #region Methods
 
         /// <summary>
         /// Checks whether this <see cref="FormSubmission"/> claims to be in the same year level 
@@ -202,6 +226,7 @@ namespace Scoresheet.Formatter
                 match.SubmissionTimeStamp = TimeStamp;
 
                 match.SubmissionEmail = Email;
+                match.SubmissionFullName = FullName;
 
                 // The csv file has 6 coloums: Stage-SJ, Non-stage-SJ, Stage-J and so on
                 // Join solo items from only two columns
@@ -220,7 +245,9 @@ namespace Scoresheet.Formatter
 
         public override string ToString() => $"{TimeStamp:dd/MM} {FullName}";
 
-        #region Comparison
+        #endregion
+
+        #region Comparison Algorithm
 
         /// <summary>
         /// Computes the Damerau-Levenshtein Distance between two strings, represented as arrays of
