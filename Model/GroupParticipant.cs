@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Scoresheet.Model
 {
-    internal class GroupParticipant
+    public class GroupParticipant : Participant
     {
         public ObservableCollection<IndividualParticipant> IndividualParticipants { get; set; } = new();
     }

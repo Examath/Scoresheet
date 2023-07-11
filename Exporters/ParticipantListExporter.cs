@@ -96,9 +96,17 @@ namespace Scoresheet.Exporters
                     flowDocument.Blocks.Add(section);
                 }
 
-                using FileStream fileStream = new(SaveLocation, FileMode.Create);
-                TextRange textRange = new(flowDocument.ContentStart, flowDocument.ContentEnd);
-                textRange.Save(fileStream, System.Windows.DataFormats.Rtf);
+                try
+                {
+                    using FileStream fileStream = new(SaveLocation, FileMode.Create);
+                    TextRange textRange = new(flowDocument.ContentStart, flowDocument.ContentEnd);
+                    textRange.Save(fileStream, System.Windows.DataFormats.Rtf);
+                }
+                catch (Exception ee)
+                {
+                    Messager.OutException(ee, "Saving Document");
+                    return;
+                }
                 
                 if (OpenAutomatically)
                 {

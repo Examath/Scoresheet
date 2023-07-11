@@ -220,9 +220,38 @@ namespace Scoresheet.Model
             }
         }
 
+        [RelayCommand]
+        public void SearchParticipant()
+        {
+            if (Searcher.Select(ScoresheetFile.IndividualParticipants, "Find Participant") is IndividualParticipant individualParticipant)
+            {
+                SelectedParticipant = individualParticipant;
+            }
+        }
+
         #endregion
 
         #region MarkingView
+
+        private CompetitionItem? _MarkingCompetitionItem = null;
+        /// <summary>
+        /// Gets or sets the competition item being currently marked
+        /// </summary>
+        public CompetitionItem? MarkingCompetitionItem
+        {
+            get => _MarkingCompetitionItem;
+            set => SetProperty(ref _MarkingCompetitionItem, value);
+        }
+
+        private Participant? _MarkingParticipant = null;
+        /// <summary>
+        /// Gets or sets the participant being marked
+        /// </summary>
+        public Participant? MarkingParticipant
+        {
+            get => _MarkingParticipant;
+            set => SetProperty(ref _MarkingParticipant, value);
+        }
 
         #endregion
     }

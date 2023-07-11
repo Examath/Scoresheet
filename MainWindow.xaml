@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Scoresheet" 
+        xmlns:controls="clr-namespace:Examath.Core.Controls;assembly=Examath.Core"
         xmlns:model="clr-namespace:Scoresheet.Model"
         xmlns:view="clr-namespace:Scoresheet.View"
         mc:Ignorable="d"
@@ -43,6 +44,7 @@
                     <WrapPanel>
                         <!--<Button Content="Add New Participant" Foreground="{StaticResource NewColourKey}"/>-->
                         <Button Command="{Binding FormatCommand}">Re-Import from CSV</Button>
+                        <Button Command="{Binding SearchParticipantCommand}">Find Participant by Name</Button>
                     </WrapPanel>
                     <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Row="1">
                         <TextBox FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" 
@@ -151,7 +153,7 @@
                                     <Label Content="{Binding Name}" FontWeight="Bold"/>
                                     <ListBox ItemsSource="{Binding IndividualParticipants}" d:ItemsSource="{d:SampleData}"
                                   Style="{StaticResource ContrastListBoxStyle}" >
-                                        <ListBox.ItemTemplate>
+                                        <!--<ListBox.ItemTemplate>
                                             <DataTemplate DataType="{x:Type model:IndividualParticipant}">
                                                 <StackPanel Orientation="Horizontal">
                                                     <ContentPresenter ContentTemplate="{StaticResource ParticipantBox}"/>
@@ -159,7 +161,7 @@
                                                     <TextBlock Margin="2 0" Text="{Binding FullName}"/>
                                                 </StackPanel>
                                             </DataTemplate>
-                                        </ListBox.ItemTemplate>
+                                        </ListBox.ItemTemplate>-->
                                     </ListBox>
                                 </StackPanel>
                             </DataTemplate>
@@ -209,14 +211,14 @@
             <TabItem Header="Marking">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="297*"/>
                         <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="351*"/>
                         <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="4*"/>
+                        <ColumnDefinition Width="468*"/>
                     </Grid.ColumnDefinitions>
-                    <ListBox Style="{StaticResource ContrastListBoxStyle}" 
-                             ItemsSource="{Binding ScoresheetFile.CompetitionItems}" d:ItemsSource="{d:SampleData ItemCount=5}"
+                    <ListBox x:Name="MarkingItemsListBox" Style="{StaticResource ContrastListBoxStyle}" 
+                             ItemsSource="{Binding ScoresheetFile.CompetitionItems}" SelectedItem="{Binding MarkingCompetitionItem}" d:ItemsSource="{d:SampleData ItemCount=5}"
                              ItemTemplateSelector="{StaticResource CompetitionItemDataTemplateSelector}" Grid.IsSharedSizeScope="True">
                         <ListBox.Resources>
                             <DataTemplate x:Key="SoloItemTemplate" DataType="{x:Type model:SoloItem}">
@@ -253,8 +255,62 @@
                             </DataTemplate>
                         </ListBox.Resources>
                     </ListBox>
-                    <GridSplitter Grid.Column="1" Width="4" ResizeBehavior="PreviousAndNext"/>
-                    <GridSplitter Grid.Column="3" Width="4" ResizeBehavior="PreviousAndNext"/>
+                    <GridSplitter Grid.Column="1" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center"/>
+                    <ListBox ItemsSource="{Binding MarkingCompetitionItem.Participants}" SelectedItem="{Binding MarkingParticipant}"
+                        Style="{StaticResource CompactListBoxStyle}" Grid.Column="2">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Vertical"/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber, FallbackValue=---}" FontWeight="Bold" Margin="2" Padding="4 2">
+                                    </TextBlock>
+                                    <Rectangle Stroke="{StaticResource BasegroundColourKey}" StrokeThickness="2" Width="16" Height="16" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <GridSplitter Grid.Column="3" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center"/>
+                    <Grid Grid.Column="4" Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>                            
+                        </Grid.ColumnDefinitions>
+                        <Border CornerRadius="8" Margin="16" HorizontalAlignment="Center" VerticalAlignment="Top" Grid.ColumnSpan="3">
+                            <TextBlock x:Name="PART_ChestNumberLabel" DataContext="{Binding MarkingParticipant}" Text="{Binding ChestNumber, FallbackValue=---}" FontSize="32" FontWeight="Bold" Padding="4 0">
+                            </TextBlock>
+                            <Border.Background>
+                                <SolidColorBrush Color="{Binding Team.Colour, FallbackValue=Gray}"/>
+                            </Border.Background>
+                        </Border>
+                        <Label Grid.Row="1" VerticalAlignment="Center">Current Score</Label>
+                        <Label FontSize="16" Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">= 12.6</Label>
+                        <Label Grid.Row="2" VerticalAlignment="Center">New Score</Label>
+                        <Label FontSize="16" Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" Foreground="{StaticResource NewColourKey}" HorizontalAlignment="Right">= 50.2</Label>
+                        <ItemsControl d:ItemsSource="{d:SampleData ItemCount=3}" Grid.Row="2" Grid.Column="1">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBox Width="70" Margin="8" FontSize="16"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Content="{Binding UserName}" ContentStringFormat="Apply Score as {0} [Enter]" Grid.Row="3" HorizontalAlignment="Center" Grid.ColumnSpan="3" />
+                    </Grid>
                 </Grid>
             </TabItem>
             <TabItem x:Name="ScoringTab" Header="Scoring">

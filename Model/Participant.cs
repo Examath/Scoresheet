@@ -52,6 +52,11 @@ namespace Scoresheet.Model
 
         #endregion
 
+        #region Scoring
+
+
+        #endregion
+
         /// <summary>
         /// Find the participant's <see cref="Team"/> from <paramref name="teams"/>
         /// </summary>

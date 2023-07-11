@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -86,6 +87,12 @@ namespace Scoresheet.Model
         /// </summary>
         [XmlIgnore]
         public ObservableCollection<IndividualParticipant> IndividualParticipants { get; set; } = new();
+
+        /// <summary>
+        /// Gets or sets the participants to be given scores by this item
+        /// </summary>
+        [XmlIgnore]
+        public virtual IEnumerable<Participant> Participants => IndividualParticipants;
 
         /// <summary>
         /// Gets the <see cref="LevelDefinition"/> of this item, if any.
