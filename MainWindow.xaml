@@ -27,6 +27,7 @@
         </CollectionViewSource>
         <view:CompetitionItemDataTemplateSelector x:Key="CompetitionItemDataTemplateSelector"/>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <view:IntersectConverter x:Key="IntersectConverter"/>
     </Window.Resources>
     <Grid Margin="2">
         <TabControl Margin="2,4,2,2">
@@ -62,13 +63,26 @@
                         <Label Tag="Form Submitted at" Content="{Binding SelectedParticipant.SubmissionTimeStamp, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
                         <Label Tag="Form Submitted by" Content="{Binding SelectedParticipant.SubmissionEmail, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
                         <Label Tag="Name as given in form" Content="{Binding SelectedParticipant.SubmissionFullName, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
-                        <ItemsControl Tag="Items" ItemsSource="{Binding SelectedParticipant.CompetitionItems}" d:ItemsSource="{d:SampleData ItemCount=2}">
+                        <ItemsControl x:Name="SelectedParticipantItemsControl" Tag="Items" ItemsSource="{Binding SelectedParticipant.CompetitionItems}" d:ItemsSource="{d:SampleData ItemCount=2}" Grid.IsSharedSizeScope="True">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="model:CompetitionItem">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Name}" Padding="4,0" ToolTip="{Binding Code}" />
+                                    <Grid Margin="2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="ShortCode"/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="Code"/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="Score"/>
+                                        </Grid.ColumnDefinitions>
                                         <TextBlock Foreground="{StaticResource ForegroundMinorColourKey}" Text="{Binding ShortCode}" Padding="4,0" ToolTip="{Binding Code}" />
-                                    </StackPanel>
+                                        <TextBlock Text="{Binding Name}" Padding="4,0" ToolTip="{Binding Code}" Grid.Column="1" />
+                                        <TextBlock x:Name="PART_Intersect" d:Text="00.0" Foreground="{StaticResource NewColourKey}" Padding="4,0" Grid.Column="2">
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{StaticResource IntersectConverter}">
+                                                    <Binding Path="Scores"/>
+                                                    <Binding ElementName="SelectedParticipantItemsControl" Path="DataContext.SelectedParticipant"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
@@ -103,7 +117,7 @@
                     </ListBox>
                 </Grid>
             </TabItem>
-            <TabItem Header="Items" IsSelected="True">
+            <TabItem Header="Items">
                 <Grid>
                     <ItemsControl Grid.Row="2" Foreground="{StaticResource ForegroundColourKey}"
                                 ItemsSource="{Binding Source={StaticResource CompetitionItemsSource}}" d:ItemsSource="{d:SampleData}"
@@ -208,67 +222,84 @@
                     <Button Command="{Binding ExportParticipantListCommand}" VerticalAlignment="Top" HorizontalAlignment="Right">Export Participant List</Button>
                 </Grid>
             </TabItem>
-            <TabItem x:Name="MarkingTab" Header="Marking" KeyUp="MarkingTab_KeyUp">
+            <TabItem x:Name="MarkingTab" Header="Marking" KeyUp="MarkingTab_KeyUp" IsSelected="True">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="297*"/>
                         <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="351*"/>
+                        <ColumnDefinition Width="300*"/>
                         <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="468*"/>
+                        <ColumnDefinition Width="350*"/>
                     </Grid.ColumnDefinitions>
                     <ListBox x:Name="MarkingItemsListBox" Style="{StaticResource ContrastListBoxStyle}" 
                              ItemsSource="{Binding ScoresheetFile.CompetitionItems}" SelectedItem="{Binding MarkingCompetitionItem}" d:ItemsSource="{d:SampleData ItemCount=5}"
                              ItemTemplateSelector="{StaticResource CompetitionItemDataTemplateSelector}" Grid.IsSharedSizeScope="True">
                         <ListBox.Resources>
+                            <Style TargetType="ProgressBar">
+                                <Setter Property="Background" Value="{StaticResource PanelFaintColourKey}"/>
+                                <Setter Property="Foreground" Value="#20f0"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                            </Style>
                             <DataTemplate x:Key="SoloItemTemplate" DataType="{x:Type model:SoloItem}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" SharedSizeGroup="Level"/>
-                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*" SharedSizeGroup="Name"/>
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Count"/>
                                         <ColumnDefinition Width="Auto" SharedSizeGroup="Stage"/>
                                         <ColumnDefinition Width="Auto" SharedSizeGroup="Duration"/>
-                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Count"/>
                                     </Grid.ColumnDefinitions>
+                                    <ProgressBar Value="{Binding Scores.Count, Mode=OneWay}" Maximum="{Binding Participants.Count, Mode=OneWay}" Grid.Column="2" />
                                     <Label Content="{Binding Level.Name}" Foreground="{StaticResource ForegroundMinorColourKey}" />
                                     <Label Content="{Binding Name}" FontWeight="Bold" Grid.Column="1"/>
-                                    <Label Content="{Binding IndividualParticipants.Count}" ContentStringFormat="({0})" Grid.Column="4"/>
-                                    <Label Visibility="{Binding IsOnStage, Converter={StaticResource BooleanToVisibilityConverter}}" Content="Stage" Grid.Column="2"/>
-                                    <Label Content="{Binding DurationInMinutes}" ContentStringFormat="{}{0} min" Grid.Column="3" />
+                                    <Label Content="{Binding IndividualParticipants.Count}" ContentStringFormat="({0})" Grid.Column="2"/>
+                                    <Label Visibility="{Binding IsOnStage, Converter={StaticResource BooleanToVisibilityConverter}}" Content="Stage" Grid.Column="3"/>
+                                    <Label Content="{Binding DurationInMinutes}" ContentStringFormat="{}{0} min" Grid.Column="4" />
                                 </Grid>
                             </DataTemplate>
                             <DataTemplate x:Key="GroupItemTemplate" DataType="{x:Type GroupItem}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" SharedSizeGroup="Level"/>
-                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*" SharedSizeGroup="Name"/>
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Count"/>
                                         <ColumnDefinition Width="Auto" SharedSizeGroup="Stage"/>
                                         <ColumnDefinition Width="Auto" SharedSizeGroup="Duration"/>
-                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Count"/>
                                     </Grid.ColumnDefinitions>
+                                    <ProgressBar Value="{Binding Scores.Count, Mode=OneWay}" Maximum="{Binding Participants.Count, Mode=OneWay}" Grid.Column="2" />
                                     <Label Content="Group" Foreground="CornflowerBlue" />
                                     <Label Content="{Binding Name}" FontWeight="Bold" Grid.Column="1"/>
-                                    <Label Content="{Binding IndividualParticipants.Count}" ContentStringFormat="({0})" Grid.Column="4"/>
-                                    <Label Content="Stage" Grid.Column="2"/>
-                                    <Label Content="{Binding DurationInMinutes}" ContentStringFormat="{}{0} min" Grid.Column="3" />
+                                    <Label Content="{Binding IndividualParticipants.Count}" ContentStringFormat="({0})" Grid.Column="2"/>
+                                    <Label Content="Stage" Grid.Column="3"/>
+                                    <Label Content="{Binding DurationInMinutes}" ContentStringFormat="{}{0} min" Grid.Column="4" />
                                 </Grid>
                             </DataTemplate>
                         </ListBox.Resources>
                     </ListBox>
                     <GridSplitter Grid.Column="1" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center"/>
-                    <ListBox ItemsSource="{Binding MarkingCompetitionItem.Participants}" SelectedItem="{Binding MarkingParticipant}"
-                        Style="{StaticResource CompactListBoxStyle}" Grid.Column="2">
+                    <ListBox x:Name="MarkingParticipantsListBox" ItemsSource="{Binding MarkingCompetitionItem.Participants}" SelectedItem="{Binding MarkingParticipant}"
+                        Style="{StaticResource CompactListBoxStyle}" Grid.Column="2" d:ItemsSource="{d:SampleData ItemCount=5}" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <WrapPanel Orientation="Vertical"/>
+                                <WrapPanel Orientation="Horizontal"/>
                             </ItemsPanelTemplate>
                         </ListBox.ItemsPanel>
                         <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber, FallbackValue=---}" FontWeight="Bold" Margin="2" Padding="4 2">
+                            <DataTemplate DataType="{x:Type model:Participant}">
+                                <StackPanel Orientation="Horizontal" Margin="2">
+                                    <StackPanel.Background>
+                                        <SolidColorBrush Color="{Binding UniqueColour}" Opacity="0.2"/>
+                                    </StackPanel.Background>
+                                    <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber, FallbackValue=---, StringFormat=#{0}}" d:Text="#000" Width="50" FontSize="16" FontWeight="Bold" Margin="2" Padding="4 2 2 2">
                                     </TextBlock>
-                                    <Rectangle Stroke="{StaticResource BasegroundColourKey}" StrokeThickness="2" Width="16" Height="16" />
+                                    <TextBlock x:Name="PART_Intersect" d:Text="00.0" Width="40" Foreground="{StaticResource NewColourKey}" FontSize="16" Margin="2" Padding="2 2 4 2">
+                                        <TextBlock.Text>
+                                            <MultiBinding Converter="{StaticResource IntersectConverter}">
+                                                <Binding ElementName="MarkingTab" Path="DataContext.ScoresRef"/>
+                                                <Binding/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -276,10 +307,10 @@
                     <GridSplitter Grid.Column="3" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center"/>
                     <StackPanel Grid.Column="4" Margin="4" Grid.IsSharedSizeScope="True">
                         <Border CornerRadius="8" Margin="16" HorizontalAlignment="Center" VerticalAlignment="Top" Grid.ColumnSpan="3" DataContext="{Binding MarkingParticipant}">
-                            <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber, FallbackValue=---}" FontSize="32" FontWeight="Bold" Padding="4 0" Foreground="{StaticResource ForegroundColourKey}">
+                            <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber, FallbackValue=---}" FontSize="32" Width="160" TextAlignment="Center" FontWeight="Bold" Padding="4 0" Foreground="{StaticResource ForegroundColourKey}">
                             </TextBlock>
                             <Border.Background>
-                                <SolidColorBrush Color="{Binding Team.Colour, FallbackValue=Gray}"/>
+                                <SolidColorBrush Color="{Binding UniqueColour, FallbackValue=Gray}" Opacity="0.4"/>
                             </Border.Background>
                         </Border>
                         <GroupBox Header="Current Score" Margin="6">
@@ -289,7 +320,7 @@
                                     <ColumnDefinition Width="Auto" SharedSizeGroup="Totals"/>
                                 </Grid.ColumnDefinitions>
                                 <Label Content="{Binding CurrentScoreIntersection, TargetNullValue='No score has been applied'}" Margin="8" />
-                                <Label FontSize="16" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Content="{Binding CurrentScoreIntersection.TotalMarks, FallbackValue=0}" ContentStringFormat="= {0}"/>
+                                <Label FontSize="16" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Content="{Binding CurrentScoreIntersection.AverageMarks, FallbackValue=0}" ContentStringFormat="= {0}"/>
                             </Grid>
                         </GroupBox>
                         <GroupBox Header="New Score" Margin="6">
@@ -315,16 +346,72 @@
             <TabItem x:Name="ScoringTab" Header="Scoring">
                 <DockPanel>
                     <WrapPanel DockPanel.Dock="Top">
-                        <Button Style="{StaticResource IconButtonStyle}" Content="&#xE72C;" ToolTip="Refresh Scores" IsEnabled="False" />
                         <Button Content="print Certificates" ToolTip="Export Selected Certificates" IsEnabled="False" />
-                        <Label Style="{StaticResource OutputLabel}" Content="Score: "/>
+                        <ItemsControl Tag="Teams" ItemsSource="{Binding ScoresheetFile.Teams}" Margin="4" 
+                          d:ItemsSource="{d:SampleData ItemCount=2}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="model:Team">
+                                    <Border CornerRadius="4" Margin="2">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Foreground="{StaticResource ForegroundColourKey}" Text="{Binding Name, StringFormat={}{0}:}" Padding="4,2" />
+                                            <TextBlock Foreground="{StaticResource ForegroundColourKey}" Text="{Binding Points}" Padding="4,2" FontWeight="Bold" />
+                                        </StackPanel>
+                                        <Border.Background>
+                                            <SolidColorBrush Color="{Binding Colour, FallbackValue=Gray}"/>
+                                        </Border.Background>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </WrapPanel>
                     <ListView ItemsSource="{Binding ScoresheetFile.CompetitionItems}" d:ItemsSource="{d:SampleData ItemCount=5}">
                         <ListView.View>
                             <GridView>
                                 <GridView.Columns>
                                     <GridViewColumn Header="Level" DisplayMemberBinding="{Binding Level}"/>
+                                    <GridViewColumn Header="Name" DisplayMemberBinding="{Binding ShortCode}"/>
                                     <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}"/>
+                                    <GridViewColumn Header="Participants" DisplayMemberBinding="{Binding Participants.Count}"/>
+                                    <GridViewColumn Header="Progress" Width="80">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ProgressBar Width="60" Height="12" HorizontalAlignment="Center" Background="{StaticResource PanelColourKey}"
+                                                             Maximum="{Binding Participants.Count, Mode=OneWay}" Value="{Binding Scores.Count, Mode=OneWay}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Winners" Width="900">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate DataType="{x:Type model:CompetitionItem}">
+                                                <ItemsControl ItemsSource="{Binding Winners}" Height="22" Margin="2">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type model:Place}">
+                                                            <StackPanel Orientation="Horizontal" Margin="0 0 24 0" Background="{StaticResource MarkerColourKey}">
+                                                                <TextBlock Text="{Binding Value}" Margin="4 2" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                                <ItemsControl ItemsSource="{Binding Participants}" VerticalAlignment="Center" >
+                                                                        <ItemsControl.ItemsPanel>
+                                                                            <ItemsPanelTemplate>
+                                                                                <StackPanel Orientation="Horizontal"/>
+                                                                            </ItemsPanelTemplate>
+                                                                        </ItemsControl.ItemsPanel>
+                                                                    </ItemsControl>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
                                 </GridView.Columns>
                             </GridView>
                         </ListView.View>

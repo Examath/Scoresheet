@@ -1,26 +1,25 @@
 ﻿using Scoresheet.Model;
 using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Data;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace Scoresheet.View
 {
-    public class IntersectConverter : IValueConverter
+    public class IntersectConverter : IMultiValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is Participant participant)
+            if (values.Length >= 2 && values[0] is ObservableCollection<Score> scores && values[1] is Participant participant)
             {
-
+                return scores.Where((s) => s.Participant == participant).FirstOrDefault()?.AverageMarks.ToString();
             }
-            return false;
+            else return null;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }

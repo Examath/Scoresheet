@@ -136,6 +136,6 @@
                 </GroupStyle>
             </ListView.GroupStyle>
         </ListView>
-        <ProgressBar Grid.Row="3" Maximum="1" Value="{Binding Progress, Mode=OneWay}" Grid.ColumnSpan="3" BorderBrush="{StaticResource BasegroundColourKey}" Foreground="{StaticResource NewColourKey}" Margin="0,2,0,0"/>
+        <ProgressBar Grid.Row="3" Maximum="1" d:Value="0.3" Value="{Binding Progress, Mode=OneWay}" Grid.ColumnSpan="3" Margin="0,2,0,0"/>
     </Grid>
 </Window>

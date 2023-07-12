@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,7 +13,7 @@ namespace Scoresheet.Model
     /// <summary>
     /// Represents a Team in the competition
     /// </summary>
-    public class Team
+    public class Team : ObservableObject
     {
         /// <summary>
         /// Gets or sets the name of the team
@@ -29,6 +30,26 @@ namespace Scoresheet.Model
         {
             get => _Colour;
             set => _Colour = value;
+        }
+
+        private double _Points = 0;
+        /// <summary>
+        /// Gets or sets 
+        /// </summary>
+        [XmlIgnore]
+        public double Points
+        {
+            get => _Points;
+            private set => SetProperty(ref _Points, value);
+        }
+
+        [XmlIgnore]
+        internal double PointsTray { get; set; } = 0;
+
+        internal void SetPoints()
+        {
+            Points = PointsTray;
+            PointsTray = 0;
         }
 
         /// <summary>

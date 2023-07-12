@@ -13,6 +13,7 @@ namespace Scoresheet.Model
         [XmlAttribute(attributeName: "For")]
         public int ParticipantChestNumber { get; set; } = 0;
 
+        [XmlIgnore]
         public Participant? Participant { get; private set; }
 
         [XmlIgnore]

@@ -4,10 +4,13 @@ namespace Scoresheet.Model
 {
     public class Place
     {
+        public int ValueInt { get; private set; }
+
         public string Value { get; private set; }
 
         public Place(int value)
         {
+            ValueInt = value;
             Value = AddOrdinal(value);
         }
 

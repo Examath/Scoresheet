@@ -6,8 +6,8 @@ using Scoresheet.Exporters;
 using Scoresheet.Formatter;
 using Scoresheet.Properties;
 using System;
+using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Scoresheet.Model
@@ -16,7 +16,7 @@ namespace Scoresheet.Model
     {
         #region File Properties
 
-        private string _UserName = "X";
+        private string _UserName = "Enter_Name";
         /// <summary>
         /// Gets or sets the name of the user currently modifying this scoresheet
         /// </summary>
@@ -237,9 +237,24 @@ namespace Scoresheet.Model
             get => _MarkingCompetitionItem;
             set
             {
-                if (SetProperty(ref _MarkingCompetitionItem, value)) UpdateIntersection();
+                if (SetProperty(ref _MarkingCompetitionItem, value))
+                {
+                    ScoresRef = value?.Scores;
+                    UpdateIntersection();
+                }
             }
         }
+
+        private ObservableCollection<Score>? _ScoresRef;
+        /// <summary>
+        /// Gets the current <see cref="MarkingCompetitionItem"/> score list
+        /// </summary>
+        public ObservableCollection<Score>? ScoresRef
+        {
+            get => _ScoresRef;
+            set => SetProperty(ref _ScoresRef, value);
+        }
+
 
         private Participant? _MarkingParticipant = null;
         /// <summary>
@@ -274,6 +289,7 @@ namespace Scoresheet.Model
 
         private void ScoresheetFile_ScoreAdded(object? sender, ScoreAddedEventArgs e)
         {
+            OnPropertyChanged(nameof(ScoresRef));
             NotifyChange(e);
         }
 

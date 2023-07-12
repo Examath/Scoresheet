@@ -14,6 +14,7 @@ namespace Scoresheet.Model
         /// Gets or sets the list of <see cref="GroupParticipant"/> participating
         /// in this item
         /// </summary>
+        [XmlElement(elementName: "GroupParticipant")]
         public ObservableCollection<GroupParticipant> GroupParticipants { get; set; } = new();
 
         public override IEnumerable<Participant> Participants => GroupParticipants;

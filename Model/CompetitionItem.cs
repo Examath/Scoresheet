@@ -124,7 +124,8 @@ namespace Scoresheet.Model
 
         internal void AddScore(Participant participant, List<double> marks, string author)
         {
-            foreach (Score oldScore in Scores.Where((s) => s.Participant == participant))
+            List<Score> oldScores = Scores.Where((s) => s.Participant == participant).ToList();
+            foreach (Score oldScore in oldScores)
             {
                 Scores.Remove(oldScore);
             }

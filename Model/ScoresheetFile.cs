@@ -21,25 +21,9 @@ namespace Scoresheet.Model
 
         public DateTime LastSavedTime { get; set; } = DateTime.Now;
 
+        private readonly double[] PlacePoints = { 50, 20, 10 };
+
         public string LastAuthor { get; set; } = "Null";
-
-        private bool _IsOpen;
-        /// <summary>
-        /// Gets or sets whether this scoresheet is open for adding scores
-        /// </summary>
-        public bool IsOpen
-        {
-            get => _IsOpen;
-            set => SetProperty(ref _IsOpen, value);
-        }
-
-        public bool CanAddScores() => IsOpen;
-
-        /// <summary>
-        /// Gets or sets the Hash of parts of this object
-        /// saved whenever scores are added
-        /// </summary>
-        public string Hash { get; set; } = "";
 
         #region DefinitionObjects
 
@@ -101,7 +85,18 @@ namespace Scoresheet.Model
 
         private void UpdateTeamTotals()
         {
+            foreach (CompetitionItem competitionItem in CompetitionItems)
+            {
+                foreach (Place place in competitionItem.Winners)
+                {
+                    foreach (Participant participant in place.Participants)
+                    {
+                        if (participant.Team != null) participant.Team.PointsTray += PlacePoints[Math.Min(place.ValueInt - 1, PlacePoints.Length)];
+                    }
+                }
+            }
 
+            foreach (Team team in Teams) team.SetPoints();
         }
 
         #endregion

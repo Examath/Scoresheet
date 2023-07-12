@@ -1,11 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Examath.Core.Utils;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 namespace Scoresheet.Model
@@ -33,8 +29,19 @@ namespace Scoresheet.Model
         public int ChestNumber
         {
             get => _ChestNumber;
-            set => SetProperty(ref _ChestNumber, value);
+            set {
+                if (SetProperty(ref _ChestNumber, value))
+                {
+                    UniqueColour = HSV.ToColor((value % 100) * 818f, Random.Shared.NextSingle() * 0.5f + 0.5f, 1f);
+                }
+            }
         }
+
+        /// <summary>
+        /// Gets a unique colour for differentiation
+        /// </summary>
+        [XmlIgnore]
+        public System.Windows.Media.Color UniqueColour { get; private set; } = System.Windows.Media.Color.FromRgb(0, 0, 0);
 
         private Team? _Team = null;
         /// <summary>

@@ -94,7 +94,7 @@
 
             <DataTemplate x:Key="ParticipantBox" DataType="model:Participant">
                 <Border CornerRadius="4">
-                    <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber, FallbackValue=---}" FontWeight="Bold" Padding="4 0">
+                    <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber, FallbackValue=---}" ToolTip="{Binding FullName}" FontWeight="Bold" Padding="4 0">
                     </TextBlock>
                     <Border.Background>
                         <SolidColorBrush Color="{Binding Team.Colour, FallbackValue=Gray}"/>

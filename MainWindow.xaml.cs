@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Security.Cryptography.X509Certificates;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace Scoresheet
@@ -301,6 +302,7 @@ namespace Scoresheet
         }
 
         private bool CanApplyScore() => 
+            VM != null &&
             VM.MarkingCompetitionItem != null && 
             VM.MarkingParticipant != null && 
             !string.IsNullOrWhiteSpace(NewScoreTextBox.Text) && 
@@ -336,9 +338,17 @@ namespace Scoresheet
             {
                 VM.MarkingCompetitionItem.AddScore(VM.MarkingParticipant, marks, VM.UserName);
                 VM.UpdateIntersection();
+
                 NewScoreTextBox.Text = "";
                 NewTotalScoreLabel.Content = 0;
                 ApplyScoreButton.IsEnabled = false;
+
+                ListBoxItem listBoxItem =
+                   (ListBoxItem)MarkingParticipantsListBox
+                     .ItemContainerGenerator
+                       .ContainerFromItem(MarkingParticipantsListBox.SelectedItem);
+
+                listBoxItem.Focus();
             }
         }
 
