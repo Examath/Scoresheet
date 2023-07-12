@@ -2,9 +2,13 @@
 using Examath.Core.Utils;
 using Scoresheet.Formatter;
 using Scoresheet.Model;
+using Scoresheet.Properties;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Security.Cryptography.X509Certificates;
 using System.Windows;
+using System.Windows.Input;
 
 namespace Scoresheet
 {
@@ -108,6 +112,7 @@ namespace Scoresheet
 
                     VM = new(scoresheet, fileLocation);
                     DataContext = VM;
+                    VM.PropertyChanged += VM_PropertyChanged;
                 }
                 catch (Exception e)
                 {
@@ -119,6 +124,14 @@ namespace Scoresheet
             }
 
             if (VM == null) Close();
+        }
+
+        private void VM_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "MarkingCompetitionItem" || e.PropertyName == "MarkingParticipant")
+            {
+                ApplyScoreButton.IsEnabled = CanApplyScore();
+            }
         }
 
         #endregion
@@ -190,7 +203,7 @@ namespace Scoresheet
                     Exception e = (Exception)args.ExceptionObject;
                     MessageBox.Show($"{e.GetType().Name}: {e.Message}\nThe scoresheet was saved to {VM.FileLocation + ".crash"}. Rename and re-open this to restore. See crash-info.txt fore more info.", " An Unhandled Exception Occurred", MessageBoxButton.OK, MessageBoxImage.Error);
                     System.IO.File.AppendAllLines(System.IO.Path.GetDirectoryName(VM.FileLocation) + "\\crash-info.txt",
-                        new string[] 
+                        new string[]
                         {
                             "______________________________________________________",
                             $"An unhandled exception occurred at {DateTime.Now:g}",
@@ -208,6 +221,127 @@ namespace Scoresheet
             }
 #pragma warning restore CS0162 // Unreachable code detected
         }
+        #endregion
+
+        #region Marking Tab Input
+
+        private void MarkingTab_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Insert)
+            {
+                NewScoreTextBox.SelectAll();
+                NewScoreTextBox.Focus();
+            }
+        }
+
+        private void NewScoreTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (!IsKeyADigit(e.Key))
+            {
+                e.Handled = true;
+                int pos = NewScoreTextBox.SelectionStart;
+
+                if (IsKeyASeparator(e.Key) && pos >= 1 && NewScoreTextBox.Text[pos - 1] != ',')
+                {
+                    NewScoreTextBox.Text = NewScoreTextBox.Text.Insert(NewScoreTextBox.SelectionStart, ",");
+                    NewScoreTextBox.SelectionStart = pos + 1;
+                }
+            }
+        }
+
+        private static bool IsKeyADigit(Key key)
+        {
+            return (key >= Key.D0 && key <= Key.D9) || (key == Key.OemPeriod) || (key >= Key.NumPad0 && key <= Key.NumPad9) || key == Key.Delete || key == Key.Back || key == Key.Left || key == Key.Right;
+        }
+
+        private static bool IsKeyASeparator(Key key)
+        {
+            return key == Key.Tab || key == Key.Space || key == Key.OemComma || key == Key.Add || key == Key.OemPlus;
+        }
+
+        private double newScoreAverage = 0;
+
+        private void NewScoreTextBox_KeyUp(object sender, KeyEventArgs e)
+        {
+            string[] markStrings = NewScoreTextBox.Text.Split(',');
+            double total = 0;
+            int length = 0;
+
+            foreach (string markString in markStrings)
+            {
+                if (string.IsNullOrWhiteSpace(markString)) continue;
+                else if (double.TryParse(markString.Trim(), out double mark))
+                {
+                    total += mark;
+                    length++;
+                }
+                else
+                {
+                    total = double.NaN;
+                    break;
+                }
+            }
+
+            if (length == 0)
+            {
+                newScoreAverage = 0;
+                ApplyScoreButton.IsEnabled = false;
+            }
+            else 
+            {
+                newScoreAverage = Math.Round(total / length, Settings.Default.MarksPrecision);
+                ApplyScoreButton.IsEnabled = CanApplyScore();
+            }
+            NewTotalScoreLabel.Content = newScoreAverage;
+
+            if (e.Key == Key.Enter && CanApplyScore())
+            {
+                ApplyScore();
+            }
+        }
+
+        private bool CanApplyScore() => 
+            VM.MarkingCompetitionItem != null && 
+            VM.MarkingParticipant != null && 
+            !string.IsNullOrWhiteSpace(NewScoreTextBox.Text) && 
+            !double.IsNaN(newScoreAverage);
+
+        private void ApplyScoreButton_Click(object sender, RoutedEventArgs e)
+        {
+            ApplyScore();
+        }
+
+        private void ApplyScore()
+        {
+            if (VM == null || VM.MarkingCompetitionItem == null || VM.MarkingParticipant == null || double.IsNaN(newScoreAverage)) return;
+
+            string[] markStrings = NewScoreTextBox.Text.Split(',');
+            List<double> marks = new();
+
+            foreach (string markString in markStrings)
+            {
+                if (string.IsNullOrWhiteSpace(markString)) continue;
+                else if (double.TryParse(markString.Trim(), out double mark))
+                {
+                    marks.Add(mark);
+                }
+                else
+                {
+                    Messager.Out("Score should be expressed as numbers separated by '+' characters. The numbers may include decimals. Nothing has been applied", "Score format incorrect", ConsoleStyle.FormatBlockStyle);
+                    return;
+                }
+            }
+
+            if (marks.Count > 0)
+            {
+                VM.MarkingCompetitionItem.AddScore(VM.MarkingParticipant, marks, VM.UserName);
+                VM.UpdateIntersection();
+                NewScoreTextBox.Text = "";
+                NewTotalScoreLabel.Content = 0;
+                ApplyScoreButton.IsEnabled = false;
+            }
+        }
+
         #endregion
 
     }

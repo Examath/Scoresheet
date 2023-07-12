@@ -1,21 +1,14 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Examath.Core.Environment;
+using Examath.Core.Utils;
+using Scoresheet.Exporters;
 using Scoresheet.Formatter;
+using Scoresheet.Properties;
 using System;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks.Dataflow;
-using System.Windows;
-using System.Windows.Documents;
-using System.Windows.Forms;
-using System.Windows.Media;
-using Examath.Core.Environment;
 using System.Threading.Tasks;
-using Examath.Core.Utils;
-using System.ComponentModel.DataAnnotations;
-using Scoresheet.Properties;
-using System.Diagnostics;
-using Scoresheet.Exporters;
 
 namespace Scoresheet.Model
 {
@@ -75,10 +68,12 @@ namespace Scoresheet.Model
         {
             ScoresheetFile = scoresheetFile;
             ScoresheetFile.Modified += NotifyChange;
+            scoresheetFile.ScoreAdded += ScoresheetFile_ScoreAdded;
             FileLocation = fileLocation;
             _ParticipantListExporter = new(ScoresheetFile);
             _UserNameI = new(this, nameof(UserName), label: "Editor Name") { IsFocused = true, HelpText = "Enter your name (or initials) for tracing purposes" };
         }
+
         #endregion
 
         #region Modification Tracking
@@ -119,7 +114,7 @@ namespace Scoresheet.Model
             {
                 ScoresheetFile.LastSavedTime = DateTime.Now;
                 ScoresheetFile.LastAuthor = UserName;
-                await XML.SaveAsync(_FileLocation, ScoresheetFile);
+                await XML.SaveAsync(_FileLocation, ScoresheetFile, new() { Indent = true, });
                 _Changes = -1;
                 NotifyChange(null);
             }
@@ -147,7 +142,7 @@ namespace Scoresheet.Model
 
         #region Exporters
 
-        private ParticipantListExporter _ParticipantListExporter; 
+        private ParticipantListExporter _ParticipantListExporter;
 
         [RelayCommand]
         public void ExportParticipantList()
@@ -240,7 +235,10 @@ namespace Scoresheet.Model
         public CompetitionItem? MarkingCompetitionItem
         {
             get => _MarkingCompetitionItem;
-            set => SetProperty(ref _MarkingCompetitionItem, value);
+            set
+            {
+                if (SetProperty(ref _MarkingCompetitionItem, value)) UpdateIntersection();
+            }
         }
 
         private Participant? _MarkingParticipant = null;
@@ -250,7 +248,33 @@ namespace Scoresheet.Model
         public Participant? MarkingParticipant
         {
             get => _MarkingParticipant;
-            set => SetProperty(ref _MarkingParticipant, value);
+            set
+            {
+                if (SetProperty(ref _MarkingParticipant, value)) UpdateIntersection();
+            }
+        }
+
+        private Score? _CurrentScoreIntersection = null;
+        /// <summary>
+        /// Gets the current intersection score between <see cref="MarkingCompetitionItem"/> and <see cref="MarkingParticipant"/>
+        /// </summary>
+        public Score? CurrentScoreIntersection
+        {
+            get => _CurrentScoreIntersection;
+            private set => SetProperty(ref _CurrentScoreIntersection, value);
+        }
+
+        public void UpdateIntersection()
+        {
+            if (MarkingCompetitionItem != null && MarkingParticipant != null)
+            {
+                CurrentScoreIntersection = MarkingCompetitionItem.GetIntersection(MarkingParticipant);
+            }
+        }
+
+        private void ScoresheetFile_ScoreAdded(object? sender, ScoreAddedEventArgs e)
+        {
+            NotifyChange(e);
         }
 
         #endregion

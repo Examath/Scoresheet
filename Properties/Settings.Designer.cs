@@ -34,5 +34,29 @@ namespace Scoresheet.Properties {
                 this["BackUpMinimumInterval"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public int MarksPrecision {
+            get {
+                return ((int)(this["MarksPrecision"]));
+            }
+            set {
+                this["MarksPrecision"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("3")]
+        public byte NumberOfPlaces {
+            get {
+                return ((byte)(this["NumberOfPlaces"]));
+            }
+            set {
+                this["NumberOfPlaces"] = value;
+            }
+        }
     }
 }

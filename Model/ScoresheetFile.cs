@@ -1,10 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace Scoresheet.Model
 {
@@ -82,8 +80,37 @@ namespace Scoresheet.Model
         /// </summary>
         public void Initialise()
         {
-            foreach (CompetitionItem competitionItem in CompetitionItems) competitionItem.Initialize(LevelDefinitions);
             foreach (IndividualParticipant individualParticipant in IndividualParticipants) individualParticipant.Initialize(this);
+            foreach (CompetitionItem competitionItem in CompetitionItems)
+            {
+                competitionItem.Initialize(LevelDefinitions);
+                competitionItem.ScoreAdded += CompetitionItem_ScoreAdded;
+            }
+            UpdateTeamTotals();
+        }
+
+        #region Scoring
+
+        public event EventHandler<ScoreAddedEventArgs>? ScoreAdded;
+
+        private void CompetitionItem_ScoreAdded(object? sender, ScoreAddedEventArgs e)
+        {
+            UpdateTeamTotals();
+            ScoreAdded?.Invoke(this, e);
+        }
+
+        private void UpdateTeamTotals()
+        {
+
+        }
+
+        #endregion
+
+        public event EventHandler? Modified;
+
+        internal void OnModified(object? sender = null)
+        {
+            Modified?.Invoke(sender ?? this, EventArgs.Empty);
         }
 
         public override string ToString()
@@ -91,18 +118,6 @@ namespace Scoresheet.Model
             return $"Teams: {string.Join(", ", Teams)}\n" +
                 $"Levels: {string.Join(", ", LevelDefinitions)}\n" +
                 $"Items: {string.Join(", ", CompetitionItems)}";
-        }
-
-        public event EventHandler? Modified;
-
-        internal void OnModified(object? sender = null)
-        {
-            EventHandler? eventHandler = Modified;
-
-            if (eventHandler != null)
-            {
-                eventHandler(sender ?? this, EventArgs.Empty);
-            }
         }
     }
 }

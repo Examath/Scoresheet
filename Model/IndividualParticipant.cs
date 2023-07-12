@@ -105,11 +105,15 @@ namespace Scoresheet.Model
         /// <summary>
         /// Gets or sets the name in the form used for submission
         /// </summary>
+        [XmlAttribute]
         public string SubmissionFullName
         {
             get => _SubmissionName;
             set => SetProperty(ref _SubmissionName, value);
         }
+
+        [XmlElement("SubmissionFullName")]
+        public string SFN { get => ""; set { if(!string.IsNullOrEmpty(value)) SubmissionFullName = value; } }
 
         #endregion
 

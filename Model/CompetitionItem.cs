@@ -1,11 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Scoresheet.Properties;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 namespace Scoresheet.Model
@@ -18,7 +16,7 @@ namespace Scoresheet.Model
     /// </remarks>
     public partial class CompetitionItem : ObservableObject
     {
-        #region MyRegion
+        #region Details
 
         private string _Code = "";
 
@@ -78,8 +76,18 @@ namespace Scoresheet.Model
         public int DurationInMinutes
         {
             get => (int)Duration.TotalMinutes;
-            set => Duration = new TimeSpan(0,value,0);
+            set => Duration = new TimeSpan(0, value, 0);
         }
+
+        /// <summary>
+        /// Gets the <see cref="LevelDefinition"/> of this item, if any.
+        /// </summary>
+        [XmlIgnore]
+        public LevelDefinition Level { get; set; } = LevelDefinition.All;
+
+        #endregion
+
+        #region Participants
 
         /// <summary>
         /// Gets or sets the list of <see cref="IndividualParticipants"/> participating
@@ -94,16 +102,82 @@ namespace Scoresheet.Model
         [XmlIgnore]
         public virtual IEnumerable<Participant> Participants => IndividualParticipants;
 
+        #endregion
+
+        #region Scoring
+
         /// <summary>
-        /// Gets the <see cref="LevelDefinition"/> of this item, if any.
+        /// Gets or sets a list of scores assigned to this competition item
+        /// </summary>
+        [XmlElement(ElementName = "Score")]
+        public ObservableCollection<Score> Scores { get; set; } = new();
+
+        /// <summary>
+        /// Gets the latest newScore assigned by this <see cref="CompetitionItem"/> to this <paramref name="participant"/>
+        /// </summary>
+        /// <param name="participant">The participant to get assigned scores for</param>
+        /// <returns>The latest newScore assigned to this <paramref name="participant"/>, or null if there aren't any</returns>
+        public Score? GetIntersection(Participant participant)
+        {
+            return Scores.Where((s) => s.Participant == participant).FirstOrDefault();
+        }
+
+        internal void AddScore(Participant participant, List<double> marks, string author)
+        {
+            foreach (Score oldScore in Scores.Where((s) => s.Participant == participant))
+            {
+                Scores.Remove(oldScore);
+            }
+
+            Score newScore = new(participant, marks, author);
+            Scores.Add(newScore);
+            CalculateWinners();
+            ScoreAdded?.Invoke(this, new(this, participant, newScore));
+        }
+
+        public event EventHandler<ScoreAddedEventArgs>? ScoreAdded;
+
+        private void CalculateWinners()
+        {
+            List<Place> winners = new();
+            int place = 0;
+            double currentMinMark = double.MaxValue;
+
+            foreach (Score score in Scores.OrderDescending())
+            {
+                if (score.Participant != null)
+                {
+                    double mark = score.AverageMarks;
+                    if (mark < currentMinMark)
+                    {
+                        place++;
+                        currentMinMark = mark;
+                        if (place > Settings.Default.NumberOfPlaces) break;
+                        winners.Add(new(place));
+                    }
+                    winners.Last().Participants.Add(score.Participant);
+                }
+            }
+
+            Winners = winners;
+        }
+
+        private List<Place> _Winners = new();
+        /// <summary>
+        /// Gets the top three scoring participants
         /// </summary>
         [XmlIgnore]
-        public LevelDefinition Level { get; set; } = LevelDefinition.All;
+        public List<Place> Winners
+        {
+            get => _Winners;
+            set => SetProperty(ref _Winners, value);
+        }
+
 
         #endregion
 
         /// <summary>
-        /// Initialises <see cref="Level"/>
+        /// Initialises <see cref="Level"/> and <see cref="Scores"/>
         /// </summary>
         public void Initialize(List<LevelDefinition> levelDefinitions)
         {
@@ -113,11 +187,27 @@ namespace Scoresheet.Model
             {
                 Level = levelDefinitions.Find((x) => x.Code == codeParameters[1]) ?? LevelDefinition.All;
             }
+
+            foreach (Score score in Scores) score.Initialize(Participants);
+            CalculateWinners();
         }
 
         /// <summary>
         /// Gets the <see cref="ShortCode"/> of this competition item
         /// </summary>
         public override string ToString() => ShortCode;
+
+    }
+
+    public class ScoreAddedEventArgs : EventArgs
+    {
+        public string Message { get; private set; }
+
+        public ScoreAddedEventArgs(CompetitionItem competitionItem, Participant participant, Score score)
+        {
+            Message = $"#{participant.ChestNumber} scored {score.AverageMarks} in {competitionItem.ShortCode}";
+        }
+
+        public override string ToString() => Message;
     }
 }

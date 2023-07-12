@@ -208,7 +208,7 @@
                     <Button Command="{Binding ExportParticipantListCommand}" VerticalAlignment="Top" HorizontalAlignment="Right">Export Participant List</Button>
                 </Grid>
             </TabItem>
-            <TabItem Header="Marking">
+            <TabItem x:Name="MarkingTab" Header="Marking" KeyUp="MarkingTab_KeyUp">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="297*"/>
@@ -274,43 +274,42 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
                     <GridSplitter Grid.Column="3" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center"/>
-                    <Grid Grid.Column="4" Margin="4">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>                            
-                        </Grid.ColumnDefinitions>
-                        <Border CornerRadius="8" Margin="16" HorizontalAlignment="Center" VerticalAlignment="Top" Grid.ColumnSpan="3">
-                            <TextBlock x:Name="PART_ChestNumberLabel" DataContext="{Binding MarkingParticipant}" Text="{Binding ChestNumber, FallbackValue=---}" FontSize="32" FontWeight="Bold" Padding="4 0">
+                    <StackPanel Grid.Column="4" Margin="4" Grid.IsSharedSizeScope="True">
+                        <Border CornerRadius="8" Margin="16" HorizontalAlignment="Center" VerticalAlignment="Top" Grid.ColumnSpan="3" DataContext="{Binding MarkingParticipant}">
+                            <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber, FallbackValue=---}" FontSize="32" FontWeight="Bold" Padding="4 0" Foreground="{StaticResource ForegroundColourKey}">
                             </TextBlock>
                             <Border.Background>
                                 <SolidColorBrush Color="{Binding Team.Colour, FallbackValue=Gray}"/>
                             </Border.Background>
                         </Border>
-                        <Label Grid.Row="1" VerticalAlignment="Center">Current Score</Label>
-                        <Label FontSize="16" Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">= 12.6</Label>
-                        <Label Grid.Row="2" VerticalAlignment="Center">New Score</Label>
-                        <Label FontSize="16" Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" Foreground="{StaticResource NewColourKey}" HorizontalAlignment="Right">= 50.2</Label>
-                        <ItemsControl d:ItemsSource="{d:SampleData ItemCount=3}" Grid.Row="2" Grid.Column="1">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBox Width="70" Margin="8" FontSize="16"/>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <Button Content="{Binding UserName}" ContentStringFormat="Apply Score as {0} [Enter]" Grid.Row="3" HorizontalAlignment="Center" Grid.ColumnSpan="3" />
-                    </Grid>
+                        <GroupBox Header="Current Score" Margin="6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="Totals"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Content="{Binding CurrentScoreIntersection, TargetNullValue='No score has been applied'}" Margin="8" />
+                                <Label FontSize="16" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Content="{Binding CurrentScoreIntersection.TotalMarks, FallbackValue=0}" ContentStringFormat="= {0}"/>
+                            </Grid>
+                        </GroupBox>
+                        <GroupBox Header="New Score" Margin="6">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition MinWidth="60" SharedSizeGroup="Totals"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="NewScoreTextBox" Margin="8" FontSize="16" Grid.Row="0" PreviewKeyDown="NewScoreTextBox_PreviewKeyDown" KeyUp="NewScoreTextBox_KeyUp" />
+                                <Label x:Name="NewTotalScoreLabel" FontSize="16" Grid.Column="1" VerticalAlignment="Center" Foreground="{StaticResource NewColourKey}" HorizontalAlignment="Right" ContentStringFormat="= {0}">0</Label>
+                                <Button x:Name="ApplyScoreButton" Margin="8" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Center"
+                                        Content="{Binding UserName}" ContentStringFormat="Apply Score as {0} [Enter]" Click="ApplyScoreButton_Click" IsEnabled="False" />
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
                 </Grid>
             </TabItem>
             <TabItem x:Name="ScoringTab" Header="Scoring">
