@@ -127,7 +127,7 @@ namespace Scoresheet.Formatter
                 {
                     for (int teamIndex = 0; teamIndex < chestNumberMatrix.GetLength(1); teamIndex++)
                     {
-                        chestNumberMatrix[levelIndex, teamIndex] = (levelIndex * ScoresheetFile.Teams.Count + teamIndex + 1) * 100;
+                        chestNumberMatrix[levelIndex, teamIndex] = ScoresheetFile.GetChessNumberBase(levelIndex, teamIndex, scoresheetFile.Teams.Count);
                     }
                 }
 

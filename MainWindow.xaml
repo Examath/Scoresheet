@@ -15,10 +15,22 @@
         <model:VM/>
     </Window.DataContext>
     <Window.Resources>
-        <CollectionViewSource Source="{Binding ScoresheetFile.IndividualParticipants}" x:Key="IndividualParticipantsSource">
+        <CollectionViewSource xmlns:componentmodel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+                              xmlns:system="clr-namespace:System;assembly=System.Runtime"
+                              Source="{Binding ScoresheetFile.IndividualParticipants}" x:Key="IndividualParticipantsSource" 
+                              IsLiveSortingRequested="True" IsLiveGroupingRequested="True">
             <CollectionViewSource.GroupDescriptions>
                 <PropertyGroupDescription PropertyName="YearLevel"/>
             </CollectionViewSource.GroupDescriptions>
+            <CollectionViewSource.LiveGroupingProperties>
+                <system:String>YearLevel</system:String>
+            </CollectionViewSource.LiveGroupingProperties>
+            <CollectionViewSource.SortDescriptions>
+                <componentmodel:SortDescription PropertyName="ChestNumber"/>
+            </CollectionViewSource.SortDescriptions>
+            <CollectionViewSource.LiveSortingProperties>
+                <system:String>ChestNumber</system:String>
+            </CollectionViewSource.LiveSortingProperties>
         </CollectionViewSource>
         <CollectionViewSource Source="{Binding ScoresheetFile.CompetitionItems}" x:Key="CompetitionItemsSource">
             <CollectionViewSource.GroupDescriptions>
@@ -53,12 +65,19 @@
                         <ComboBox Tag="Team" ItemsSource="{Binding ScoresheetFile.Teams}" SelectedItem="{Binding SelectedParticipant.Team}" 
                                   d:ItemsSource="{d:SampleData ItemCount=2}" d:SelectedIndex="1"
                                   ItemTemplate="{StaticResource TeamBox}"/>
-                        <Label Tag="Chest Number" Content="{Binding SelectedParticipant.ChestNumber, FallbackValue=000}" ContentStringFormat="#{0}" />
-                        <StackPanel Orientation="Horizontal" Tag="Year Level">
+                        <DockPanel Tag="Year Level" LastChildFill="False">
                             <Label Content="Year "/>
                             <TextBox Text="{Binding SelectedParticipant.YearLevel, ValidatesOnNotifyDataErrors=True}" MinWidth="50"/>
-                            <Label Content="{Binding SelectedParticipant.Level, FallbackValue=?}" ContentStringFormat="- {0}"/>
-                        </StackPanel>
+                            <Label Content="{Binding SelectedParticipant.Level, FallbackValue=?}" DockPanel.Dock="Right"/>
+                        </DockPanel>
+                        <DockPanel Tag="Chest Number">
+                            <Button Command="{Binding UpdateChestNumberCommand}" CommandParameter="{Binding SelectedParticipant}" DockPanel.Dock="Right">Update</Button>
+                            <Label Content="{Binding SelectedParticipant.ChestNumber, FallbackValue=000}" Margin="2 2 -2 2" ContentStringFormat="#{0}">
+                                <Label.Background>
+                                    <SolidColorBrush Opacity="0.2" Color="{Binding SelectedParticipant.UniqueColour, FallbackValue=Transparent}"/>
+                                </Label.Background>
+                            </Label>
+                        </DockPanel>
                         <Separator/>
                         <Label Tag="Form Submitted at" Content="{Binding SelectedParticipant.SubmissionTimeStamp, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
                         <Label Tag="Form Submitted by" Content="{Binding SelectedParticipant.SubmissionEmail, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
@@ -180,16 +199,16 @@
                                 </StackPanel>
                             </DataTemplate>
                             <DataTemplate x:Key="GroupItemTemplate" DataType="model:GroupItem">
-                                <StackPanel Background="{StaticResource PanelColourKey}" Margin="2">
-                                    <StackPanel.Resources>
+                                <DockPanel Background="{StaticResource PanelColourKey}" Margin="2">
+                                    <DockPanel.Resources>
                                         <CollectionViewSource x:Key="People" Source="{Binding IndividualParticipants}">
                                             <CollectionViewSource.GroupDescriptions>
                                                 <PropertyGroupDescription PropertyName="Team"/>
                                             </CollectionViewSource.GroupDescriptions>
                                         </CollectionViewSource>
-                                    </StackPanel.Resources>
-                                    <Label Content="{Binding Name}" FontWeight="Bold"/>
-                                    <ListBox ItemsSource="{Binding Source={StaticResource People}}" d:ItemsSource="{d:SampleData}"
+                                    </DockPanel.Resources>
+                                    <Label Content="{Binding Name}" FontWeight="Bold" DockPanel.Dock="Top"/>
+                                    <ListBox x:Name="GroupsListBox" ItemsSource="{Binding Source={StaticResource People}}" d:ItemsSource="{d:SampleData}" SelectionMode="Extended"
                                   Style="{StaticResource ContrastListBoxStyle}" >
                                         <ListBox.GroupStyle>
                                             <GroupStyle>
@@ -205,17 +224,33 @@
                                                 </GroupStyle.Panel>
                                             </GroupStyle>
                                         </ListBox.GroupStyle>
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate DataType="{x:Type model:IndividualParticipant}">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <ContentPresenter ContentTemplate="{StaticResource ParticipantBox}"/>
-                                                    <TextBlock Margin="8 0 2 0" Text="{Binding YearLevel, StringFormat=y{0}}" Foreground="{StaticResource ForegroundMinorColourKey}"/>
-                                                    <TextBlock Margin="2 0" Text="{Binding FullName}"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
+                                        <ListBox.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Create Group from Selected" Command="{Binding CreateGroupParticipantCommand}" CommandParameter="{Binding ElementName=GroupsListBox, Path=SelectedItems}"/>
+                                                <MenuItem Header="Add to Group" Command="{Binding AddToExistingGroupParticipantCommand}" CommandParameter="{Binding ElementName=GroupsListBox, Path=SelectedItems}"/>
+                                            </ContextMenu>
+                                        </ListBox.ContextMenu>
                                     </ListBox>
-                                </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding GroupParticipants}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Vertical"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type model:GroupParticipant}">
+                                                <DockPanel>
+                                                    <DockPanel.Background>
+                                                        <SolidColorBrush Opacity="0.2" Color="{Binding Team.Colour}"/>
+                                                    </DockPanel.Background>
+                                                    
+                                                    <ListBox x:Name="ParticipantsListBox" ItemsSource="{Binding IndividualParticipants}">
+                                                    </ListBox>
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </DockPanel>
                             </DataTemplate>
                         </ItemsControl.Resources>
                     </ItemsControl>

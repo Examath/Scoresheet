@@ -1,8 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Examath.Core.Environment;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace Scoresheet.Model
 {
@@ -62,15 +63,31 @@ namespace Scoresheet.Model
         /// <summary>
         /// Call after loading from XML. Matches the correct <see cref="LevelDefinition"/>s to each <see cref="CompetitionItem"/>
         /// </summary>
-        public void Initialise()
+        public async Task InitialiseAsync()
         {
-            foreach (IndividualParticipant individualParticipant in IndividualParticipants) individualParticipant.Initialize(this);
+            ProgressWindowTask participantInit = new("Participants", IndividualParticipants.Count);
+            ProgressWindowTask competitionItemInit = new("Competition Items", CompetitionItems.Count);
+
+            ProgressWindow progressWindow = new(participantInit, competitionItemInit);
+            progressWindow.Show();
+
+            foreach (IndividualParticipant individualParticipant in IndividualParticipants) 
+            { 
+                await Task.Run(() => individualParticipant.Initialize(this));
+                participantInit.Increment();
+            }
+
             foreach (CompetitionItem competitionItem in CompetitionItems)
             {
-                competitionItem.Initialize(LevelDefinitions);
+                await Task.Run(() => competitionItem.Initialize(this));
                 competitionItem.ScoreAdded += CompetitionItem_ScoreAdded;
+                competitionItemInit.Increment();
             }
+
             UpdateTeamTotals();
+
+            await Task.Delay(500);
+            progressWindow.Close();
         }
 
         #region Scoring
@@ -98,6 +115,44 @@ namespace Scoresheet.Model
 
             foreach (Team team in Teams) team.SetPoints();
         }
+
+        #endregion
+
+        #region ChestNumbers
+
+        // This should always be a power of 10
+        public const int CATEGORY_CAPACITY = 100;
+
+        /// <summary>
+        /// Returns the valid starting index for chest numbers given the <paramref name="levelIndex"/> and <paramref name="teamIndex"/>
+        /// </summary>
+        /// <param name="levelIndex">The ID of the level</param>
+        /// <param name="teamIndex">The ID of the team</param>
+        /// <param name="teamCount">The number of teams in the competition</param>
+        /// <returns>
+        ///     <c>
+        ///         (<paramref name="levelIndex"/> * <paramref name="teamCount"/> + <paramref name="teamIndex"/>) * <see cref="CATEGORY_CAPACITY"/>
+        ///     </c>
+        /// </returns>
+        public static int GetChessNumberBase(int levelIndex, int teamIndex, int teamCount) => (levelIndex * teamCount + teamIndex + 1) * CATEGORY_CAPACITY;
+
+        /// <summary>
+        /// Returns the valid starting index for chest numbers given the <paramref name="level"/> and <paramref name="team"/>
+        /// </summary>
+        /// <param name="level">The level</param>
+        /// <param name="team">The team</param>
+        /// <returns><inheritdoc cref="GetChessNumberBase(int, int, int)"/></returns>
+        public int GetChessNumberBase(LevelDefinition? level, Team? team)
+        {
+            int levelIndex = (level != null) ? LevelDefinitions.IndexOf(level) : LevelDefinitions.Count;
+            if (levelIndex == -1) levelIndex = LevelDefinitions.Count;
+
+            int teamIndex = (team != null) ? Teams.IndexOf(team) : 0;
+            if (teamIndex == -1) teamIndex = 0;
+
+            return GetChessNumberBase(levelIndex, teamIndex, Teams.Count);
+        }
+
 
         #endregion
 

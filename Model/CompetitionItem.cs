@@ -16,6 +16,8 @@ namespace Scoresheet.Model
     /// </remarks>
     public partial class CompetitionItem : ObservableObject
     {
+        protected ScoresheetFile? _ScoresheetFile;
+
         #region Details
 
         private string _Code = "";
@@ -180,13 +182,14 @@ namespace Scoresheet.Model
         /// <summary>
         /// Initialises <see cref="Level"/> and <see cref="Scores"/>
         /// </summary>
-        public void Initialize(List<LevelDefinition> levelDefinitions)
+        public void Initialize(ScoresheetFile scoresheetFile)
         {
+            _ScoresheetFile = scoresheetFile;
             string[] codeParameters = Code.Split('/');
 
             if (codeParameters.Length >= 2)
             {
-                Level = levelDefinitions.Find((x) => x.Code == codeParameters[1]) ?? LevelDefinition.All;
+                Level = _ScoresheetFile.LevelDefinitions.Find((x) => x.Code == codeParameters[1]) ?? LevelDefinition.All;
             }
 
             foreach (Score score in Scores) score.Initialize(Participants);

@@ -12,7 +12,7 @@ namespace Scoresheet.Model
     /// <remarks>
     /// Must be initialized when loading from XML
     /// </remarks>
-    public partial class Participant : ObservableValidator
+    public abstract partial class Participant : ObservableValidator
     {
         protected ScoresheetFile? _ScoresheetFile;
 

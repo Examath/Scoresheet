@@ -9,6 +9,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Scoresheet.Model
 {
@@ -212,6 +213,32 @@ namespace Scoresheet.Model
                 individualParticipant.SubmissionEmail = UserName;
                 individualParticipant.SubmissionFullName = individualParticipant.FullName;
                 individualParticipant.SubmissionTimeStamp = DateTime.Now;
+            }
+        }
+
+        [RelayCommand]
+        public void UpdateChestNumber(IndividualParticipant? individualParticipant)
+        {
+            if (individualParticipant != null)
+            {
+                if (individualParticipant.FindNewChestNumber(out int newChestNumber))
+                {
+                    DialogResult dialogResult = Messager.Out("There is an increased chance that the file may become corrupt when preforming this action." +
+                        $"Are you sure you want to change {individualParticipant.FullName}'s " +
+                        $"chest number from {individualParticipant.ChestNumber} to {newChestNumber}?",
+                        "Update Chest Number",
+                        ConsoleStyle.WarningBlockStyle,
+                        isNoButtonVisible: true);
+
+                    if (dialogResult == DialogResult.Yes)
+                    {
+                        individualParticipant.ChestNumber = newChestNumber;
+                    }
+                }
+                else
+                {
+                    Messager.Out("Cannot find a new valid chest number", "Updating Chest Number", ConsoleStyle.FormatBlockStyle);
+                }
             }
         }
 

@@ -70,6 +70,36 @@ namespace Scoresheet.Model
 
         #endregion
 
+        #region Chest Number
+
+        /// <summary>
+        /// Finds a new unused chest number that matches first digit rules 
+        /// </summary>
+        /// <param name="participant"><see cref="IndividualParticipant.Level"/> and <see cref="Participant.Team"/> are used to calculate the first digit of the chest number</param>
+        /// <param name="newChestNumber">The valid chest number that can be applied</param>
+        /// <returns>True if a new chest number can be calculated and if it is available</returns>
+        public bool FindNewChestNumber(out int newChestNumber)
+        {
+            if  (_ScoresheetFile != null && Level != null && Team != null)
+            {
+                int chestNumberBase = _ScoresheetFile.GetChessNumberBase(Level, Team);
+                int searchEnd = chestNumberBase + ScoresheetFile.CATEGORY_CAPACITY - 1;
+
+                for (int i = chestNumberBase + 1; i < searchEnd; i++)
+                {
+                    if (_ScoresheetFile.IndividualParticipants.Find((p) => p.ChestNumber == i) == null)
+                    {
+                        newChestNumber = i;
+                        return true;
+                    }
+                }
+            }
+            newChestNumber = -1;
+            return false;
+        }
+
+        #endregion
+
         #region Submission Evidence
 
         private DateTime _SubmissionTimeStamp;

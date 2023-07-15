@@ -105,7 +105,7 @@ namespace Scoresheet
                     }
                     else
                     {
-                        scoresheet.Initialise();
+                        await scoresheet.InitialiseAsync();
                     }
 
                     // Now, Scoresheet is formatted.

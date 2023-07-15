@@ -9,9 +9,14 @@ namespace Scoresheet.Model
     public class Score : IComparable<Score>
     {
         #region Data
+        private int _XMLParticipantChestNumber = 0;
 
         [XmlAttribute(attributeName: "For")]
-        public int ParticipantChestNumber { get; set; } = 0;
+        public int ParticipantChestNumber
+        {
+            get => Participant?.ChestNumber ?? _XMLParticipantChestNumber;
+            set => _XMLParticipantChestNumber = value;
+        }
 
         [XmlIgnore]
         public Participant? Participant { get; private set; }
