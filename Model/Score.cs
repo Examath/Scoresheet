@@ -9,17 +9,16 @@ namespace Scoresheet.Model
     public class Score : IComparable<Score>
     {
         #region Data
-        private int _XMLParticipantChestNumber = 0;
+        [XmlIgnore]
+        public Participant? Participant { get; private set; }
 
+        private int _XMLParticipantChestNumber = 0;
         [XmlAttribute(attributeName: "For")]
         public int ParticipantChestNumber
         {
             get => Participant?.ChestNumber ?? _XMLParticipantChestNumber;
             set => _XMLParticipantChestNumber = value;
         }
-
-        [XmlIgnore]
-        public Participant? Participant { get; private set; }
 
         [XmlIgnore]
         public List<double> Marks { get; private set; } = new();
@@ -81,6 +80,31 @@ namespace Scoresheet.Model
         {
             if (other == null) return 1;
             else return Marks.Average().CompareTo(other.Marks.Average());
+        }
+
+        [XmlIgnore]
+        public int? Place { get; set; }
+
+        /// <summary>
+        /// Gets whether this score is for <paramref name="participant"/>
+        /// </summary>
+        /// <param name="participant">
+        /// The participant to compare. 
+        /// If <paramref name="participant"/> is an <see cref="IndividualParticipant"/> and
+        /// <see cref="Participant"/> IS A <see cref="GroupParticipant"/>, then the group participant is checked to see if it contains the <paramref name="participant"/>.
+        /// </param>
+        /// <returns></returns>
+        public bool IsOf(Participant participant)
+        {
+
+            if (Participant is GroupParticipant groupParticipant && participant is IndividualParticipant individualParticipant)
+            {
+                return groupParticipant.IndividualParticipants.Contains(participant);
+            }
+            else
+            {
+                return Participant == participant;
+            }
         }
 
         #endregion

@@ -34,6 +34,7 @@ namespace Scoresheet
         {
             LoadDataAsync();
         }
+
         public async void LoadDataAsync()
         {
             bool isLoadingFromAppSelect = false;
@@ -132,6 +133,10 @@ namespace Scoresheet
             if (e.PropertyName == "MarkingCompetitionItem" || e.PropertyName == "MarkingParticipant")
             {
                 ApplyScoreButton.IsEnabled = CanApplyScore();
+            }
+            if (e.PropertyName == nameof(VM.CurrentScoreIntersection))
+            {
+                ClearScoreButton.IsEnabled = VM?.CurrentScoreIntersection != null;
             }
         }
 
@@ -342,6 +347,7 @@ namespace Scoresheet
                 NewScoreTextBox.Text = "";
                 NewTotalScoreLabel.Content = 0;
                 ApplyScoreButton.IsEnabled = false;
+                ClearScoreButton.IsEnabled = true;
 
                 ListBoxItem listBoxItem =
                    (ListBoxItem)MarkingParticipantsListBox
@@ -349,6 +355,21 @@ namespace Scoresheet
                        .ContainerFromItem(MarkingParticipantsListBox.SelectedItem);
 
                 listBoxItem.Focus();
+            }
+        }
+
+        private void ClearScoreButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (VM == null || VM.MarkingCompetitionItem == null || VM.MarkingParticipant == null || VM.CurrentScoreIntersection == null) return;
+            else
+            {
+                if (Messager.Out($"Are you sure you want to clear #{VM.MarkingParticipant.ChestNumber}'s score in {VM.MarkingCompetitionItem.Name}?", "Clear score", ConsoleStyle.WarningBlockStyle, isCancelButtonVisible: true, yesButtonText: "Yes")
+                    == System.Windows.Forms.DialogResult.Yes) 
+                {
+                    VM.MarkingCompetitionItem.ClearScore(VM.MarkingParticipant);
+                    VM.UpdateIntersection();
+                    ClearScoreButton.IsEnabled = false;
+                }
             }
         }
 

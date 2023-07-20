@@ -14,7 +14,16 @@ namespace Scoresheet.View
         {
             if (values.Length >= 2 && values[0] is ObservableCollection<Score> scores && values[1] is Participant participant)
             {
-                return scores.Where((s) => s.Participant == participant).FirstOrDefault()?.AverageMarks.ToString();
+                if (parameter is bool ShowDetails && ShowDetails)
+                {
+                    Score? score = scores.Where(s => s.IsOf(participant)).FirstOrDefault();
+                    if (score != null) return $"{string.Join(',', score.Marks)} = {score.AverageMarks} ({Place.AddOrdinal(score.Place ?? 0)})";
+                    else return null;
+                }
+                else
+                {
+                    return scores.Where(s => s.IsOf(participant)).FirstOrDefault()?.AverageMarks.ToString();
+                }
             }
             else return null;
         }

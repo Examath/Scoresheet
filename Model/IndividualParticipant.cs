@@ -43,7 +43,7 @@ namespace Scoresheet.Model
         /// Gets or sets the year level of this person
         /// </summary>
         [XmlAttribute]
-        [Range(1,12)]
+        [Range(1, 12)]
         public int YearLevel
         {
             get => _YearLevel;
@@ -80,7 +80,7 @@ namespace Scoresheet.Model
         /// <returns>True if a new chest number can be calculated and if it is available</returns>
         public bool FindNewChestNumber(out int newChestNumber)
         {
-            if  (_ScoresheetFile != null && Level != null && Team != null)
+            if (_ScoresheetFile != null && Level != null && Team != null)
             {
                 int chestNumberBase = _ScoresheetFile.GetChessNumberBase(Level, Team);
                 int searchEnd = chestNumberBase + ScoresheetFile.CATEGORY_CAPACITY - 1;
@@ -143,7 +143,7 @@ namespace Scoresheet.Model
         }
 
         [XmlElement("SubmissionFullName")]
-        public string SFN { get => ""; set { if(!string.IsNullOrEmpty(value)) SubmissionFullName = value; } }
+        public string SFN { get => ""; set { if (!string.IsNullOrEmpty(value)) SubmissionFullName = value; } }
 
         #endregion
 
@@ -219,6 +219,21 @@ namespace Scoresheet.Model
         {
             foreach (CompetitionItem competitionItem in CompetitionItems) competitionItem.IndividualParticipants.Remove(this);
             CompetitionItems.Clear();
+        }
+
+        internal CertificateData GetCertificateData()
+        {
+            CertificateData certificateData = new(this);
+
+            foreach (CompetitionItem competitionItem in CompetitionItems)
+            {
+                Score? score = competitionItem.GetIntersection(this);
+                if (score != null) certificateData.Items.Add(new(competitionItem, score));
+            }
+
+            certificateData.Items = certificateData.Items.OrderBy(sr => sr.Place).ToList();
+
+            return certificateData;
         }
 
         #endregion

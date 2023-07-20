@@ -121,24 +121,35 @@ namespace Scoresheet.Model
         /// <returns>The latest newScore assigned to this <paramref name="participant"/>, or null if there aren't any</returns>
         public Score? GetIntersection(Participant participant)
         {
-            return Scores.Where((s) => s.Participant == participant).FirstOrDefault();
+            return Scores.Where((s) => s.IsOf(participant)).FirstOrDefault();
         }
 
         internal void AddScore(Participant participant, List<double> marks, string author)
+        {
+            RemoveScoresOf(participant);
+            Score newScore = new(participant, marks, author);
+            Scores.Add(newScore);
+            CalculateWinners();
+            ScoreChanged?.Invoke(this, new(this, participant, newScore));
+        }
+
+        internal void ClearScore(Participant participant)
+        {
+            RemoveScoresOf(participant);
+            CalculateWinners();
+            ScoreChanged?.Invoke(this, new(this, participant, null));
+        }
+
+        private void RemoveScoresOf(Participant participant)
         {
             List<Score> oldScores = Scores.Where((s) => s.Participant == participant).ToList();
             foreach (Score oldScore in oldScores)
             {
                 Scores.Remove(oldScore);
             }
-
-            Score newScore = new(participant, marks, author);
-            Scores.Add(newScore);
-            CalculateWinners();
-            ScoreAdded?.Invoke(this, new(this, participant, newScore));
         }
 
-        public event EventHandler<ScoreAddedEventArgs>? ScoreAdded;
+        public event EventHandler<ScoreChangedEventArgs>? ScoreChanged;
 
         private void CalculateWinners()
         {
@@ -151,14 +162,18 @@ namespace Scoresheet.Model
                 if (score.Participant != null)
                 {
                     double mark = score.AverageMarks;
+                    
+                    // New place
                     if (mark < currentMinMark)
                     {
                         place++;
                         currentMinMark = mark;
-                        if (place > Settings.Default.NumberOfPlaces) break;
-                        winners.Add(new(place));
+                        score.Place = place;
+                        if (place <= Settings.Default.NumberOfPlaces) winners.Add(new(place));
                     }
-                    winners.Last().Participants.Add(score.Participant);
+
+                    // Tie
+                    if (place <= Settings.Default.NumberOfPlaces) winners.Last().Participants.Add(score.Participant);
                 }
             }
 
@@ -173,7 +188,17 @@ namespace Scoresheet.Model
         public List<Place> Winners
         {
             get => _Winners;
-            set => SetProperty(ref _Winners, value);
+            private set => SetProperty(ref _Winners, value);
+        }
+
+        private string _ScoreBreakdown = "";
+        /// <summary>
+        /// Gets the breakdown of scores to each team 
+        /// </summary>
+        public string ScoreBreakdown
+        {
+            get => _ScoreBreakdown;
+            set => SetProperty(ref _ScoreBreakdown, value);
         }
 
 
@@ -182,7 +207,7 @@ namespace Scoresheet.Model
         /// <summary>
         /// Initialises <see cref="Level"/> and <see cref="Scores"/>
         /// </summary>
-        public void Initialize(ScoresheetFile scoresheetFile)
+        public virtual void Initialize(ScoresheetFile scoresheetFile)
         {
             _ScoresheetFile = scoresheetFile;
             string[] codeParameters = Code.Split('/');
@@ -203,13 +228,20 @@ namespace Scoresheet.Model
 
     }
 
-    public class ScoreAddedEventArgs : EventArgs
+    public class ScoreChangedEventArgs : EventArgs
     {
         public string Message { get; private set; }
 
-        public ScoreAddedEventArgs(CompetitionItem competitionItem, Participant participant, Score score)
+        public ScoreChangedEventArgs(CompetitionItem competitionItem, Participant participant, Score? score)
         {
-            Message = $"#{participant.ChestNumber} scored {score.AverageMarks} in {competitionItem.ShortCode}";
+            if (score != null)
+            {
+                Message = $"#{participant.ChestNumber} scored {score.AverageMarks} in {competitionItem.ShortCode}";
+            }
+            else
+            {
+                Message = $"#{participant.ChestNumber}'s score for {competitionItem.ShortCode} cleared";
+            }
         }
 
         public override string ToString() => Message;

@@ -94,7 +94,7 @@
 
             <DataTemplate x:Key="ParticipantBox" DataType="model:Participant">
                 <Border CornerRadius="4">
-                    <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber, FallbackValue=---}" ToolTip="{Binding FullName}" FontWeight="Bold" Padding="4 0">
+                    <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber, FallbackValue=---}" FontWeight="Bold" Padding="4 0" VerticalAlignment="Center" HorizontalAlignment="Center">
                     </TextBlock>
                     <Border.Background>
                         <SolidColorBrush Color="{Binding Team.Colour, FallbackValue=Gray}"/>
@@ -120,6 +120,13 @@
                     <ContentPresenter ContentTemplate="{StaticResource ParticipantBox}"/>
                     <TextBlock Margin="8 0 2 0" Text="{Binding YearLevel, StringFormat=y{0}}" Foreground="{StaticResource ForegroundMinorColourKey}"/>
                     <TextBlock Margin="2 0" Text="{Binding FullName}"/>
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type model:GroupParticipant}">
+                <StackPanel Orientation="Horizontal">
+                    <ContentPresenter ContentTemplate="{StaticResource ParticipantBox}"/>
+                    <TextBlock Margin="2 0" Text="{Binding Leader.FullName}"/>
                 </StackPanel>
             </DataTemplate>
 

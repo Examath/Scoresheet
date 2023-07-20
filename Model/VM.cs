@@ -6,8 +6,10 @@ using Scoresheet.Exporters;
 using Scoresheet.Formatter;
 using Scoresheet.Properties;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -69,9 +71,10 @@ namespace Scoresheet.Model
         {
             ScoresheetFile = scoresheetFile;
             ScoresheetFile.Modified += NotifyChange;
-            scoresheetFile.ScoreAdded += ScoresheetFile_ScoreAdded;
+            scoresheetFile.ScoreChanged += ScoresheetFile_ScoreChanged;
             FileLocation = fileLocation;
             _ParticipantListExporter = new(ScoresheetFile);
+            _CertificateExporter = new(ScoresheetFile);
             _UserNameI = new(this, nameof(UserName), label: "Editor Name") { IsFocused = true, HelpText = "Enter your name (or initials) for tracing purposes" };
         }
 
@@ -151,6 +154,16 @@ namespace Scoresheet.Model
             _ParticipantListExporter.Export();
         }
 
+        private CertificateExporter _CertificateExporter;
+
+        [RelayCommand]
+        public async Task ExportCertificates(object param)
+        {
+            System.Collections.IList items = (System.Collections.IList)param;
+            List<IndividualParticipant> individualParticipants = items.Cast<IndividualParticipant>().ToList();
+            await _CertificateExporter.Export(individualParticipants);
+        }
+
         #endregion
 
         #region ParticipantsView
@@ -179,7 +192,7 @@ namespace Scoresheet.Model
             formatterDialog.ShowDialog();
         }
 
-        private readonly AskerOptions _EditParticipantAskerOptions = new(title: "Edit Participant", canCancel: true);
+        private readonly AskerOptions _EditParticipantAskerOptions = new(title: "Edit IndividualParticipant", canCancel: true);
 
         [RelayCommand]
         public void EditParticipant(IndividualParticipant individualParticipant)
@@ -245,7 +258,7 @@ namespace Scoresheet.Model
         [RelayCommand]
         public void SearchParticipant()
         {
-            if (Searcher.Select(ScoresheetFile.IndividualParticipants, "Find Participant") is IndividualParticipant individualParticipant)
+            if (Searcher.Select(ScoresheetFile.IndividualParticipants, "Find IndividualParticipant") is IndividualParticipant individualParticipant)
             {
                 SelectedParticipant = individualParticipant;
             }
@@ -314,7 +327,7 @@ namespace Scoresheet.Model
             }
         }
 
-        private void ScoresheetFile_ScoreAdded(object? sender, ScoreAddedEventArgs e)
+        private void ScoresheetFile_ScoreChanged(object? sender, ScoreChangedEventArgs e)
         {
             OnPropertyChanged(nameof(ScoresRef));
             NotifyChange(e);

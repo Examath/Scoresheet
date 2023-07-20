@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Scoresheet" 
         xmlns:controls="clr-namespace:Examath.Core.Controls;assembly=Examath.Core"
+        xmlns:system="clr-namespace:System;assembly=System.Runtime"
         xmlns:model="clr-namespace:Scoresheet.Model"
         xmlns:view="clr-namespace:Scoresheet.View"
         mc:Ignorable="d"
@@ -15,8 +16,7 @@
         <model:VM/>
     </Window.DataContext>
     <Window.Resources>
-        <CollectionViewSource xmlns:componentmodel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
-                              xmlns:system="clr-namespace:System;assembly=System.Runtime"
+        <CollectionViewSource xmlns:componentmodel="clr-namespace:System.ComponentModel;assembly=WindowsBase"                              
                               Source="{Binding ScoresheetFile.IndividualParticipants}" x:Key="IndividualParticipantsSource" 
                               IsLiveSortingRequested="True" IsLiveGroupingRequested="True">
             <CollectionViewSource.GroupDescriptions>
@@ -57,7 +57,13 @@
                     <WrapPanel>
                         <!--<Button Content="Add New Participant" Foreground="{StaticResource NewColourKey}"/>-->
                         <Button Command="{Binding FormatCommand}">Re-Import from CSV</Button>
-                        <Button Command="{Binding SearchParticipantCommand}">Find Participant by Name</Button>
+                        <Button Command="{Binding ExportCertificatesCommand}" CommandParameter="{Binding ElementName=ParticipantsListBox, Path=SelectedItems}"
+                                Content="{Binding ElementName=ParticipantsListBox, Path=SelectedItems.Count}" ContentStringFormat="Print Certificates of {0} Participants" />
+                        <Button Command="{Binding SearchParticipantCommand}">
+                            <TextBlock>
+                                <Run Style="{StaticResource Glyph}">&#xE094;</Run> Find by Name
+                            </TextBlock>
+                        </Button>
                     </WrapPanel>
                     <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Row="1">
                         <TextBox FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" 
@@ -96,6 +102,9 @@
                                         <TextBlock x:Name="PART_Intersect" d:Text="00.0" Foreground="{StaticResource NewColourKey}" Padding="4,0" Grid.Column="2">
                                             <TextBlock.Text>
                                                 <MultiBinding Converter="{StaticResource IntersectConverter}">
+                                                    <MultiBinding.ConverterParameter>
+                                                        <system:Boolean>true</system:Boolean>
+                                                    </MultiBinding.ConverterParameter>
                                                     <Binding Path="Scores"/>
                                                     <Binding ElementName="SelectedParticipantItemsControl" Path="DataContext.SelectedParticipant"/>
                                                 </MultiBinding>
@@ -112,7 +121,7 @@
                         Grid.Column="2"
                         ItemsSource="{Binding Source={StaticResource IndividualParticipantsSource}}" d:ItemsSource="{d:SampleData ItemCount=50}" 
                         Style="{StaticResource ContrastListBoxStyle}"
-                        SelectedItem="{Binding SelectedParticipant}" ItemTemplate="{StaticResource ParticipantItemsDataTemplate}"
+                        SelectedItem="{Binding SelectedParticipant}" ItemTemplate="{StaticResource ParticipantItemsDataTemplate}" SelectionMode="Extended"
                         ScrollViewer.VerticalScrollBarVisibility="Disabled" Grid.RowSpan="2">
                         <ListBox.ContextMenu>
                             <ContextMenu>
@@ -226,30 +235,48 @@
                                         </ListBox.GroupStyle>
                                         <ListBox.ContextMenu>
                                             <ContextMenu>
-                                                <MenuItem Header="Create Group from Selected" Command="{Binding CreateGroupParticipantCommand}" CommandParameter="{Binding ElementName=GroupsListBox, Path=SelectedItems}"/>
-                                                <MenuItem Header="Add to Group" Command="{Binding AddToExistingGroupParticipantCommand}" CommandParameter="{Binding ElementName=GroupsListBox, Path=SelectedItems}"/>
+                                                <MenuItem Header="Create Group from Selected" Command="{Binding CreateGroupParticipantCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItems}"/>
+                                                <MenuItem Header="Add to Group" Command="{Binding AddToExistingGroupParticipantCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItems}"/>
                                             </ContextMenu>
                                         </ListBox.ContextMenu>
                                     </ListBox>
-                                    <ItemsControl ItemsSource="{Binding GroupParticipants}">
-                                        <ItemsControl.ItemsPanel>
+                                    <ListBox x:Name="GroupParticipantsListBox" ItemsSource="{Binding GroupParticipants}" Style="{StaticResource ContrastListBoxStyle}" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                        <ListBox.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <WrapPanel Orientation="Vertical"/>
                                             </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
+                                        </ListBox.ItemsPanel>
+                                        <ListBox.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Edit Group" Command="{Binding EditGroupParticipantCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                                                <MenuItem Header="Remove Group" Command="{Binding RemoveGroupParticipantCommand}" InputGestureText="Del" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                                            </ContextMenu>
+                                        </ListBox.ContextMenu>
+                                        <ListBox.InputBindings>
+                                            <KeyBinding Command="{Binding RemoveGroupParticipantCommand}" CommandParameter="{Binding ElementName=GroupParticipantsListBox, Path=SelectedItem}" Key="Delete"/>
+                                        </ListBox.InputBindings>
+                                        <ListBox.ItemTemplate>
                                             <DataTemplate DataType="{x:Type model:GroupParticipant}">
                                                 <DockPanel>
                                                     <DockPanel.Background>
                                                         <SolidColorBrush Opacity="0.2" Color="{Binding Team.Colour}"/>
                                                     </DockPanel.Background>
-                                                    
-                                                    <ListBox x:Name="ParticipantsListBox" ItemsSource="{Binding IndividualParticipants}">
+                                                    <ListBox x:Name="ParticipantsListBox" DockPanel.Dock="Bottom" Style="{StaticResource ContrastListBoxStyle}" ItemsSource="{Binding IndividualParticipants}">
+                                                        <ListBox.ContextMenu>
+                                                            <ContextMenu>
+                                                                <MenuItem Command="{Binding RemoveParticipantCommand}" InputGestureText="Del" Header="Remove Participant" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                                                            </ContextMenu>
+                                                        </ListBox.ContextMenu>
+                                                        <ListBox.InputBindings>
+                                                            <KeyBinding Command="{Binding RemoveParticipantCommand}" Key="Delete" CommandParameter="{Binding ElementName=ParticipantsListBox, Path=SelectedItem}"/>
+                                                        </ListBox.InputBindings>
                                                     </ListBox>
+                                                    <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource ParticipantBox}" Margin="2" MinWidth="50" />
+                                                    <Label Content="{Binding Leader.FullName}" DockPanel.Dock="Top" />
                                                 </DockPanel>
                                             </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
                                 </DockPanel>
                             </DataTemplate>
                         </ItemsControl.Resources>
@@ -350,18 +377,23 @@
                         </Border>
                         <GroupBox Header="Current Score" Margin="6">
                             <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto" SharedSizeGroup="Totals"/>
                                 </Grid.ColumnDefinitions>
                                 <Label Content="{Binding CurrentScoreIntersection, TargetNullValue='No score has been applied'}" Margin="8" />
                                 <Label FontSize="16" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Content="{Binding CurrentScoreIntersection.AverageMarks, FallbackValue=0}" ContentStringFormat="= {0}"/>
+                                <Button x:Name="ClearScoreButton" Margin="8" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Center"
+                                        Content="Clear Score" Foreground="{StaticResource ErrorColourKey}" Click="ClearScoreButton_Click" IsEnabled="False" />
                             </Grid>
                         </GroupBox>
                         <GroupBox Header="New Score" Margin="6">
                             <Grid>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
@@ -372,7 +404,7 @@
                                 <TextBox x:Name="NewScoreTextBox" Margin="8" FontSize="16" Grid.Row="0" PreviewKeyDown="NewScoreTextBox_PreviewKeyDown" KeyUp="NewScoreTextBox_KeyUp" />
                                 <Label x:Name="NewTotalScoreLabel" FontSize="16" Grid.Column="1" VerticalAlignment="Center" Foreground="{StaticResource NewColourKey}" HorizontalAlignment="Right" ContentStringFormat="= {0}">0</Label>
                                 <Button x:Name="ApplyScoreButton" Margin="8" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Center"
-                                        Content="{Binding UserName}" ContentStringFormat="Apply Score as {0} [Enter]" Click="ApplyScoreButton_Click" IsEnabled="False" />
+                                        Content="{Binding UserName}" ContentStringFormat="Apply Score as {0} [Enter]" Foreground="{StaticResource NewColourKey}" Click="ApplyScoreButton_Click" IsEnabled="False" />
                             </Grid>
                         </GroupBox>
                     </StackPanel>
@@ -381,7 +413,6 @@
             <TabItem x:Name="ScoringTab" Header="Scoring">
                 <DockPanel>
                     <WrapPanel DockPanel.Dock="Top">
-                        <Button Content="print Certificates" ToolTip="Export Selected Certificates" IsEnabled="False" />
                         <ItemsControl Tag="Teams" ItemsSource="{Binding ScoresheetFile.Teams}" Margin="4" 
                           d:ItemsSource="{d:SampleData ItemCount=2}">
                             <ItemsControl.ItemsPanel>
@@ -434,12 +465,7 @@
                                                             <StackPanel Orientation="Horizontal" Margin="0 0 24 0" Background="{StaticResource MarkerColourKey}">
                                                                 <TextBlock Text="{Binding Value}" Margin="4 2" FontWeight="Bold" VerticalAlignment="Center"/>
                                                                 <ItemsControl ItemsSource="{Binding Participants}" VerticalAlignment="Center" >
-                                                                        <ItemsControl.ItemsPanel>
-                                                                            <ItemsPanelTemplate>
-                                                                                <StackPanel Orientation="Horizontal"/>
-                                                                            </ItemsPanelTemplate>
-                                                                        </ItemsControl.ItemsPanel>
-                                                                    </ItemsControl>
+                                                                </ItemsControl>
                                                             </StackPanel>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>

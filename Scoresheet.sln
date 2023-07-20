@@ -5,7 +5,7 @@ VisualStudioVersion = 17.5.33424.131
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Scoresheet", "Scoresheet.csproj", "{91C6CAAC-0563-4387-8777-09672098F5CF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Examath.Core", "..\Examath\Examath.Core\Examath.Core.csproj", "{B05991E0-5C59-4F79-A59D-2A8832474118}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Examath.Core", "..\Examath\Core\Examath.Core.csproj", "{3109FB8B-2702-4F4E-9BAE-60BFCBFF3836}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{91C6CAAC-0563-4387-8777-09672098F5CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91C6CAAC-0563-4387-8777-09672098F5CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91C6CAAC-0563-4387-8777-09672098F5CF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B05991E0-5C59-4F79-A59D-2A8832474118}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B05991E0-5C59-4F79-A59D-2A8832474118}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B05991E0-5C59-4F79-A59D-2A8832474118}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B05991E0-5C59-4F79-A59D-2A8832474118}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3109FB8B-2702-4F4E-9BAE-60BFCBFF3836}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3109FB8B-2702-4F4E-9BAE-60BFCBFF3836}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3109FB8B-2702-4F4E-9BAE-60BFCBFF3836}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3109FB8B-2702-4F4E-9BAE-60BFCBFF3836}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

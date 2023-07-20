@@ -12,9 +12,9 @@ using System.Windows.Media;
 
 namespace Scoresheet.Exporters
 {
-    public partial class ParticipantListExporter
+    public class ParticipantListExporter
     {
-        public ScoresheetFile ScoresheetFile { get; set; }
+        private ScoresheetFile _ScoresheetFile { get; set; }
 
         public string SaveLocation { get; set; } = "C:\\temp\\doc.rtf";
         private FilePickerInput SaveLocationI;
@@ -25,11 +25,11 @@ namespace Scoresheet.Exporters
         public bool OpenAutomatically { get;set; } = true;
         private CheckBoxInput OpenAutomaticallyI;
 
-        private AskerOptions _AskerOptions = new("Export Participant-Items List", canCancel: true);
+        private AskerOptions _AskerOptions = new("Export IndividualParticipant-Items List", canCancel: true);
 
         public ParticipantListExporter(ScoresheetFile scoresheetFile)
         {
-            ScoresheetFile = scoresheetFile;
+            _ScoresheetFile = scoresheetFile;
             SaveLocationI = new(this, nameof(SaveLocation), "Location to Export to") { ExtensionFilter = "Rich Text Document|*.rtf", UseSaveFileDialog = true };
             AddChestNumbersI = new(this, nameof(AddChestNumbers), "Add chest numbers");
             OpenAutomaticallyI = new(this, nameof(OpenAutomatically), "Open file when complete");
@@ -44,7 +44,7 @@ namespace Scoresheet.Exporters
                     FontFamily = new FontFamily("Arial"),
                 };
 
-                foreach (CompetitionItem competitionItem in ScoresheetFile.CompetitionItems)
+                foreach (CompetitionItem competitionItem in _ScoresheetFile.CompetitionItems)
                 {
                     Section section = new();
                     string subTitle = "";
@@ -71,7 +71,7 @@ namespace Scoresheet.Exporters
                     TableRow headerRow = new();
                     TableRow personsRow = new();
 
-                    foreach (Team team in ScoresheetFile.Teams)
+                    foreach (Team team in _ScoresheetFile.Teams)
                     {
                         table.Columns.Add(new TableColumn() { Width = new GridLength(250) });
                         headerRow.Cells.Add(new TableCell(new Paragraph(new Run(
@@ -83,7 +83,7 @@ namespace Scoresheet.Exporters
 
                     foreach (IndividualParticipant individualParticipant in competitionItem.IndividualParticipants)
                     {
-                        int teamIndex = (individualParticipant.Team != null) ? ScoresheetFile.Teams.IndexOf(individualParticipant.Team) : 0;
+                        int teamIndex = (individualParticipant.Team != null) ? _ScoresheetFile.Teams.IndexOf(individualParticipant.Team) : 0;
                         string participantRep = (AddChestNumbers) ? individualParticipant.ToString() : individualParticipant.FullName;
                         personsRow.Cells[teamIndex].Blocks.Add(new Paragraph(new Run(participantRep)));
                     }

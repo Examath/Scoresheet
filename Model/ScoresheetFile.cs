@@ -80,7 +80,7 @@ namespace Scoresheet.Model
             foreach (CompetitionItem competitionItem in CompetitionItems)
             {
                 await Task.Run(() => competitionItem.Initialize(this));
-                competitionItem.ScoreAdded += CompetitionItem_ScoreAdded;
+                competitionItem.ScoreChanged += CompetitionItem_ScoreChanged;
                 competitionItemInit.Increment();
             }
 
@@ -92,12 +92,12 @@ namespace Scoresheet.Model
 
         #region Scoring
 
-        public event EventHandler<ScoreAddedEventArgs>? ScoreAdded;
+        public event EventHandler<ScoreChangedEventArgs>? ScoreChanged;
 
-        private void CompetitionItem_ScoreAdded(object? sender, ScoreAddedEventArgs e)
+        private void CompetitionItem_ScoreChanged(object? sender, ScoreChangedEventArgs e)
         {
             UpdateTeamTotals();
-            ScoreAdded?.Invoke(this, e);
+            ScoreChanged?.Invoke(this, e);
         }
 
         private void UpdateTeamTotals()

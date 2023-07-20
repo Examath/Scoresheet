@@ -26,18 +26,18 @@ namespace Scoresheet.Model
 
         private string _LeaderFromXML = "";
 
-        [XmlAttribute("Participants")]
+        [XmlAttribute("Leader")]
         public string LeaderXML
         {
-            get => Leader.ChestNumber.ToString() ?? "-1";
+            get => Leader?.ChestNumber.ToString() ?? "-1";
             set => _LeaderFromXML = value;
         }
 
-        [XmlIgnore]
         private IndividualParticipant? _Leader = null;
         /// <summary>
         /// Gets or sets the leader of this group
         /// </summary>
+        [XmlIgnore]
         public IndividualParticipant? Leader
         {
             get => _Leader;

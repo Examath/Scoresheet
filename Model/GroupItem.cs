@@ -25,9 +25,12 @@ namespace Scoresheet.Model
         public override IEnumerable<Participant> Participants => GroupParticipants;
 
         [RelayCommand]
-        public void CreateGroupParticipant(IList<IndividualParticipant> individualParticipants)
+        public void CreateGroupParticipant(object param)
         {
-            if (individualParticipants.Count == 0) return;
+            System.Collections.IList items = (System.Collections.IList)param;
+            List<IndividualParticipant> individualParticipants = items.Cast<IndividualParticipant>().ToList();
+
+            if (individualParticipants.Count() == 0) return;
 
             // Check Team
             Team? team = individualParticipants.First().Team;
@@ -44,18 +47,21 @@ namespace Scoresheet.Model
             GroupParticipant groupParticipant = new()
             {
                 Team = team,
-                IndividualParticipants = (ObservableCollection<IndividualParticipant>)individualParticipants,
-                ChestNumber = GroupParticipants.LastOrDefault()?.ChestNumber ?? _ScoresheetFile?.GetChessNumberBase(null, team) ?? 1000,
+                IndividualParticipants = new ObservableCollection<IndividualParticipant>(individualParticipants),
+                ChestNumber = GroupParticipants.Where(gp => gp.Team == team).LastOrDefault()?.ChestNumber + 1 ?? _ScoresheetFile?.GetChessNumberBase(null, team) ?? 1000,
             };
 
-            EditGroupParticipant(groupParticipant);
-
+            _ScoresheetFile?.OnModified(this);
             GroupParticipants.Add(groupParticipant);
+
+            EditGroupParticipant(groupParticipant);
         }
 
         [RelayCommand]
-        public void AddToExistingGroupParticipant(IList<IndividualParticipant> individualParticipants)
+        public void AddToExistingGroupParticipant(object param)
         {
+            System.Collections.IList items = (System.Collections.IList)param;
+            List<IndividualParticipant> individualParticipants = items.Cast<IndividualParticipant>().ToList();
             if (individualParticipants.Count == 0) return;
 
             // Check Team
@@ -76,6 +82,8 @@ namespace Scoresheet.Model
                 {
                     groupParticipant.IndividualParticipants.Add(individualParticipant);
                 }
+
+                _ScoresheetFile?.OnModified(groupParticipant);
             }
         }
 
@@ -93,7 +101,32 @@ namespace Scoresheet.Model
                 {
                     groupParticipant.ChestNumber = chestNumberQ.Value;
                 }
+                _ScoresheetFile?.OnModified(groupParticipant) ;
             }
+
+        }
+
+        [RelayCommand]
+        public void RemoveGroupParticipant(GroupParticipant? groupParticipant)
+        {
+            if (groupParticipant != null)
+            {
+                if (Scores.Where(s => s.ParticipantChestNumber == groupParticipant.ChestNumber).Any()) // Score given
+                {
+                    Messager.Out("This group participant has already been marked and so cannot be removed", "Cannot remove group", ConsoleStyle.WarningBlockStyle);
+                    return;
+                }
+
+                GroupParticipants.Remove(groupParticipant);
+                _ScoresheetFile?.OnModified(this);
+            }
+        }
+
+        public override void Initialize(ScoresheetFile scoresheetFile)
+        {
+            base.Initialize(scoresheetFile);
+
+            foreach(GroupParticipant participant in GroupParticipants) participant.Initialize(scoresheetFile);
         }
     }
 }
