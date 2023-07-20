@@ -60,6 +60,8 @@ namespace Scoresheet.Model
 
         #endregion
 
+        #region Init
+
         /// <summary>
         /// Call after loading from XML. Matches the correct <see cref="LevelDefinition"/>s to each <see cref="CompetitionItem"/>
         /// </summary>
@@ -71,8 +73,8 @@ namespace Scoresheet.Model
             ProgressWindow progressWindow = new(participantInit, competitionItemInit);
             progressWindow.Show();
 
-            foreach (IndividualParticipant individualParticipant in IndividualParticipants) 
-            { 
+            foreach (IndividualParticipant individualParticipant in IndividualParticipants)
+            {
                 await Task.Run(() => individualParticipant.Initialize(this));
                 participantInit.Increment();
             }
@@ -89,6 +91,14 @@ namespace Scoresheet.Model
             await Task.Delay(500);
             progressWindow.Close();
         }
+
+        #endregion
+
+        #region Exports
+
+        public string TemplateLocation { get; set; } = "C:\\temp\\doc.docx";
+
+        #endregion
 
         #region Scoring
 

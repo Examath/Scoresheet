@@ -19,7 +19,7 @@ namespace Scoresheet.Exporters
         private const string ITEMS_FIELD = "${Items}";
 
         private ScoresheetFile _ScoresheetFile { get; set; }
-        public string TemplateLocation { get; set; } = "C:\\temp\\doc.docx";
+
         private FilePickerInput TemplateLocationI;
 
         public string SaveLocation { get; set; } = "C:\\temp\\doc.docx";
@@ -33,7 +33,7 @@ namespace Scoresheet.Exporters
         public CertificateExporter(ScoresheetFile scoresheetFile)
         {
             _ScoresheetFile = scoresheetFile;
-            TemplateLocationI = new(this, nameof(TemplateLocation), "Template to use")
+            TemplateLocationI = new(scoresheetFile, nameof(scoresheetFile.TemplateLocation), "Template to use")
             {
                 ExtensionFilter = "Word Document (*.docx)|*.docx;*.dotx",
                 HelpText = $"Select a Word document with the generation code to use as a template for the certificates.",
@@ -54,18 +54,41 @@ namespace Scoresheet.Exporters
             {
                 try
                 {
-                    using var template = WordprocessingDocument.Open(TemplateLocation, false);
+                    using var template = WordprocessingDocument.Open(_ScoresheetFile.TemplateLocation, false);
                     using var gen = (WordprocessingDocument)template.Clone(SaveLocation, true);
-                    if (gen?.MainDocumentPart?.Document.Body is Body body &&
-                        body.Descendants<Text>().FirstOrDefault(t => t.Text.Contains(NAME_FIELD)) is Text name &&
-                        body.Descendants<Paragraph>().FirstOrDefault(p => p.InnerText.Contains(ITEMS_FIELD)) is Paragraph itemTemplate)
+                    if (gen?.MainDocumentPart?.Document.Body is Body body)
                     {
+                        // Name
+                        Text? name = body.Descendants<Text>().FirstOrDefault(t => t.Text.Contains(NAME_FIELD));
+                        if (name == null)
+                        {
+                            Messager.Out($"{NAME_FIELD} could not be found in template. Check that it exists and formatting has been cleared.", "Template error", ConsoleStyle.FormatBlockStyle);
+                            return;
+                        }
                         string nameFormat = name.Text;
-                        itemTemplate.RemoveAllChildren();
+
+                        // Items
+                        Paragraph? itemTemplate = body.Descendants<Paragraph>().FirstOrDefault(p => p.InnerText.Contains(ITEMS_FIELD));
+                        if (itemTemplate == null)
+                        {
+                            Messager.Out($"{ITEMS_FIELD} paragraph not found in template.", "Template error", ConsoleStyle.WarningBlockStyle);
+                            return;
+                        }
+
+                        ParagraphStyleId? itemStyle = itemTemplate.ParagraphProperties?.ParagraphStyleId; 
+                        if (itemStyle == null)
+                        {
+                            Messager.Out($"{ITEMS_FIELD} paragraph does not have a style attached. Define a new paragraph style and assign it to the paragraph", "Template error", ConsoleStyle.WarningBlockStyle);
+                            return;
+                        }
+
+                        // Other Blocks
                         List<OpenXmlElement> source = body.ChildElements.ToList();
                         body.RemoveAllChildren();
+
                         foreach (CertificateData certificateData in certificates)
                         {
+                            // Set Name
                             name.Text = nameFormat.Replace(NAME_FIELD, certificateData.IndividualParticipant.FullName);
                             foreach (var item in source)
                             {
@@ -78,20 +101,24 @@ namespace Scoresheet.Exporters
                                 {
                                     foreach (ScoreRecord scoreRecord in certificateData.Items)
                                     {
-                                        Paragraph element = (Paragraph)itemTemplate.Clone();
-                                        body.AppendChild(element);
+                                        Paragraph element = body.AppendChild(new Paragraph());
+                                        ParagraphProperties paragraphProperties = element.PrependChild(new ParagraphProperties());
+                                        paragraphProperties.ParagraphStyleId = new ParagraphStyleId() { Val = itemStyle.Val};
+
                                         Run run = element.AppendChild(new Run());
-                                        run.AppendChild(new Text(scoreRecord.CompetitionItem.Name));
+                                        Text text = run.AppendChild(new Text(scoreRecord.CompetitionItem.Name));
                                         if (scoreRecord.Place <= Scoresheet.Properties.Settings.Default.NumberOfPlaces)
                                         {
-                                            Run plrun = element.AppendChild(new Run());
-                                            plrun.AppendChild(new Text($" ({Place.AddOrdinal(scoreRecord.Place ?? 0)})"));
+                                            text.Text += $" ({Place.AddOrdinal(scoreRecord.Place ?? 0)})";
                                         }
                                     }
                                 }
                             }
                         }
-
+                    }
+                    else
+                    {
+                        Messager.Out("Template body is null", "Error reading template", ConsoleStyle.FormatBlockStyle);
                     }
                 }
                 catch (Exception e)

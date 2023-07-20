@@ -14,6 +14,9 @@ namespace Scoresheet.Model
     {
         private string _IndividualParticipantsFromXML = "";
 
+        /// <summary>
+        /// Gets a comma separated list of chestnumbers of the participants in this group
+        /// </summary>
         [XmlAttribute("Participants")]
         public string IndividualParticipantsXML
         {
@@ -21,11 +24,23 @@ namespace Scoresheet.Model
             set => _IndividualParticipantsFromXML = value;
         }
 
+        /// <summary>
+        /// Gets the list of participants in this group
+        /// </summary>
         [XmlIgnore]
-        public ObservableCollection<IndividualParticipant> IndividualParticipants { get; set; } = new();
+        public ObservableCollection<IndividualParticipant> IndividualParticipants { get; private set; } = new();
+
+        /// <summary>
+        /// Gets a new line separated list of thee full names of the participants in this group
+        /// </summary>
+        [XmlIgnore]
+        public string ParticipantString { get => string.Join('\n', IndividualParticipants); }
 
         private string _LeaderFromXML = "";
 
+        /// <summary>
+        /// Gets the chest number of the leader of this group
+        /// </summary>
         [XmlAttribute("Leader")]
         public string LeaderXML
         {
@@ -44,6 +59,11 @@ namespace Scoresheet.Model
             set => SetProperty(ref _Leader, value);
         }
 
+        /// <summary>
+        /// Removes <paramref name="participant"/> from this group, 
+        /// including as leader if <paramref name="participant"/> is <see cref="Leader"/>
+        /// </summary>
+        /// <param name="participant"></param>
         [RelayCommand]
         public void RemoveParticipant(IndividualParticipant? participant)
         {
@@ -61,6 +81,7 @@ namespace Scoresheet.Model
         public override void Initialize(ScoresheetFile scoresheetFile)
         {
             base.Initialize(scoresheetFile);
+            IndividualParticipants.CollectionChanged += IndividualParticipants_CollectionChanged;
 
             // Parse leader
             if(!int.TryParse(_LeaderFromXML, out int leaderChestNumber)) leaderChestNumber = -1;
@@ -80,5 +101,9 @@ namespace Scoresheet.Model
             }
         }
 
+        private void IndividualParticipants_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(ParticipantString));
+        }
     }
 }

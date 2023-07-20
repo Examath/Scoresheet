@@ -191,17 +191,6 @@ namespace Scoresheet.Model
             private set => SetProperty(ref _Winners, value);
         }
 
-        private string _ScoreBreakdown = "";
-        /// <summary>
-        /// Gets the breakdown of scores to each team 
-        /// </summary>
-        public string ScoreBreakdown
-        {
-            get => _ScoreBreakdown;
-            set => SetProperty(ref _ScoreBreakdown, value);
-        }
-
-
         #endregion
 
         /// <summary>

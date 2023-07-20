@@ -124,9 +124,10 @@
             </DataTemplate>
 
             <DataTemplate DataType="{x:Type model:GroupParticipant}">
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal" ToolTip="{Binding ParticipantString}">
                     <ContentPresenter ContentTemplate="{StaticResource ParticipantBox}"/>
-                    <TextBlock Margin="2 0" Text="{Binding Leader.FullName}"/>
+                    <TextBlock Margin="4 0" Text="{Binding IndividualParticipants.Count}"/>
+                    <TextBlock Margin="2 0" Foreground="{StaticResource ForegroundMinorColourKey}" Text="{Binding Leader.FullName}"/>
                 </StackPanel>
             </DataTemplate>
 

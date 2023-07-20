@@ -451,10 +451,10 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="Winners" Width="900">
+                                    <GridViewColumn Header="Winners" Width="750">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate DataType="{x:Type model:CompetitionItem}">
-                                                <ItemsControl ItemsSource="{Binding Winners}" Height="22" Margin="2">
+                                                <ItemsControl ItemsSource="{Binding Winners}" MinHeight="20"  Margin="2">
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
                                                             <StackPanel Orientation="Horizontal"/>
@@ -462,7 +462,7 @@
                                                     </ItemsControl.ItemsPanel>
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate DataType="{x:Type model:Place}">
-                                                            <StackPanel Orientation="Horizontal" Margin="0 0 24 0" Background="{StaticResource MarkerColourKey}">
+                                                            <StackPanel Orientation="Horizontal" Margin="0 0 24 0" MinWidth="250" Background="{StaticResource MarkerColourKey}">
                                                                 <TextBlock Text="{Binding Value}" Margin="4 2" FontWeight="Bold" VerticalAlignment="Center"/>
                                                                 <ItemsControl ItemsSource="{Binding Participants}" VerticalAlignment="Center" >
                                                                 </ItemsControl>
