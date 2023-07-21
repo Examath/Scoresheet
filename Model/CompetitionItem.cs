@@ -1,4 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Examath.Core.Environment;
 using Scoresheet.Properties;
 using System;
 using System.Collections.Generic;
@@ -14,7 +16,7 @@ namespace Scoresheet.Model
     /// <remarks>
     /// Must be initialised when loaded from XML
     /// </remarks>
-    public partial class CompetitionItem : ObservableObject
+    public abstract partial class CompetitionItem : ObservableObject
     {
         protected ScoresheetFile? _ScoresheetFile;
 
@@ -104,6 +106,37 @@ namespace Scoresheet.Model
         [XmlIgnore]
         public virtual IEnumerable<Participant> Participants => IndividualParticipants;
 
+        [RelayCommand]
+        public void SearchAndAddParticipant()
+        {
+            SearchAddParticipantFunc();
+        }
+
+        protected IndividualParticipant? SearchAddParticipantFunc(GroupParticipant? gp = null)
+        {
+            if (_ScoresheetFile != null)
+            {
+                List<IndividualParticipant> validParticipants = 
+                    _ScoresheetFile.IndividualParticipants.Where(p =>
+                    {
+                        return Level.Within(p.YearLevel) && 
+                        !IndividualParticipants.Contains(p) && 
+                        (gp == null || (p.Team == gp.Team && !gp.IndividualParticipants.Contains(p)));
+                    })                   
+                    .ToList();
+                if (Searcher.Select(validParticipants, "Select participant") is IndividualParticipant result)
+                {
+                    result.JoinCompetition(this);
+                    return result;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            else return null;
+        }
+
         #endregion
 
         #region Scoring
@@ -129,14 +162,14 @@ namespace Scoresheet.Model
             RemoveScoresOf(participant);
             Score newScore = new(participant, marks, author);
             Scores.Add(newScore);
-            CalculateWinners();
+            ReCalculateWinners();
             ScoreChanged?.Invoke(this, new(this, participant, newScore));
         }
 
         internal void ClearScore(Participant participant)
         {
             RemoveScoresOf(participant);
-            CalculateWinners();
+            ReCalculateWinners();
             ScoreChanged?.Invoke(this, new(this, participant, null));
         }
 
@@ -151,7 +184,7 @@ namespace Scoresheet.Model
 
         public event EventHandler<ScoreChangedEventArgs>? ScoreChanged;
 
-        private void CalculateWinners()
+        public void ReCalculateWinners()
         {
             List<Place> winners = new();
             int place = 0;
@@ -162,7 +195,7 @@ namespace Scoresheet.Model
                 if (score.Participant != null)
                 {
                     double mark = score.AverageMarks;
-                    
+
                     // New place
                     if (mark < currentMinMark)
                     {
@@ -176,9 +209,26 @@ namespace Scoresheet.Model
                     if (place <= Settings.Default.NumberOfPlaces) winners.Last().Participants.Add(score.Participant);
                 }
             }
-
             Winners = winners;
+
+            if (_ScoresheetFile == null) return;
+
+            double[] points = new double[_ScoresheetFile.Teams.Count];
+
+            foreach (Place placeW in winners)
+            {
+                foreach (Participant participant in placeW.Participants)
+                {
+                    if (participant.Team != null) points[_ScoresheetFile.Teams.IndexOf(participant.Team)] += GetPlacePoints(placeW);
+                }
+            }
+
+            PointsRoundUp = points;
         }
+
+        protected abstract double[] _PlacePoints { get; }
+
+        private double GetPlacePoints(Place place) => _PlacePoints[Math.Min(place.ValueInt - 1, _PlacePoints.Length)];
 
         private List<Place> _Winners = new();
         /// <summary>
@@ -189,6 +239,17 @@ namespace Scoresheet.Model
         {
             get => _Winners;
             private set => SetProperty(ref _Winners, value);
+        }
+
+        private double[]? _PointsRoundUp;
+        /// <summary>
+        /// Gets the points awarded ot each team
+        /// </summary>
+        [XmlIgnore]
+        public double[]? PointsRoundUp
+        {
+            get => _PointsRoundUp;
+            private set => SetProperty(ref _PointsRoundUp, value);
         }
 
         #endregion
@@ -207,7 +268,7 @@ namespace Scoresheet.Model
             }
 
             foreach (Score score in Scores) score.Initialize(Participants);
-            CalculateWinners();
+            ReCalculateWinners();
         }
 
         /// <summary>

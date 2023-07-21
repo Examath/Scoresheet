@@ -14,6 +14,9 @@ namespace Scoresheet.Model
             Value = AddOrdinal(value);
         }
 
+        /// <summary>
+        /// Gets a list of one or more participants that won this place
+        /// </summary>
         public List<Participant> Participants { get; set; } = new();
 
         /// <summary>

@@ -4,8 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 namespace Scoresheet.Model
@@ -24,9 +22,23 @@ namespace Scoresheet.Model
         /// </summary>
         public override IEnumerable<Participant> Participants => GroupParticipants;
 
+        protected override double[] _PlacePoints => new double[] { 50, 20, 10, 0 };
+
+        [RelayCommand]
+        public void SearchAndAddParticipantToGroup(GroupParticipant? groupParticipant)
+        {
+            IndividualParticipant? result = SearchAddParticipantFunc(groupParticipant);
+
+            if (result != null && groupParticipant != null)
+            {
+                groupParticipant.IndividualParticipants.Add(result);
+            }
+        }
+
         [RelayCommand]
         public void CreateGroupParticipant(object param)
         {
+            if (_ScoresheetFile == null) return;
             System.Collections.IList items = (System.Collections.IList)param;
             List<IndividualParticipant> individualParticipants = items.Cast<IndividualParticipant>().ToList();
 
@@ -44,14 +56,13 @@ namespace Scoresheet.Model
             }
 
             // Create Group
-            GroupParticipant groupParticipant = new()
+            GroupParticipant groupParticipant = new(_ScoresheetFile, new ObservableCollection<IndividualParticipant>(individualParticipants))
             {
                 Team = team,
-                IndividualParticipants = new ObservableCollection<IndividualParticipant>(individualParticipants),
                 ChestNumber = GroupParticipants.Where(gp => gp.Team == team).LastOrDefault()?.ChestNumber + 1 ?? _ScoresheetFile?.GetChessNumberBase(null, team) ?? 1000,
             };
 
-            _ScoresheetFile?.OnModified(this);
+            _ScoresheetFile?.NotifyChange(this);
             GroupParticipants.Add(groupParticipant);
 
             EditGroupParticipant(groupParticipant);
@@ -76,14 +87,14 @@ namespace Scoresheet.Model
             }
 
             // Add to Group
-            if(Searcher.Select(GroupParticipants.Where((g) => g.Team == team).ToList(), "Select group to add to") is GroupParticipant groupParticipant)
+            if (Searcher.Select(GroupParticipants.Where((g) => g.Team == team).ToList(), "Select group to add to") is GroupParticipant groupParticipant)
             {
                 foreach (IndividualParticipant individualParticipant in individualParticipants)
                 {
-                    groupParticipant.IndividualParticipants.Add(individualParticipant);
+                    if (!groupParticipant.IndividualParticipants.Contains(individualParticipant)) groupParticipant.IndividualParticipants.Add(individualParticipant);
                 }
 
-                _ScoresheetFile?.OnModified(groupParticipant);
+                _ScoresheetFile?.NotifyChange(groupParticipant);
             }
         }
 
@@ -96,12 +107,12 @@ namespace Scoresheet.Model
                 IntQ chestNumberQ = new(groupParticipant.ChestNumber, "Chest Number");
                 Asker.Show(new("Edit Group"), comboBoxI, chestNumberQ);
 
-                if (chestNumberQ.Value != groupParticipant.ChestNumber 
+                if (chestNumberQ.Value != groupParticipant.ChestNumber
                     && GroupParticipants.Where((g) => g.ChestNumber == chestNumberQ.Value).Count() == 0)
                 {
                     groupParticipant.ChestNumber = chestNumberQ.Value;
                 }
-                _ScoresheetFile?.OnModified(groupParticipant) ;
+                _ScoresheetFile?.NotifyChange(groupParticipant);
             }
 
         }
@@ -113,20 +124,19 @@ namespace Scoresheet.Model
             {
                 if (Scores.Where(s => s.ParticipantChestNumber == groupParticipant.ChestNumber).Any()) // Score given
                 {
-                    Messager.Out("This group participant has already been marked and so cannot be removed", "Cannot remove group", ConsoleStyle.WarningBlockStyle);
+                    Messager.Out("This group result has already been marked and so cannot be removed", "Cannot remove group", ConsoleStyle.WarningBlockStyle);
                     return;
                 }
 
                 GroupParticipants.Remove(groupParticipant);
-                _ScoresheetFile?.OnModified(this);
+                _ScoresheetFile?.NotifyChange(this);
             }
         }
 
         public override void Initialize(ScoresheetFile scoresheetFile)
         {
+            foreach (GroupParticipant participant in GroupParticipants) participant.Initialize(scoresheetFile);
             base.Initialize(scoresheetFile);
-
-            foreach(GroupParticipant participant in GroupParticipants) participant.Initialize(scoresheetFile);
         }
     }
 }

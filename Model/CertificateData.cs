@@ -20,10 +20,22 @@ namespace Scoresheet.Model
 
     internal class ScoreRecord
     {
+        /// <summary>
+        /// gets the competition item this score was gained for
+        /// </summary>
         public CompetitionItem CompetitionItem { get; private set; }
 
+        /// <summary>
+        /// <inheritdoc cref="Score.AverageMarks"/>
+        /// </summary>
         public double Marks { get; private set; }
 
+        /// <summary>
+        /// <inheritdoc cref="Score.Place"/>
+        /// </summary>
+        /// <remarks>
+        /// <inheritdoc cref="Score.Place"/>
+        /// </remarks>
         public int? Place { get; private set; }
 
         public ScoreRecord(CompetitionItem competitionItem, Score score)

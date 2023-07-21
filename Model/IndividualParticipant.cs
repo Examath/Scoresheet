@@ -142,9 +142,6 @@ namespace Scoresheet.Model
             set => SetProperty(ref _SubmissionName, value);
         }
 
-        [XmlElement("SubmissionFullName")]
-        public string SFN { get => ""; set { if (!string.IsNullOrEmpty(value)) SubmissionFullName = value; } }
-
         #endregion
 
         #region Competition items

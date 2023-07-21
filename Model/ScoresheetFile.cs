@@ -22,9 +22,21 @@ namespace Scoresheet.Model
 
         public DateTime LastSavedTime { get; set; } = DateTime.Now;
 
-        private readonly double[] PlacePoints = { 50, 20, 10 };
-
         public string LastAuthor { get; set; } = "Null";
+        
+        #region Exports
+
+        private string _TemplateLocation =  "C:\\temp\\doc.docx";
+        /// <summary>
+        /// Gets or sets the template location
+        /// </summary>
+        public string TemplateLocation
+        {
+            get => _TemplateLocation;
+            set => SetProperty(ref _TemplateLocation, value);
+        }
+
+        #endregion
 
         #region DefinitionObjects
 
@@ -73,30 +85,34 @@ namespace Scoresheet.Model
             ProgressWindow progressWindow = new(participantInit, competitionItemInit);
             progressWindow.Show();
 
-            foreach (IndividualParticipant individualParticipant in IndividualParticipants)
+            try
             {
-                await Task.Run(() => individualParticipant.Initialize(this));
-                participantInit.Increment();
+                foreach (IndividualParticipant individualParticipant in IndividualParticipants)
+                {
+                    await Task.Run(() => individualParticipant.Initialize(this));
+                    participantInit.Increment();
+                }
+
+                foreach (CompetitionItem competitionItem in CompetitionItems)
+                {
+                    await Task.Run(() => competitionItem.Initialize(this));
+                    competitionItem.ScoreChanged += CompetitionItem_ScoreChanged;
+                    competitionItemInit.Increment();
+                }
+            }
+            catch (Exception e)
+            {
+
+                throw;
             }
 
-            foreach (CompetitionItem competitionItem in CompetitionItems)
-            {
-                await Task.Run(() => competitionItem.Initialize(this));
-                competitionItem.ScoreChanged += CompetitionItem_ScoreChanged;
-                competitionItemInit.Increment();
-            }
+
 
             UpdateTeamTotals();
 
             await Task.Delay(500);
             progressWindow.Close();
         }
-
-        #endregion
-
-        #region Exports
-
-        public string TemplateLocation { get; set; } = "C:\\temp\\doc.docx";
 
         #endregion
 
@@ -110,20 +126,25 @@ namespace Scoresheet.Model
             ScoreChanged?.Invoke(this, e);
         }
 
-        private void UpdateTeamTotals()
+        public void UpdateTeamTotals()
         {
+            double[] points = new double[Teams.Count];
+
             foreach (CompetitionItem competitionItem in CompetitionItems)
             {
-                foreach (Place place in competitionItem.Winners)
+                if (competitionItem.PointsRoundUp != null)
                 {
-                    foreach (Participant participant in place.Participants)
+                    for (int i = 0; i < competitionItem.PointsRoundUp.Length; i++)
                     {
-                        if (participant.Team != null) participant.Team.PointsTray += PlacePoints[Math.Min(place.ValueInt - 1, PlacePoints.Length)];
+                        points[i] += competitionItem.PointsRoundUp[i];
                     }
                 }
             }
 
-            foreach (Team team in Teams) team.SetPoints();
+            for (int i = 0; i < Teams.Count; i++)
+            {
+                Teams[i].Points = points[i];
+            }
         }
 
         #endregion
@@ -168,7 +189,7 @@ namespace Scoresheet.Model
 
         public event EventHandler? Modified;
 
-        internal void OnModified(object? sender = null)
+        internal void NotifyChange(object? sender = null)
         {
             Modified?.Invoke(sender ?? this, EventArgs.Empty);
         }

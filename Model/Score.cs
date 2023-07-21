@@ -82,6 +82,12 @@ namespace Scoresheet.Model
             else return Marks.Average().CompareTo(other.Marks.Average());
         }
 
+        /// <summary>
+        /// Gets the place of this score.
+        /// </summary>
+        /// <remarks>
+        /// This starts at 1
+        /// </remarks>
         [XmlIgnore]
         public int? Place { get; set; }
 

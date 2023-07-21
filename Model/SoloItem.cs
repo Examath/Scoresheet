@@ -11,5 +11,7 @@ namespace Scoresheet.Model
     {
         [XmlAttribute]
         public bool IsOnStage { get; set; }
+
+        protected override double[] _PlacePoints => new double[] { 10, 8, 5, 0};
     }
 }

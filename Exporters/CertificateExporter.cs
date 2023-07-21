@@ -28,6 +28,9 @@ namespace Scoresheet.Exporters
         public bool OpenAutomatically { get; set; } = true;
         private CheckBoxInput OpenAutomaticallyI;
 
+        public List<string> PlaceEnumeration { get; set; } = new() { "First Place", "Second Place", "Third Place" };
+        private ListTextBoxInput PlaceEnumerationI;
+
         private AskerOptions _AskerOptions = new("Export Certificates", canCancel: true);
 
         public CertificateExporter(ScoresheetFile scoresheetFile)
@@ -40,8 +43,7 @@ namespace Scoresheet.Exporters
             };
             SaveLocationI = new(this, nameof(SaveLocation), "Location to Export to") { ExtensionFilter = "Word Document (.docx)|*.docx", UseSaveFileDialog = true };
             OpenAutomaticallyI = new(this, nameof(OpenAutomatically), "Open file when complete");
-
-            DocumentFormat.OpenXml.Int16Value i = new();
+            PlaceEnumerationI = new(this, nameof(PlaceEnumeration), "Place Enum") { Separator = ","};
         }
 
         public async Task Export(List<IndividualParticipant> selectedParticipants)
@@ -50,7 +52,7 @@ namespace Scoresheet.Exporters
 
             AskerNote askerNote = new($"Export certificates for {certificates.Count} participants");
 
-            if (Asker.Show(_AskerOptions, askerNote, TemplateLocationI, SaveLocationI, OpenAutomaticallyI))
+            if (Asker.Show(_AskerOptions, askerNote, TemplateLocationI, SaveLocationI, OpenAutomaticallyI, PlaceEnumerationI))
             {
                 try
                 {
@@ -107,9 +109,9 @@ namespace Scoresheet.Exporters
 
                                         Run run = element.AppendChild(new Run());
                                         Text text = run.AppendChild(new Text(scoreRecord.CompetitionItem.Name));
-                                        if (scoreRecord.Place <= Scoresheet.Properties.Settings.Default.NumberOfPlaces)
+                                        if (scoreRecord.Place <= PlaceEnumeration.Count)
                                         {
-                                            text.Text += $" ({Place.AddOrdinal(scoreRecord.Place ?? 0)})";
+                                            text.Text += $" ({PlaceEnumeration[scoreRecord.Place - 1 ?? 0]})";
                                         }
                                     }
                                 }

@@ -118,7 +118,7 @@ namespace Scoresheet
                 }
                 catch (Exception e)
                 {
-                    if (Messager.OutException(e, yesButtonText: "Try Again", isCancelButtonVisible: true) == System.Windows.Forms.DialogResult.Yes)
+                    if (Messager.OutException(e, "Loading", yesButtonText: "Try Again", isCancelButtonVisible: true) == System.Windows.Forms.DialogResult.Yes)
                         continue;
                     else
                         break;

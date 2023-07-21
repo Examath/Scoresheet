@@ -78,7 +78,7 @@ namespace Scoresheet.Model
         protected override void OnPropertyChanged(PropertyChangedEventArgs e)
         {
             base.OnPropertyChanged(e);
-            _ScoresheetFile?.OnModified(this);
+            _ScoresheetFile?.NotifyChange(this);
         }
     }
 }

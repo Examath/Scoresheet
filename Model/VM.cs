@@ -192,6 +192,8 @@ namespace Scoresheet.Model
             formatterDialog.ShowDialog();
         }
 
+        public List<string>? EditableItemCodes { get; set; }
+
         private readonly AskerOptions _EditParticipantAskerOptions = new(title: "Edit IndividualParticipant", canCancel: true);
 
         [RelayCommand]
@@ -199,19 +201,33 @@ namespace Scoresheet.Model
         {
             AskerNote note = new($"This dialog creates and applies a new submission to {individualParticipant.FullName}.");
 
-            StringQ itemsQ = new(label: "Item Codes", defaultValue: individualParticipant.CompetitionItemsXML)
+            EditableItemCodes = individualParticipant.CompetitionItems.Select(ci => ci.Code).ToList();
+            ListTextBoxInput itemsI = new(this, nameof(EditableItemCodes), label: "Item Codes")
             {
-                HelpText = "Modify the items here. Each item has a unique code consisting of it's name followed by the level abbreviations, separated by commas. " +
-                "The codes must be an exact match. The codes are case and spacing sensitive.",
+                HelpText = "Modify the items here. Each item has a unique code consisting of it's name followed by the level abbreviations, separated by new lines. " +
+                "The codes must be an exact match. This is case and space sensitive.",
             };
 
-            if (Asker.Show(_EditParticipantAskerOptions, _UserNameI, itemsQ))
+            if (Asker.Show(_EditParticipantAskerOptions, _UserNameI, itemsI))
             {
-                if (itemsQ.Value == individualParticipant.CompetitionItemsXML) return;
+                if (EditableItemCodes == individualParticipant.CompetitionItems.Select(ci => ci.Code).ToList()) return;
+                List<CompetitionItem> alreadyScored = new();
 
-                foreach (string code in itemsQ.Value.Split(','))
+                foreach (string code in EditableItemCodes)
                 {
-                    if (ScoresheetFile.CompetitionItems.FindIndex((x) => x.Code == code) == -1)
+                    if (ScoresheetFile.CompetitionItems.FirstOrDefault((x) => x.Code == code) is CompetitionItem competitionItem)
+                    {
+                        if (competitionItem.GetIntersection(individualParticipant) != null) alreadyScored.Add(competitionItem);
+                        if (!competitionItem.Level.Within(individualParticipant.YearLevel))
+                        {
+                            Messager.Out(
+                                $"{competitionItem.Name} is for {competitionItem.Level.Name} (between years {competitionItem.Level.LowerBound} and {competitionItem.Level.UpperBound}) but {individualParticipant.FullName} is in year {individualParticipant.YearLevel}. \nNo edits will be made.",
+                                title: "Invalid Item Level",
+                                messageStyle: ConsoleStyle.FormatBlockStyle);
+                            return;
+                        }
+                    }
+                    else
                     {
                         Messager.Out(
                             $"Competition item '{code}' was not found.\nVerify that the name, case, spacing and level-code are correct.\nNo edits will be made.",
@@ -221,8 +237,18 @@ namespace Scoresheet.Model
                     }
                 }
 
+                if (alreadyScored.Count > 0 &&
+                    Messager.Out($"{individualParticipant.FullName} already has scores assigned to them for {string.Join(", ", alreadyScored)}. This could cause unpredictable behavior. Are you sure you want to modify?",
+                    "Participant already marked",
+                    ConsoleStyle.WarningBlockStyle,
+                    isCancelButtonVisible: true
+                    ) != DialogResult.Yes)
+                {
+                    return;
+                }
+
                 individualParticipant.UnjoinAllCompetitions();
-                individualParticipant.JoinCompetitions(itemsQ.Value.Split(','));
+                individualParticipant.JoinCompetitions(EditableItemCodes.ToArray());
                 individualParticipant.SubmissionEmail = UserName;
                 individualParticipant.SubmissionFullName = individualParticipant.FullName;
                 individualParticipant.SubmissionTimeStamp = DateTime.Now;
@@ -327,10 +353,25 @@ namespace Scoresheet.Model
             }
         }
 
+        #endregion
+
+        #region Scoring
+
         private void ScoresheetFile_ScoreChanged(object? sender, ScoreChangedEventArgs e)
         {
             OnPropertyChanged(nameof(ScoresRef));
             NotifyChange(e);
+        }
+
+        [RelayCommand]
+        public void RefreshScore()
+        {
+            foreach (CompetitionItem competitionItem in ScoresheetFile.CompetitionItems)
+            {
+                competitionItem.ReCalculateWinners();
+            }
+
+            ScoresheetFile.UpdateTeamTotals();
         }
 
         #endregion

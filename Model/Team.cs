@@ -40,16 +40,7 @@ namespace Scoresheet.Model
         public double Points
         {
             get => _Points;
-            private set => SetProperty(ref _Points, value);
-        }
-
-        [XmlIgnore]
-        internal double PointsTray { get; set; } = 0;
-
-        internal void SetPoints()
-        {
-            Points = PointsTray;
-            PointsTray = 0;
+            set => SetProperty(ref _Points, value);
         }
 
         /// <summary>

@@ -15,7 +15,7 @@ namespace Scoresheet.Model
         private string _IndividualParticipantsFromXML = "";
 
         /// <summary>
-        /// Gets a comma separated list of chestnumbers of the participants in this group
+        /// Gets a comma separated list of chestnumbers of the individualParticipants in this group
         /// </summary>
         [XmlAttribute("Participants")]
         public string IndividualParticipantsXML
@@ -25,13 +25,13 @@ namespace Scoresheet.Model
         }
 
         /// <summary>
-        /// Gets the list of participants in this group
+        /// Gets the list of individualParticipants in this group
         /// </summary>
         [XmlIgnore]
         public ObservableCollection<IndividualParticipant> IndividualParticipants { get; private set; } = new();
 
         /// <summary>
-        /// Gets a new line separated list of thee full names of the participants in this group
+        /// Gets a new line separated list of thee full names of the individualParticipants in this group
         /// </summary>
         [XmlIgnore]
         public string ParticipantString { get => string.Join('\n', IndividualParticipants); }
@@ -75,7 +75,30 @@ namespace Scoresheet.Model
         }
 
         /// <summary>
-        /// Initialises the participants making up this group and their leader
+        /// Creates an GroupParticipant for deserialisation
+        /// </summary>
+        /// <remarks>
+        /// Must call <see cref="Initialize(ScoresheetFile?)"/> afterward
+        /// </remarks>
+        public GroupParticipant()
+        {
+
+        }
+
+        /// <summary>
+        /// Creates a group participant in the specified <paramref name="scoresheetFile"/> with <paramref name="individualParticipants"/>
+        /// </summary>
+        /// <param name="scoresheetFile"></param>
+        /// <param name="individualParticipants"></param>
+        public GroupParticipant(ScoresheetFile scoresheetFile, ObservableCollection<IndividualParticipant>? individualParticipants = null)
+        {
+            _ScoresheetFile = scoresheetFile;
+            if (individualParticipants != null) IndividualParticipants = individualParticipants;
+            IndividualParticipants.CollectionChanged += IndividualParticipants_CollectionChanged;
+        }
+
+        /// <summary>
+        /// Initialises the individualParticipants making up this group and their leader
         /// and finally <inheritdoc/>
         /// </summary>
         public override void Initialize(ScoresheetFile scoresheetFile)
@@ -86,7 +109,7 @@ namespace Scoresheet.Model
             // Parse leader
             if(!int.TryParse(_LeaderFromXML, out int leaderChestNumber)) leaderChestNumber = -1;
 
-            // Parse participants
+            // Parse individualParticipants
             foreach (string chestNumberString in _IndividualParticipantsFromXML.Split(','))
             {
                 if (int.TryParse(chestNumberString, out int chestNumber))
@@ -104,6 +127,11 @@ namespace Scoresheet.Model
         private void IndividualParticipants_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             OnPropertyChanged(nameof(ParticipantString));
+        }
+
+        public override string ToString()
+        {
+            return ChestNumber.ToString();
         }
     }
 }
