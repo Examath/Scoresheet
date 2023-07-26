@@ -60,6 +60,7 @@ namespace Scoresheet.Model
             {
                 Team = team,
                 ChestNumber = GroupParticipants.Where(gp => gp.Team == team).LastOrDefault()?.ChestNumber + 1 ?? _ScoresheetFile?.GetChessNumberBase(null, team) ?? 1000,
+                Leader = individualParticipants.FirstOrDefault(),
             };
 
             _ScoresheetFile?.NotifyChange(this);

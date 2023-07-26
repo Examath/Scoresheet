@@ -16,6 +16,7 @@ namespace Scoresheet.Exporters
     public class CertificateExporter
     {
         private const string NAME_FIELD = "${Name}";
+        private const string YEAR_LEVEL_FIELD = "${YearLevel}";
         private const string ITEMS_FIELD = "${Items}";
 
         private ScoresheetFile _ScoresheetFile { get; set; }
@@ -48,7 +49,13 @@ namespace Scoresheet.Exporters
 
         public async Task Export(List<IndividualParticipant> selectedParticipants)
         {
-            List<CertificateData> certificates = await Task.Run(() => selectedParticipants.Select(p => p.GetCertificateData()).Where(c => c.Items.Count > 0).ToList());
+            List<CertificateData> certificates = await Task.Run(() =>
+            {
+                return selectedParticipants.Select(p => p.GetCertificateData())
+                                           .Where(c => c.Items.Count > 0)
+                                           .OrderBy(p => p.IndividualParticipant.YearLevel)
+                                           .ToList();
+            });
 
             AskerNote askerNote = new($"Export certificates for {certificates.Count} participants");
 
@@ -68,6 +75,10 @@ namespace Scoresheet.Exporters
                             return;
                         }
                         string nameFormat = name.Text;
+
+                        // Year
+                        Text? year = body.Descendants<Text>().FirstOrDefault(t => t.Text.Contains(YEAR_LEVEL_FIELD));
+                        string yearFormat = year?.Text ?? "";
 
                         // Items
                         Paragraph? itemTemplate = body.Descendants<Paragraph>().FirstOrDefault(p => p.InnerText.Contains(ITEMS_FIELD));
@@ -92,6 +103,10 @@ namespace Scoresheet.Exporters
                         {
                             // Set Name
                             name.Text = nameFormat.Replace(NAME_FIELD, certificateData.IndividualParticipant.FullName);
+
+                            // Set Year
+                            if (year != null) year.Text = yearFormat.Replace(YEAR_LEVEL_FIELD, certificateData.IndividualParticipant.YearLevel.ToString());
+
                             foreach (var item in source)
                             {
                                 if (item != itemTemplate)

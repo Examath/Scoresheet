@@ -6,6 +6,7 @@ using Scoresheet.Properties;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Windows;
 using System.Windows.Controls;
@@ -112,9 +113,8 @@ namespace Scoresheet
                     // Now, Scoresheet is formatted.
                     // Hence, Load into MainWindow
 
-                    VM = new(scoresheet, fileLocation);
-                    DataContext = VM;
-                    VM.PropertyChanged += VM_PropertyChanged;
+                    LoadVM(scoresheet, fileLocation);
+
                 }
                 catch (Exception e)
                 {
@@ -126,6 +126,18 @@ namespace Scoresheet
             }
 
             if (VM == null) Close();
+        }
+
+        private void LoadVM(ScoresheetFile scoresheet, string fileLocation)
+        {
+            Asker.Show(
+                new AskerOptions("Enter username"),
+                new AskerNote("Opening scoresheet file...\nPlease enter your name below for record keeping purposes:"),
+                new TextBoxInput(VM, nameof(VM.UserName))
+                );
+            VM = new(scoresheet, fileLocation);
+            DataContext = VM;
+            VM.PropertyChanged += VM_PropertyChanged;
         }
 
         private void VM_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -231,9 +243,27 @@ namespace Scoresheet
 
         #region Marking Tab Input
 
-        private void MarkingTab_KeyUp(object sender, KeyEventArgs e)
+        private void SearchBox_KeyUp(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Insert)
+            if (VM != null &&
+                VM.MarkingCompetitionItem != null &&
+                e.Key == Key.Enter &&
+                int.TryParse(SearchBox.Text, out int chestNumber))
+            {
+                Participant? participant = VM.MarkingCompetitionItem.Participants.FirstOrDefault((p) => p.ChestNumber == chestNumber);
+                if (participant != null)
+                {
+                    VM.MarkingParticipant = participant;
+                    SearchBox.Text = "";
+                    NewScoreTextBox.SelectAll();
+                    NewScoreTextBox.Focus();
+                }
+            }
+        }
+
+        private void MarkingListBox_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
             {
                 NewScoreTextBox.SelectAll();
                 NewScoreTextBox.Focus();
@@ -242,7 +272,7 @@ namespace Scoresheet
 
         private void NewScoreTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (!IsKeyADigit(e.Key))
+            if (!IsKeyADigit(e.Key) && !(e.Key == Key.Escape))
             {
                 e.Handled = true;
                 int pos = NewScoreTextBox.SelectionStart;
@@ -293,7 +323,7 @@ namespace Scoresheet
                 newScoreAverage = 0;
                 ApplyScoreButton.IsEnabled = false;
             }
-            else 
+            else
             {
                 newScoreAverage = Math.Round(total / length, Settings.Default.MarksPrecision);
                 ApplyScoreButton.IsEnabled = CanApplyScore();
@@ -304,13 +334,17 @@ namespace Scoresheet
             {
                 ApplyScore();
             }
+            else if (e.Key == Key.Escape)
+            {
+                ResetNewScore();
+            }
         }
 
-        private bool CanApplyScore() => 
+        private bool CanApplyScore() =>
             VM != null &&
-            VM.MarkingCompetitionItem != null && 
-            VM.MarkingParticipant != null && 
-            !string.IsNullOrWhiteSpace(NewScoreTextBox.Text) && 
+            VM.MarkingCompetitionItem != null &&
+            VM.MarkingParticipant != null &&
+            !string.IsNullOrWhiteSpace(NewScoreTextBox.Text) &&
             !double.IsNaN(newScoreAverage);
 
         private void ApplyScoreButton_Click(object sender, RoutedEventArgs e)
@@ -344,17 +378,30 @@ namespace Scoresheet
                 VM.MarkingCompetitionItem.AddScore(VM.MarkingParticipant, marks, VM.UserName);
                 VM.UpdateIntersection();
 
-                NewScoreTextBox.Text = "";
-                NewTotalScoreLabel.Content = 0;
-                ApplyScoreButton.IsEnabled = false;
                 ClearScoreButton.IsEnabled = true;
 
+                ResetNewScore();
+            }
+        }
+
+        private void ResetNewScore()
+        {
+            NewScoreTextBox.Text = "";
+            NewTotalScoreLabel.Content = 0;
+            ApplyScoreButton.IsEnabled = false;
+
+            if (SearchMode.IsChecked == false)
+            {
                 ListBoxItem listBoxItem =
                    (ListBoxItem)MarkingParticipantsListBox
                      .ItemContainerGenerator
                        .ContainerFromItem(MarkingParticipantsListBox.SelectedItem);
 
                 listBoxItem.Focus();
+            }
+            else
+            {
+                SearchBox.Focus();
             }
         }
 
@@ -364,7 +411,7 @@ namespace Scoresheet
             else
             {
                 if (Messager.Out($"Are you sure you want to clear #{VM.MarkingParticipant.ChestNumber}'s score in {VM.MarkingCompetitionItem.Name}?", "Clear score", ConsoleStyle.WarningBlockStyle, isCancelButtonVisible: true, yesButtonText: "Yes")
-                    == System.Windows.Forms.DialogResult.Yes) 
+                    == System.Windows.Forms.DialogResult.Yes)
                 {
                     VM.MarkingCompetitionItem.ClearScore(VM.MarkingParticipant);
                     VM.UpdateIntersection();

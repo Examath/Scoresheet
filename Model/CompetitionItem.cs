@@ -201,11 +201,13 @@ namespace Scoresheet.Model
                     {
                         place++;
                         currentMinMark = mark;
-                        score.Place = place;
                         if (place <= Settings.Default.NumberOfPlaces) winners.Add(new(place));
                     }
 
-                    // Tie
+                    // Update score
+                    score.Place = place;
+
+                    // Add participant to (current) lowest place
                     if (place <= Settings.Default.NumberOfPlaces) winners.Last().Participants.Add(score.Participant);
                 }
             }
@@ -254,6 +256,8 @@ namespace Scoresheet.Model
 
         #endregion
 
+        #region Init
+
         /// <summary>
         /// Initialises <see cref="Level"/> and <see cref="Scores"/>
         /// </summary>
@@ -276,6 +280,7 @@ namespace Scoresheet.Model
         /// </summary>
         public override string ToString() => ShortCode;
 
+        #endregion
     }
 
     public class ScoreChangedEventArgs : EventArgs

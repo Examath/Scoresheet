@@ -10,7 +10,7 @@
         xmlns:model="clr-namespace:Scoresheet.Model"
         xmlns:view="clr-namespace:Scoresheet.View"
         mc:Ignorable="d"
-        Title="{Binding FileName, StringFormat=Scoresheet v1.0 | {0}}" Height="600" Width="1200" Style="{StaticResource ContrastWindowStyle}" 
+        Title="{Binding FileName, StringFormat=Scoresheet v1.1 | {0}}" Height="600" Width="1200" Style="{StaticResource ContrastWindowStyle}" 
         WindowState="Maximized"
         Loaded="Window_Loaded">
     <Window.DataContext>
@@ -305,10 +305,10 @@
                             </DataTemplate>
                         </ItemsControl.Resources>
                     </ItemsControl>
-                    <Button Command="{Binding ExportParticipantListCommand}" VerticalAlignment="Top" HorizontalAlignment="Right">Export Participant List</Button>
+                    <Button Command="{Binding ExportParticipantListCommand}" VerticalAlignment="Top" HorizontalAlignment="Right">Export Participant-Items List</Button>
                 </Grid>
             </TabItem>
-            <TabItem x:Name="MarkingTab" Header="Marking" KeyUp="MarkingTab_KeyUp" IsSelected="True">
+            <TabItem x:Name="MarkingTab" Header="Marking" IsSelected="True">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="297*"/>
@@ -364,7 +364,8 @@
                     </ListBox>
                     <GridSplitter Grid.Column="1" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center"/>
                     <ListBox x:Name="MarkingParticipantsListBox" ItemsSource="{Binding MarkingCompetitionItem.Participants}" SelectedItem="{Binding MarkingParticipant}"
-                        Style="{StaticResource CompactListBoxStyle}" Grid.Column="2" d:ItemsSource="{d:SampleData ItemCount=5}" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                             Style="{StaticResource CompactListBoxStyle}" Grid.Column="2" d:ItemsSource="{d:SampleData ItemCount=5}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             KeyUp="MarkingListBox_KeyUp">
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <WrapPanel Orientation="Horizontal"/>
@@ -392,8 +393,14 @@
                     </ListBox>
                     <GridSplitter Grid.Column="3" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center"/>
                     <StackPanel Grid.Column="4" Margin="4" Grid.IsSharedSizeScope="True">
+                        <GroupBox Header="Search">
+                            <DockPanel Margin="12">
+                                <ToggleButton x:Name="SearchMode" DockPanel.Dock="Right" Content="Kbd Focus"/>
+                                <TextBox x:Name="SearchBox" KeyUp="SearchBox_KeyUp" />
+                            </DockPanel>
+                        </GroupBox>
                         <Border CornerRadius="8" Margin="16" HorizontalAlignment="Center" VerticalAlignment="Top" Grid.ColumnSpan="3" DataContext="{Binding MarkingParticipant}">
-                            <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber, FallbackValue=---}" FontSize="32" Width="160" TextAlignment="Center" FontWeight="Bold" Padding="4 0" Foreground="{StaticResource ForegroundColourKey}">
+                            <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber, FallbackValue=---}" FontSize="48" Width="160" TextAlignment="Center" FontWeight="Bold" Padding="4 0" Foreground="{StaticResource ForegroundColourKey}">
                             </TextBlock>
                             <Border.Background>
                                 <SolidColorBrush Color="{Binding UniqueColour, FallbackValue=Gray}" Opacity="0.4"/>
@@ -476,10 +483,10 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="Winners" Width="750">
+                                    <GridViewColumn Header="Winners" Width="900">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate DataType="{x:Type model:CompetitionItem}">
-                                                <ItemsControl ItemsSource="{Binding Winners}" MinHeight="20"  Margin="2">
+                                                <ItemsControl ItemsSource="{Binding Winners}" Margin="2" MinHeight="16">
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
                                                             <StackPanel Orientation="Horizontal"/>
