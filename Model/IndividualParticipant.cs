@@ -131,6 +131,17 @@ namespace Scoresheet.Model
             set => SetProperty(ref _SubmissionEmail, value);
         }
 
+        private string _SubmissionPhoneNumber = "";
+        /// <summary>
+        /// Gets or sets the phone number provided with the <see cref="Formatter.FormSubmission"/>
+        /// </summary>
+        [XmlAttribute]
+        public string SubmissionPhoneNumber
+        {
+            get => _SubmissionPhoneNumber;
+            set => SetProperty(ref _SubmissionPhoneNumber, value);
+        }
+
         private string _SubmissionName = "";
         /// <summary>
         /// Gets or sets the name in the form used for submission

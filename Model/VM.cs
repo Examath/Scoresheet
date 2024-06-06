@@ -46,6 +46,7 @@ namespace Scoresheet.Model
                 {
                     FileName = Path.GetFileNameWithoutExtension(value);
                     OnPropertyChanged(nameof(FileName));
+                    NotifyChange("Save Location");
                     BackupDirectory = $"{Path.GetDirectoryName(value)}\\{FileName} Backups";
                 }
             }
@@ -57,12 +58,13 @@ namespace Scoresheet.Model
 
         #endregion
 
-        #region Initializers
+        #region VM Constructors
 
         public VM()
         {
             ScoresheetFile = new ScoresheetFile();
             _ParticipantListExporter = new(ScoresheetFile);
+            _CertificateExporter = new(ScoresheetFile);
 
             _UserNameI = new(this, nameof(UserName), label: "Editor Name") { IsFocused = true, HelpText = "Enter your name (or initials) for tracing purposes" };
         }
@@ -72,7 +74,8 @@ namespace Scoresheet.Model
             ScoresheetFile = scoresheetFile;
             ScoresheetFile.Modified += NotifyChange;
             scoresheetFile.ScoreChanged += ScoresheetFile_ScoreChanged;
-            FileLocation = fileLocation;
+            IsScoring = scoresheetFile.IsScoring;
+            _FileLocation = fileLocation;
             _ParticipantListExporter = new(ScoresheetFile);
             _CertificateExporter = new(ScoresheetFile);
             _UserNameI = new(this, nameof(UserName), label: "Editor Name") { IsFocused = true, HelpText = "Enter your name (or initials) for tracing purposes" };
@@ -107,7 +110,7 @@ namespace Scoresheet.Model
 
         #endregion
 
-        #region Saving
+        #region Saving Scoresheet Data
 
         private DateTime LastBackup = DateTime.MinValue;
 
@@ -140,6 +143,125 @@ namespace Scoresheet.Model
                     Messager.OutException(e, "Backing Up");
                 }
             }
+        }
+
+        #endregion
+
+        #region Load Participants and Format
+
+        private readonly Examath.Core.Model.FileFilter _TeamsListFileFilter = new("Teams List", "*.sstl", "*.txt");
+
+        [RelayCommand(CanExecute = nameof(IsNotScoring))]
+        public void LoadParticipantList()
+        {
+            if (ScoresheetFile.IndividualParticipants.Count > 0)
+            {
+                if (Messager.Out(
+                    "Warning: The individual participants have already been defined in this scoresheet. " +
+                    "Loading another teams list in will result in all existing participants being overridden, " +
+                    "and all registrations and group participants being cleared." +
+                    "\nAre you sure you want to continue?",
+                    "Override Existing Participants?",
+                    isCancelButtonVisible: true
+                    ) == DialogResult.Yes)
+                {
+                    // Delete all group participants
+                    foreach (GroupItem groupItem in ScoresheetFile.CompetitionItems.OfType<GroupItem>())
+                    {
+                        groupItem.GroupParticipants.Clear();
+                    }
+
+                    // Reset all individual participant competition joins
+                    foreach (IndividualParticipant participant in ScoresheetFile.IndividualParticipants)
+                    {
+                        participant.UnjoinAllCompetitions();
+                    }
+                }
+                else
+                {
+                    return;
+                }
+            }
+
+            OpenFileDialog openFileDialog = new()
+            {
+                Title = "Open Teams List file to import individual participants",
+                Filter = _TeamsListFileFilter.ToString(),
+            };
+
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+
+                List<IndividualParticipant> individualParticipants = new();
+                string[] rawData, buffer;
+                try
+                {
+                    rawData = File.ReadAllLines(openFileDialog.FileName);
+                    buffer = new string[3];
+                }
+                catch (Exception e)
+                {
+                    Messager.OutException(e, "Error loading teams list file");
+                    return;
+                }
+
+                int[,] chestNumberMatrix = getChestNumberMatrix();
+
+                foreach (string line in rawData)
+                {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+
+                    string[] entry = line.Split('/');
+
+                    for (int i = 0; i < Math.Min(buffer.Length, entry.Length); i++)
+                    {
+                        if (!string.IsNullOrWhiteSpace(entry[i])) buffer[i] = entry[i];
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(entry[0]))
+                    {
+                        individualParticipants.Add(new(buffer, chestNumberMatrix, ScoresheetFile));
+                    }
+                }
+
+                // Exit if empty.
+                if (individualParticipants.Count == 0)
+                {
+                    Messager.Out("The teams list file was empty", "Could not load participants list");
+                    return;
+                }
+
+                // Set list
+                ScoresheetFile.IndividualParticipants = individualParticipants;
+            }
+
+            int[,] getChestNumberMatrix()
+            {
+                int[,] chestNumberMatrix = new int[ScoresheetFile.LevelDefinitions.Count, ScoresheetFile.Teams.Count];
+
+                for (int levelIndex = 0; levelIndex < chestNumberMatrix.GetLength(0); levelIndex++)
+                {
+                    for (int teamIndex = 0; teamIndex < chestNumberMatrix.GetLength(1); teamIndex++)
+                    {
+                        chestNumberMatrix[levelIndex, teamIndex] = ScoresheetFile.GetChessNumberBase(levelIndex, teamIndex, ScoresheetFile.Teams.Count);
+                    }
+                }
+
+                return chestNumberMatrix;
+            }
+        }
+
+        [RelayCommand(CanExecute = nameof(IsNotScoring))]
+        public void Format()
+        {
+            FormatterVM formatterVM = new(ScoresheetFile);
+
+            FormatterDialog formatterDialog = new()
+            {
+                DataContext = formatterVM
+            };
+
+            formatterDialog.ShowDialog();
         }
 
         #endregion
@@ -177,19 +299,6 @@ namespace Scoresheet.Model
         {
             get => _SelectedParticipant;
             set { SetProperty(ref _SelectedParticipant, value); }
-        }
-
-        [RelayCommand]
-        public void Format()
-        {
-            FormatterVM formatterVM = new(ScoresheetFile);
-
-            FormatterDialog formatterDialog = new()
-            {
-                DataContext = formatterVM
-            };
-
-            formatterDialog.ShowDialog();
         }
 
         public List<string>? EditableItemCodes { get; set; }
@@ -356,6 +465,45 @@ namespace Scoresheet.Model
         #endregion
 
         #region Scoring
+
+        private bool _IsScoring = false;
+        /// <summary>
+        /// Gets whether the scoresheet is open for adding scores
+        /// </summary>
+        public bool IsScoring
+        {
+            get => _IsScoring;
+            private set
+            {
+                if (SetProperty(ref _IsScoring, value))
+                {
+                    OnPropertyChanged(nameof(IsNotScoring));
+                    LoadParticipantListCommand.NotifyCanExecuteChanged();
+                    FormatCommand.NotifyCanExecuteChanged();
+                    LockForScoringCommand.NotifyCanExecuteChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets whether the scoresheet is still being formatted
+        /// </summary>
+        public bool IsNotScoring
+        {
+            get => !_IsScoring;
+        }
+
+        [RelayCommand(CanExecute = nameof(IsNotScoring))]
+        public void LockForScoring()
+        {
+            if (Messager.Out("Once you lock a scoresheet for marking, you cannot unlock it, " +
+                "and the changes that can be made will be severely limited. " +
+                "Are you sure you want to continue?", "Lock Scoresheet for Marking") == DialogResult.Yes)
+            {
+                ScoresheetFile.IsScoring = true;
+                IsScoring = true;
+            }
+        }
 
         private void ScoresheetFile_ScoreChanged(object? sender, ScoreChangedEventArgs e)
         {

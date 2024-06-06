@@ -304,23 +304,7 @@ namespace Scoresheet.Formatter
 
                 if (!SelectedSubmission.IsValidMatch(SelectedParticipant))
                 {
-                    if (SelectedParticipant.Team != SelectedSubmission.Team)
-                    {
-                        DialogResult dialogResult = Messager.Out(
-                            $"{SelectedParticipant.FullName} is in {SelectedParticipant.Team}, per the teams list," +
-                            $" but the team selected ({SelectedSubmission.Team}) in the form does not match. " +
-                            $"When applying submission, do you want to keep the team as in the teams list, or change the team?",
-                            "Invalid Submission",
-                            ConsoleStyle.WarningBlockStyle,
-                            isCancelButtonVisible: true,
-                            yesButtonText: "Keep",
-                            noButtonText: $"Move to {SelectedSubmission.Team}"
-                        );
-                        if (dialogResult == DialogResult.Yes) ok = true;
-                        else if (dialogResult == DialogResult.No) SelectedParticipant.Team = SelectedSubmission.Team;
-                        else ok = false;
-                    }
-                    else if (SelectedParticipant.Level?.Within(SelectedSubmission.YearLevel) ?? false)
+                    if (SelectedParticipant.Level?.Within(SelectedSubmission.YearLevel) ?? false)
                     {
                         ok = Messager.Out(
                             $"{SelectedParticipant.FullName} is a year {SelectedParticipant.YearLevel}, per the teams list," +

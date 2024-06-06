@@ -18,10 +18,16 @@ namespace Scoresheet.Model
     {
         public const string Extension = ".ssf";
 
-        public bool IsFormatted { get; set; }
+        [XmlAttribute]
+        public double Version = 2.0;
 
+        [XmlAttribute]
+        public bool IsScoring { get; set; } = false;
+
+        [XmlAttribute]
         public DateTime LastSavedTime { get; set; } = DateTime.Now;
 
+        [XmlAttribute]
         public string LastAuthor { get; set; } = "Null";
         
         #region Exports
@@ -102,11 +108,9 @@ namespace Scoresheet.Model
             }
             catch (Exception e)
             {
-
+                Messager.OutException(e, "Initializing Scoresheet");
                 throw;
             }
-
-
 
             UpdateTeamTotals();
 

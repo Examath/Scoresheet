@@ -41,7 +41,7 @@ namespace Scoresheet.Formatter
         {
             base.OnActivated(e);
             FormatterVM = (FormatterVM)DataContext;
-            if (FormatterVM.ScoresheetFile.IsFormatted) CreateButton.IsEnabled = false;
+            if (FormatterVM.ScoresheetFile.IsScoring) CreateButton.IsEnabled = false;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -62,7 +62,7 @@ namespace Scoresheet.Formatter
             if (saveFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 FormattedScoresheetFileLocation = saveFileDialog.FileName;
-                FormatterVM.ScoresheetFile.IsFormatted = true;
+                FormatterVM.ScoresheetFile.IsScoring = true;
                 FormatterVM.ScoresheetFile.LastSavedTime = DateTime.Now;
                 FormatterVM.ScoresheetFile.LastAuthor = "Formatter";
                 try

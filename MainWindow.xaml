@@ -10,7 +10,8 @@
         xmlns:model="clr-namespace:Scoresheet.Model"
         xmlns:view="clr-namespace:Scoresheet.View"
         mc:Ignorable="d"
-        Title="{Binding FileName, StringFormat=Scoresheet v1.1 | {0}}" Height="600" Width="1200" Style="{StaticResource ContrastWindowStyle}" 
+        Title="{Binding FileName, StringFormat=Scoresheet v2.0 | {0}}" 
+        Height="600" Width="1200" Style="{StaticResource ContrastWindowStyle}" 
         WindowState="Maximized"
         Loaded="Window_Loaded">
     <Window.DataContext>
@@ -43,6 +44,53 @@
     </Window.Resources>
     <Grid Margin="2">
         <TabControl Margin="2,4,2,2">
+            <TabItem Header="General" IsSelected="True">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition MaxWidth="400"/>
+                        <ColumnDefinition MaxWidth="400"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <GroupBox Header="Basic Setup Procedure">
+                        <StackPanel>
+                            <StackPanel.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Margin" Value="4,10,6,2"/>
+                                    <Setter Property="TextWrapping" Value="Wrap"/>
+                                </Style>
+                            </StackPanel.Resources>
+                            <TextBlock>
+                                    <Bold>Step 1: </Bold> Define the teams, and the individual and group competitions.
+                            </TextBlock>
+                            <TextBlock>
+                                    <Bold>Step 2: </Bold> Define the elegible individual participants for this competition.
+                                    You can import participants from a text file in the specified format.
+                            </TextBlock>
+                            <Button Content="Load Participants List..." Command="{Binding LoadParticipantListCommand}" HorizontalAlignment="Left" />
+                            <TextBlock>
+                                    <Bold>Step 3: </Bold> Import and synchronise the registration forms. 
+                                The data from the forms should be in a comma-separated value (.csv) format.
+                            </TextBlock>
+                            <Button Content="Import Registration Forms..." Command="{Binding FormatCommand}" HorizontalAlignment="Left" />
+                            <TextBlock>
+                                    <Bold>Step 4: </Bold> Once all competitions and participants have been correctly, you can lock the scoresheet
+                                    from being edited. Once this is done you may start entering scores through the marking tab.
+                            </TextBlock>
+                            <Button Content="Lock Scoresheet and Start Marking..." Command="{Binding LockForScoringCommand}" HorizontalAlignment="Left" />
+                            <TextBlock>
+                                    <Bold>Step 5: </Bold> Go to the scoring tab to view prize winners and total score.
+                            </TextBlock>
+                        </StackPanel>
+                    </GroupBox>
+                    <GroupBox Header="Settings" Grid.Column="1">
+                        <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Row="1">
+                            <TextBox Tag="Current Author Name" Text="{Binding UserName}"/>
+                            <controls:FilePicker Tag="Scoresheet Save Location" ToolTip="Change to save scoresheet to a different location"
+                                                 FileName="{Binding FileLocation}" UseSaveFileDialog="True" ExtensionFilter="Scoresheet File (*.ssf)|*.ssf|XML|*.xml"/>
+                        </ListBox>
+                    </GroupBox>
+                </Grid>
+            </TabItem>
             <TabItem Header="Participants">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -56,12 +104,13 @@
                     </Grid.ColumnDefinitions>
                     <WrapPanel>
                         <!--<Button Content="Add New Participant" Foreground="{StaticResource NewColourKey}"/>-->
-                        <Button Command="{Binding FormatCommand}">Re-Import from CSV</Button>
+                        <Button Command="{Binding LoadParticipantListCommand}" Foreground="{StaticResource NewColourKey}">Load Participants List...</Button>
+                        <Button Command="{Binding FormatCommand}">Import Registrations...</Button>
                         <Button Command="{Binding ExportCertificatesCommand}" CommandParameter="{Binding ElementName=ParticipantsListBox, Path=SelectedItems}"
-                                Content="{Binding ElementName=ParticipantsListBox, Path=SelectedItems.Count}" ContentStringFormat="Print Certificates of {0} Participants" />
+                                Content="{Binding ElementName=ParticipantsListBox, Path=SelectedItems.Count, FallbackValue='0'}" ContentStringFormat="Print Certificates of {0} Participants..." />
                         <Button Command="{Binding SearchParticipantCommand}">
                             <TextBlock>
-                                <Run Style="{StaticResource Glyph}">&#xE094;</Run> Find by Name
+                                <Run Style="{StaticResource Glyph}">&#xE094;</Run> Find Participant by Name...
                             </TextBlock>
                         </Button>
                     </WrapPanel>
@@ -87,6 +136,7 @@
                         <Separator/>
                         <Label Tag="Form Submitted at" Content="{Binding SelectedParticipant.SubmissionTimeStamp, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
                         <Label Tag="Form Submitted by" Content="{Binding SelectedParticipant.SubmissionEmail, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
+                        <Label Tag="Contact Phone Number" Content="{Binding SelectedParticipant.SubmissionPhoneNumber, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
                         <Label Tag="Name as given in form" Content="{Binding SelectedParticipant.SubmissionFullName, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
                         <ItemsControl x:Name="SelectedParticipantItemsControl" Tag="Items" ItemsSource="{Binding SelectedParticipant.CompetitionItems}" d:ItemsSource="{d:SampleData ItemCount=2}" Grid.IsSharedSizeScope="True">
                             <ItemsControl.ItemTemplate>
@@ -145,7 +195,7 @@
                     </ListBox>
                 </Grid>
             </TabItem>
-            <TabItem Header="Items">
+            <TabItem Header="Items &amp; Participants">
                 <Grid>
                     <ItemsControl Grid.Row="2" Foreground="{StaticResource ForegroundColourKey}"
                                 ItemsSource="{Binding Source={StaticResource CompetitionItemsSource}}" d:ItemsSource="{d:SampleData}"
@@ -308,7 +358,7 @@
                     <Button Command="{Binding ExportParticipantListCommand}" VerticalAlignment="Top" HorizontalAlignment="Right">Export Participant-Items List</Button>
                 </Grid>
             </TabItem>
-            <TabItem x:Name="MarkingTab" Header="Marking" IsSelected="True">
+            <TabItem x:Name="MarkingTab" Header="Marking">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="297*"/>
@@ -441,7 +491,7 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
-            <TabItem x:Name="ScoringTab" Header="Scoring">
+            <TabItem x:Name="ScoringTab" Header="Results">
                 <DockPanel>
                     <WrapPanel DockPanel.Dock="Top">
                         <Button Command="{Binding RefreshScoreCommand}">Re-calculate Scores</Button>
@@ -533,7 +583,6 @@
         <DockPanel LastChildFill="False" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-2,0,0.5">
             <Label Style="{StaticResource OutputLabel}" Content="{Binding LastChange}" Foreground="{StaticResource FileColourKey}"/>
             <Button Command="{Binding TrySaveCommand}" Foreground="{StaticResource FileColourKey}">Save</Button>
-            <TextBox Text="{Binding UserName}"/>
         </DockPanel>
     </Grid>
 </Window>

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Scoresheet.Formatter
@@ -35,8 +36,13 @@ namespace Scoresheet.Formatter
         /// </summary>
         public string Email { get; set; }
 
-        private const int FamilyNameI = 2;
-        private const int FirstNameI = 3;
+        private const int PhoneNumberI = 2;
+        /// <summary>
+        /// The phone number provided as contact
+        /// </summary>
+        public string PhoneNumber { get; set; }
+
+        private const int FullNameI = 3;
         /// <summary>
         /// The full name, combined from Family name and Given name entries
         /// </summary>
@@ -59,13 +65,7 @@ namespace Scoresheet.Formatter
         public LevelDefinition? Level { get; private set; }
 
         private const int ItemsStartI = 5;
-
-
-        private const int TeamI = 11;
-        /// <summary>
-        /// Gets or sets this entrants claimed team
-        /// </summary>
-        public Team? Team { get; set; }
+        private const int ItemsEndI = 8;
 
         /// <summary>
         /// Possible or actual match
@@ -74,7 +74,7 @@ namespace Scoresheet.Formatter
 
         public double MatchScore { get; private set; } = 0;
 
-        private const int GroupItemsI = 12;
+        private const int GroupItemsI = 9;
 
         private SubmissionStatus _SubmissionStatus;
         /// <summary>
@@ -130,7 +130,7 @@ namespace Scoresheet.Formatter
                 Data[i] = rawArray[i].Trim(new char[] { '"', ' ' });
 
                 // For Details property
-                if (i >= ItemsStartI && i !=TeamI) // Column that may store items then
+                if (i >= ItemsStartI && i <= ItemsEndI) // Column that may store items then
                 {
                     Details += string.Join(' ',                     // Join with space
                         Data[i].Split(';')                          //  Items separated by semicolon
@@ -142,19 +142,19 @@ namespace Scoresheet.Formatter
                 }
             }
 
-            // Independent properties
-            TimeStamp = DateTime.ParseExact(Data[TimeStampI].Replace("GMT", ""), "yyyy/MM/dd h:mm:ss tt zzz", CultureInfo.InvariantCulture);
+            // Independent properties 5/12/2024 14:59:01
+            TimeStamp = DateTime.ParseExact(Data[TimeStampI].Replace("GMT", ""), "M/d/yyyy H:mm:ss", CultureInfo.InvariantCulture);
             Email = Data[EmailI].ToLower();
-            FullName = Data[FirstNameI] + " " + Data[FamilyNameI];
+            PhoneNumber = Data[PhoneNumberI].ToLower();
+            FullName = Data[FullNameI];
             SearchName = FullName.ToUpperInvariant();
 
             // Dependent properties
-            if (int.TryParse(Data[YearLevelI], out int yearLevel))
+            if (int.TryParse(NotDigitsRegex().Replace(Data[YearLevelI], ""), out int yearLevel))
             {
                 YearLevel = yearLevel;
                 Level = scoresheetFile.LevelDefinitions.Find(x => x.Within(YearLevel));
             }
-            Team = scoresheetFile.Teams.Find((x) => x.Name == Data[TeamI]);
 
             // Find match
             double searchDistance = SEARCH_CLIP;
@@ -194,7 +194,7 @@ namespace Scoresheet.Formatter
         /// </summary>
         /// <param name="match">The <see cref="IndividualParticipant"/> to compare to</param>
         /// <returns>True if they are a valid match, otherwise false</returns>
-        public bool IsValidMatch(IndividualParticipant match) => match.Team == Team && match.YearLevel == YearLevel;
+        public bool IsValidMatch(IndividualParticipant match) => match.YearLevel == YearLevel;
 
         /// <summary>
         /// Applies the data from this <see cref="FormSubmission"/> to the <paramref name="match"/>
@@ -226,16 +226,18 @@ namespace Scoresheet.Formatter
                 match.SubmissionTimeStamp = TimeStamp;
 
                 match.SubmissionEmail = Email;
+                match.SubmissionPhoneNumber = PhoneNumber;
                 match.SubmissionFullName = FullName;
 
-                // The csv file has 6 coloums: Stage-SJ, Non-stage-SJ, Stage-J and so on
+                // The csv file has several columns with individual items
                 // Join solo items from only two columns
-                int specificIndex = ItemsStartI + scoresheetFile.LevelDefinitions.IndexOf(Level) * 2;
-                match.JoinCompetitions(Data[specificIndex].Split(';'), appendLevelToCode: true);
-                match.JoinCompetitions(Data[specificIndex + 1].Split(';'), appendLevelToCode: true);
+                for (int i = ItemsStartI; i <= ItemsEndI; i++)
+                {                    
+                    match.JoinCompetitions(Data[i].Split(';'), appendLevelToCode: true);
+                }
 
                 // Join group items
-                match.JoinCompetitions(Data[TeamI + 1].Split(';'));
+                match.JoinCompetitions(Data[GroupItemsI].Split(';'));
             }
             else
             {
@@ -335,6 +337,9 @@ namespace Scoresheet.Formatter
             arg1 = arg2;
             arg2 = temp;
         }
+
+        [GeneratedRegex("[^0-9]+")]
+        private static partial Regex NotDigitsRegex();
 
         #endregion
     }

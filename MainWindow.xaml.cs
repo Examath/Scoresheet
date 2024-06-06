@@ -1,13 +1,11 @@
 ﻿using Examath.Core.Environment;
 using Examath.Core.Utils;
-using Scoresheet.Formatter;
 using Scoresheet.Model;
 using Scoresheet.Properties;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -19,7 +17,8 @@ namespace Scoresheet
     /// </summary>
     public partial class MainWindow : Window
     {
-        private VM? VM;
+        private VM? _VM;
+        private readonly string _Version = System.Reflection.Assembly.GetExecutingAssembly()?.GetName()?.Version?.ToString(2) ?? "?";
 
         public MainWindow()
         {
@@ -38,106 +37,83 @@ namespace Scoresheet
 
         public async void LoadDataAsync()
         {
-            bool isLoadingFromAppSelect = false;
             string fileLocation = string.Empty;
 
-            if (((App)Application.Current).Args?.Length >= 1) // File selected
+            if (((App)Application.Current).Args?.Length >= 1) // App triggered fromfile explorer
             {
                 fileLocation = ((App)Application.Current).Args[0];
-                isLoadingFromAppSelect = true;
             }
-
-            while (VM == null)
+            else if (Messager.Out(
+                "Would you like to open an existing scoresheet or create a new one from the default template?",
+                $"Welcome to Scoresheet v{_Version}",
+                yesButtonText: "Open Existing...",
+                isNoButtonVisible: true,
+                noButtonText: "Create New"
+                ) == System.Windows.Forms.DialogResult.Yes)
             {
-                // Pick file location
-                if (isLoadingFromAppSelect)
+                System.Windows.Forms.OpenFileDialog openFileDialog = new()
                 {
-                    isLoadingFromAppSelect = false; // So that runs only once
-                }
-                else
-                {
-                    System.Windows.Forms.OpenFileDialog openFileDialog = new()
-                    {
-                        Title = "Open Scoresheet file",
-                        Filter = "Scoresheet (.ssf)|*.ssf|All|*.*",
-                    };
+                    Title = "Open Scoresheet file",
+                    Filter = "Scoresheet (.ssf)|*.ssf|All|*.*",
+                };
 
-                    if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) fileLocation = openFileDialog.FileName;
-                    else break; // Close app
-                }
-
-                // Try Load data
-                try
-                {
-                    // Load Scoresheet XML
-                    Model.ScoresheetFile? scoresheet = await Examath.Core.Utils.XML.LoadAsync<Model.ScoresheetFile>(fileLocation);
-
-                    // Check if null
-                    if (scoresheet == null)
-                    {
-                        if (Messager.Out("Want to try again", "Scoresheet is null, an error may have occurred",
-                            yesButtonText: "Try Again", isCancelButtonVisible: true) == System.Windows.Forms.DialogResult.Yes)
-                            continue; // Restart
-                        else
-                            break; // Close app
-                    }
-
-                    // Check if not formatted
-                    if (!scoresheet.IsFormatted)
-                    {
-                        System.Windows.Forms.DialogResult dialogResult = Messager.Out(scoresheet.ToString() ?? "null", $"New Scoresheet - Please Check Guideline:",
-                            isCancelButtonVisible: true, noButtonText: "Try Again", yesButtonText: "Continue");
-
-                        if (dialogResult == System.Windows.Forms.DialogResult.Yes) // If Guideline is checked, then format
-                        {
-                            FormatterVM formatterVM = new(scoresheet);
-                            if (!formatterVM.IsLoaded) break; // If teams list is not loaded, close app
-
-                            FormatterDialog formatterDialog = new()
-                            {
-                                Owner = this,
-                                DataContext = formatterVM
-                            };
-                            formatterDialog.ShowDialog();
-                            if (!scoresheet.IsFormatted) break; // if formatting cancelled, close app
-                            if (formatterDialog.FormattedScoresheetFileLocation != null) fileLocation = formatterDialog.FormattedScoresheetFileLocation;
-                        }
-                        else if (dialogResult == System.Windows.Forms.DialogResult.No) continue; // Try Again
-                        else break; // Close App
-                    }
-                    else
-                    {
-                        await scoresheet.InitialiseAsync();
-                    }
-
-                    // Now, Scoresheet is formatted.
-                    // Hence, Load into MainWindow
-
-                    LoadVM(scoresheet, fileLocation);
-
-                }
-                catch (Exception e)
-                {
-                    if (Messager.OutException(e, "Loading", yesButtonText: "Try Again", isCancelButtonVisible: true) == System.Windows.Forms.DialogResult.Yes)
-                        continue;
-                    else
-                        break;
-                }
+                if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) fileLocation = openFileDialog.FileName;
+            }
+            else
+            {
+                Messager.Out("Sorry creating new is not yet supported. Please open an existing template",
+                        yesButtonText: "Exit");
+                Close();
+                return;
             }
 
-            if (VM == null) Close();
+            // Try Load data
+            try
+            {
+                // Load Scoresheet XML
+                ScoresheetFile? scoresheet = await XML.LoadAsync<ScoresheetFile>(fileLocation);
+
+                // Check if null
+                if (scoresheet == null)
+                {
+                    Messager.Out("Scoresheet is null, an error may have occurred.", "Could Not Load Scoresheet",
+                        messageStyle: ConsoleStyle.ErrorBlockStyle,
+                        yesButtonText: "Exit");
+                    Close();
+                    return;
+                }
+
+                // Initialise Scoresheet
+                await scoresheet.InitialiseAsync();
+
+                // Now, Scoresheet is formatted.
+                // Hence, Load into MainWindow
+                LoadVM(scoresheet, fileLocation);
+            }
+            catch (Exception e)
+            {
+                Messager.OutException(e, "Loading",
+                        yesButtonText: "Exit");
+                Close();
+            }
+
+            if (_VM == null)
+            {
+                Close();
+            }
         }
+
 
         private void LoadVM(ScoresheetFile scoresheet, string fileLocation)
         {
-            Asker.Show(
-                new AskerOptions("Enter username"),
-                new AskerNote("Opening scoresheet file...\nPlease enter your name below for record keeping purposes:"),
-                new TextBoxInput(VM, nameof(VM.UserName))
-                );
-            VM = new(scoresheet, fileLocation);
-            DataContext = VM;
-            VM.PropertyChanged += VM_PropertyChanged;
+            _VM = new(scoresheet, fileLocation);
+#if DEBUG
+            _VM.UserName = "DEBUG EXCEMPTED";
+#else
+            _VM.UserName = Env.Default.In("Please enter your name");
+#endif
+            DataContext = _VM;
+            _VM.PropertyChanged += VM_PropertyChanged;
         }
 
         private void VM_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -146,9 +122,9 @@ namespace Scoresheet
             {
                 ApplyScoreButton.IsEnabled = CanApplyScore();
             }
-            if (e.PropertyName == nameof(VM.CurrentScoreIntersection))
+            if (e.PropertyName == nameof(_VM.CurrentScoreIntersection))
             {
-                ClearScoreButton.IsEnabled = VM?.CurrentScoreIntersection != null;
+                ClearScoreButton.IsEnabled = _VM?.CurrentScoreIntersection != null;
             }
         }
 
@@ -165,7 +141,7 @@ namespace Scoresheet
             base.OnClosing(e);
 
             // If dirty
-            if (VM != null && VM.IsModified)
+            if (_VM != null && _VM.IsModified)
             {
                 // Temp cancel Closing
                 e.Cancel = true;
@@ -182,10 +158,10 @@ namespace Scoresheet
                 {
                     try
                     {
-                        VM.ScoresheetFile.LastSavedTime = DateTime.Now;
-                        VM.ScoresheetFile.LastAuthor = VM.UserName;
-                        XML.Save(VM.FileLocation, VM.ScoresheetFile);
-                        VM.NotifyChange(this);
+                        _VM.ScoresheetFile.LastSavedTime = DateTime.Now;
+                        _VM.ScoresheetFile.LastAuthor = _VM.UserName;
+                        XML.Save(_VM.FileLocation, _VM.ScoresheetFile);
+                        _VM.NotifyChange(this);
                     }
                     catch (Exception ee)
                     {
@@ -210,22 +186,22 @@ namespace Scoresheet
 #pragma warning disable CS0162 // Unreachable code detected when DEBUG config
             try
             {
-                if (VM != null)
+                if (_VM != null)
                 {
-                    XML.Save(VM.FileLocation + ".crash", VM.ScoresheetFile);
+                    XML.Save(_VM.FileLocation + ".crash", _VM.ScoresheetFile);
 
 #if DEBUG
                     return;
 #endif
 
                     Exception e = (Exception)args.ExceptionObject;
-                    MessageBox.Show($"{e.GetType().Name}: {e.Message}\nThe scoresheet was saved to {VM.FileLocation + ".crash"}. Rename and re-open this to restore. See crash-info.txt fore more info.", " An Unhandled Exception Occurred", MessageBoxButton.OK, MessageBoxImage.Error);
-                    System.IO.File.AppendAllLines(System.IO.Path.GetDirectoryName(VM.FileLocation) + "\\crash-info.txt",
+                    MessageBox.Show($"{e.GetType().Name}: {e.Message}\nThe scoresheet was saved to {_VM.FileLocation + ".crash"}. Rename and re-open this to restore. See crash-info.txt fore more info.", " An Unhandled Exception Occurred", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.IO.File.AppendAllLines(System.IO.Path.GetDirectoryName(_VM.FileLocation) + "\\crash-info.txt",
                         new string[]
                         {
                             "______________________________________________________",
                             $"An unhandled exception occurred at {DateTime.Now:g}",
-                            $"A backup of Scoresheet was saved at {VM.FileLocation}.crashed",
+                            $"A backup of Scoresheet was saved at {_VM.FileLocation}.crashed",
                             $"Error Message:\t{e.Message}",
                             $"Stack Trace:\n{e.StackTrace}",
                         }
@@ -245,15 +221,15 @@ namespace Scoresheet
 
         private void SearchBox_KeyUp(object sender, KeyEventArgs e)
         {
-            if (VM != null &&
-                VM.MarkingCompetitionItem != null &&
+            if (_VM != null &&
+                _VM.MarkingCompetitionItem != null &&
                 e.Key == Key.Enter &&
                 int.TryParse(SearchBox.Text, out int chestNumber))
             {
-                Participant? participant = VM.MarkingCompetitionItem.Participants.FirstOrDefault((p) => p.ChestNumber == chestNumber);
+                Participant? participant = _VM.MarkingCompetitionItem.Participants.FirstOrDefault((p) => p.ChestNumber == chestNumber);
                 if (participant != null)
                 {
-                    VM.MarkingParticipant = participant;
+                    _VM.MarkingParticipant = participant;
                     SearchBox.Text = "";
                     NewScoreTextBox.SelectAll();
                     NewScoreTextBox.Focus();
@@ -295,7 +271,7 @@ namespace Scoresheet
             return key == Key.Tab || key == Key.Space || key == Key.OemComma || key == Key.Add || key == Key.OemPlus;
         }
 
-        private double newScoreAverage = 0;
+        private double _NewScoreAverage = 0;
 
         private void NewScoreTextBox_KeyUp(object sender, KeyEventArgs e)
         {
@@ -320,15 +296,15 @@ namespace Scoresheet
 
             if (length == 0)
             {
-                newScoreAverage = 0;
+                _NewScoreAverage = 0;
                 ApplyScoreButton.IsEnabled = false;
             }
             else
             {
-                newScoreAverage = Math.Round(total / length, Settings.Default.MarksPrecision);
+                _NewScoreAverage = Math.Round(total / length, Settings.Default.MarksPrecision);
                 ApplyScoreButton.IsEnabled = CanApplyScore();
             }
-            NewTotalScoreLabel.Content = newScoreAverage;
+            NewTotalScoreLabel.Content = _NewScoreAverage;
 
             if (e.Key == Key.Enter && CanApplyScore())
             {
@@ -341,11 +317,11 @@ namespace Scoresheet
         }
 
         private bool CanApplyScore() =>
-            VM != null &&
-            VM.MarkingCompetitionItem != null &&
-            VM.MarkingParticipant != null &&
+            _VM != null &&
+            _VM.MarkingCompetitionItem != null &&
+            _VM.MarkingParticipant != null &&
             !string.IsNullOrWhiteSpace(NewScoreTextBox.Text) &&
-            !double.IsNaN(newScoreAverage);
+            !double.IsNaN(_NewScoreAverage);
 
         private void ApplyScoreButton_Click(object sender, RoutedEventArgs e)
         {
@@ -354,7 +330,7 @@ namespace Scoresheet
 
         private void ApplyScore()
         {
-            if (VM == null || VM.MarkingCompetitionItem == null || VM.MarkingParticipant == null || double.IsNaN(newScoreAverage)) return;
+            if (_VM == null || _VM.MarkingCompetitionItem == null || _VM.MarkingParticipant == null || double.IsNaN(_NewScoreAverage)) return;
 
             string[] markStrings = NewScoreTextBox.Text.Split(',');
             List<double> marks = new();
@@ -375,8 +351,8 @@ namespace Scoresheet
 
             if (marks.Count > 0)
             {
-                VM.MarkingCompetitionItem.AddScore(VM.MarkingParticipant, marks, VM.UserName);
-                VM.UpdateIntersection();
+                _VM.MarkingCompetitionItem.AddScore(_VM.MarkingParticipant, marks, _VM.UserName);
+                _VM.UpdateIntersection();
 
                 ClearScoreButton.IsEnabled = true;
 
@@ -407,21 +383,20 @@ namespace Scoresheet
 
         private void ClearScoreButton_Click(object sender, RoutedEventArgs e)
         {
-            if (VM == null || VM.MarkingCompetitionItem == null || VM.MarkingParticipant == null || VM.CurrentScoreIntersection == null) return;
+            if (_VM == null || _VM.MarkingCompetitionItem == null || _VM.MarkingParticipant == null || _VM.CurrentScoreIntersection == null) return;
             else
             {
-                if (Messager.Out($"Are you sure you want to clear #{VM.MarkingParticipant.ChestNumber}'s score in {VM.MarkingCompetitionItem.Name}?", "Clear score", ConsoleStyle.WarningBlockStyle, isCancelButtonVisible: true, yesButtonText: "Yes")
+                if (Messager.Out($"Are you sure you want to clear #{_VM.MarkingParticipant.ChestNumber}'s score in {_VM.MarkingCompetitionItem.Name}?", "Clear score", ConsoleStyle.WarningBlockStyle, isCancelButtonVisible: true, yesButtonText: "Yes")
                     == System.Windows.Forms.DialogResult.Yes)
                 {
-                    VM.MarkingCompetitionItem.ClearScore(VM.MarkingParticipant);
-                    VM.UpdateIntersection();
+                    _VM.MarkingCompetitionItem.ClearScore(_VM.MarkingParticipant);
+                    _VM.UpdateIntersection();
                     ClearScoreButton.IsEnabled = false;
                 }
             }
         }
 
         #endregion
-
     }
 }
 
