@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Examath.Core.Environment;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
@@ -206,8 +207,8 @@ namespace Scoresheet.Model
         /// Initialises the <see cref="CompetitionItems"/> list
         /// </summary>
         /// <param name="codes">Codes for each unique <see cref="CompetitionItem"/></param>
-        /// <exception cref="InvalidOperationException">If <see cref="Level"/> is null</exception>
-        public void JoinCompetitions(string[] codes, bool appendLevelToCode = false)
+        /// <exception cref="InvalidOperationException"></exception>
+        public void JoinCompetitions(System.Collections.Generic.List<string> codes, bool appendLevelToCode = false)
         {
             if (Level == null || _ScoresheetFile == null) throw new InvalidOperationException("Level or Scoresheet parent is null");
             // join from either .ssf cross-link codes or .csv data
@@ -217,6 +218,7 @@ namespace Scoresheet.Model
                 string lvlCode = (appendLevelToCode) ? code + "/" + Level.Code : code; // Codes in .csv don't have level abbreviations
                 CompetitionItem? competitionItem = _ScoresheetFile.CompetitionItems.Find((x) => x.Code == lvlCode);
                 if (competitionItem != null) JoinCompetition(competitionItem);
+                else throw new InvalidOperationException($"Could not find a competition coded '{lvlCode}' for '{FullName}' to join.");
             }
         }
 
@@ -282,7 +284,7 @@ namespace Scoresheet.Model
         {
             base.Initialize(scoresheetFile);
             InitializeLevel();
-            JoinCompetitions(_CompetitionItemsFromXML.Split(','));
+            JoinCompetitions(_CompetitionItemsFromXML.Split(',').ToList());
         }
 
         private void InitializeLevel()

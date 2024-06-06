@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using DocumentFormat.OpenXml.InkML;
 using Scoresheet.Model;
 using System;
 using System.Collections.Generic;
@@ -17,43 +18,38 @@ namespace Scoresheet.Formatter
         const int SEARCH_CLIP = 20;
         const double SEARCH_LEVEL_FACTOR = 0.4;
 
-        public string[] Data { get; set; }
-
         /// <summary>
         /// Gets a list of abbreviations for the items this participant seeks to join
         /// </summary>
         public string Details { get; private set; }
+        private List<string> _SoloItemCodes = new();
+        private List<string> _GroupItemCodes = new();
 
-        private const int TimeStampI = 0;
         /// <summary>
         /// The time this form was submitted
         /// </summary>
         public DateTime TimeStamp { get; set; }
 
-        private const int EmailI = 1;
         /// <summary>
         /// The email used to submit this form
         /// </summary>
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
-        private const int PhoneNumberI = 2;
         /// <summary>
         /// The phone number provided as contact
         /// </summary>
-        public string PhoneNumber { get; set; }
+        public string PhoneNumber { get; set; } = string.Empty;
 
-        private const int FullNameI = 3;
         /// <summary>
         /// The full name, combined from Family name and Given name entries
         /// </summary>
-        public string FullName { get; set; }
+        public string FullName { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets the <see cref="string.ToUpperInvariant"/> form of <see cref="FullName"/>
         /// </summary>
         public string SearchName { get; private set; }
 
-        private const int YearLevelI = 4;
         /// <summary>
         /// The year level of entrant
         /// </summary>
@@ -62,10 +58,8 @@ namespace Scoresheet.Formatter
         /// <summary>
         /// Gets the level definition associated with this entrant's claimed year level
         /// </summary>
-        public LevelDefinition? Level { get; private set; }
+        public LevelDefinition Level { get; private set; }
 
-        private const int ItemsStartI = 5;
-        private const int ItemsEndI = 8;
 
         /// <summary>
         /// Possible or actual match
@@ -74,11 +68,10 @@ namespace Scoresheet.Formatter
 
         public double MatchScore { get; private set; } = 0;
 
-        private const int GroupItemsI = 9;
 
-        private SubmissionStatus _SubmissionStatus;
+        private SubmissionStatus _SubmissionStatus = SubmissionStatus.Pending;
         /// <summary>
-        /// Gets or sets 
+        /// Gets or sets the submission status
         /// </summary>
         public SubmissionStatus SubmissionStatus
         {
@@ -90,70 +83,72 @@ namespace Scoresheet.Formatter
 
         #region Init
 
-        public static async System.Threading.Tasks.Task<FormSubmission> CreateFormSubmissionAndApplyMatch(string rawData, ScoresheetFile scoresheetFile)
-        {
-            FormSubmission formSubmission = await Task.Run<FormSubmission>(() => new(rawData, scoresheetFile));
-
-            // Apply match
-            if (formSubmission.Match != null && formSubmission.MatchScore >= 1)
-            {
-                if (formSubmission.IsValidMatch(formSubmission.Match)) // Validity of Submission
-                {
-                    formSubmission.ApplyMatch(formSubmission.Match, scoresheetFile);
-                }
-                else
-                {
-                    formSubmission._SubmissionStatus = SubmissionStatus.Invalid;
-                }
-            }
-            else
-            {
-                formSubmission._SubmissionStatus = SubmissionStatus.Mismatch;
-            }
-
-            return formSubmission;
-        }
-
         /// <summary>
         /// Formats the form submission entry and attempts to find the matching <see cref="ScoresheetFile.IndividualParticipants"/>
         /// </summary>
         /// <param name="rawData">The raw csv line for this submission</param>
         /// <param name="scoresheetFile">the scoresheet file for reference and to modify if a match is found</param>
-        private FormSubmission(string rawData, ScoresheetFile scoresheetFile)
+        /// <exception cref="FormatException"></exception>
+        public FormSubmission(string[] rawData, List<FormSubmissionColumn> columns, ScoresheetFile scoresheetFile)
         {
-            // text processing
-            string[] rawArray = rawData.Split(',');
-            Data = new string[rawArray.Length];
-            Details = "";
-            for (int i = 0; i < rawArray.Length; i++)
+            LevelDefinition? level = null;
+            for (int i = 0; i < rawData.Length; i++)
             {
-                Data[i] = rawArray[i].Trim(new char[] { '"', ' ' });
-
-                // For Details property
-                if (i >= ItemsStartI && i <= ItemsEndI) // Column that may store items then
+                switch (columns[i].ColumnType)
                 {
-                    Details += string.Join(' ',                     // Join with space
-                        Data[i].Split(';')                          //  Items separated by semicolon
-                        .Select((x) =>                              //   Select:
-                        string.Join("",                             //    Join with nothing
-                        x.Split(' ')                                //     Words split by space
-                        .Select((y) => y[..Math.Min(y.Length, 2)])  //      Select: first two chars                        
-                        ))) + " ";                                  // Then Append Space
+                    case ColumnType.Timestamp:
+                        TimeStamp = DateTime.ParseExact(rawData[i].Replace("GMT", ""), "M/d/yyyy H:mm:ss", CultureInfo.InvariantCulture);
+                        break;
+                    case ColumnType.Email:
+                        Email = rawData[i].ToLower();
+                        break;
+                    case ColumnType.PhoneNumber:
+                        PhoneNumber = rawData[i].ToLower();
+                        break;
+                    case ColumnType.Name:
+                        if (string.IsNullOrEmpty(FullName))
+                        {
+                            FullName = rawData[i];
+                        }
+                        else
+                        {
+                            FullName += " " + rawData[i];
+                        }
+                        break;
+                    case ColumnType.Year:
+                        if (int.TryParse(NotDigitsRegex().Replace(rawData[i], ""), out int yearLevel))
+                        {
+                            YearLevel = yearLevel;
+                            level = scoresheetFile.LevelDefinitions.Find(x => x.Within(YearLevel));
+                        }
+                        else
+                        {
+                            throw new FormatException("Invalid year level");
+                        }
+                        break;
+                    case ColumnType.SoloItems:
+                        _SoloItemCodes.AddRange(rawData[i].Split(',').Select(s => s.Trim()).ToList());
+                        break;
+                    case ColumnType.GroupItems:
+                        _GroupItemCodes.AddRange(rawData[i].Split(',').Select(s => s.Trim()).ToList());
+                        break;
+                    case ColumnType.Ignore:
+                    default:
+                        break;
                 }
             }
 
-            // Independent properties 5/12/2024 14:59:01
-            TimeStamp = DateTime.ParseExact(Data[TimeStampI].Replace("GMT", ""), "M/d/yyyy H:mm:ss", CultureInfo.InvariantCulture);
-            Email = Data[EmailI].ToLower();
-            PhoneNumber = Data[PhoneNumberI].ToLower();
-            FullName = Data[FullNameI];
+            // Independent properties 
             SearchName = FullName.ToUpperInvariant();
 
             // Dependent properties
-            if (int.TryParse(NotDigitsRegex().Replace(Data[YearLevelI], ""), out int yearLevel))
+            if (level != null)
             {
-                YearLevel = yearLevel;
-                Level = scoresheetFile.LevelDefinitions.Find(x => x.Within(YearLevel));
+                Level = level;
+            }
+            else
+            {
+                throw new FormatException("Invalid year level");
             }
 
             // Find match
@@ -182,6 +177,14 @@ namespace Scoresheet.Formatter
             }
 
             MatchScore = Math.Round(1 - (searchDistance / 15), 2);
+
+            Details = string.Join(' ',                        // Join with space
+                    _SoloItemCodes.Concat(_GroupItemCodes)      //  All item codes, for which
+                    .Select((x) =>                              //  
+                    string.Join("",                             //    Join with nothing
+                    x.Split(' ')                                //     Words split by space
+                    .Select((y) => y[..Math.Min(y.Length, 2)])  //      Select: first two chars                        
+                    )));
         }
 
         #endregion
@@ -197,6 +200,15 @@ namespace Scoresheet.Formatter
         public bool IsValidMatch(IndividualParticipant match) => match.YearLevel == YearLevel;
 
         /// <summary>
+        /// Gets whether the submission has been sonsidered processed.
+        /// </summary>
+        /// <returns></returns>
+        public bool IsProcessed =>
+            SubmissionStatus == SubmissionStatus.Assigned ||
+            SubmissionStatus == SubmissionStatus.Edited ||
+            SubmissionStatus == SubmissionStatus.Ignored;
+
+        /// <summary>
         /// Applies the data from this <see cref="FormSubmission"/> to the <paramref name="match"/>
         /// </summary>
         /// <param name="match">The <see cref="IndividualParticipant"/> to apply to</param>
@@ -206,12 +218,22 @@ namespace Scoresheet.Formatter
         /// </remarks>
         public void ApplyMatch(IndividualParticipant match, ScoresheetFile scoresheetFile)
         {
-            if (Level == null)
+            if (match.SubmissionTimeStamp < TimeStamp)
             {
-                SubmissionStatus = SubmissionStatus.Error;
-            }
-            else if (match.SubmissionTimeStamp < TimeStamp)
-            {
+                try
+                {
+                    // Join solo and group competitions
+                    match.JoinCompetitions(_SoloItemCodes, appendLevelToCode: true);
+
+                    // Join group items
+                    match.JoinCompetitions(_GroupItemCodes, appendLevelToCode: false);
+                }
+                catch (InvalidOperationException ioe)
+                {
+                    match.UnjoinAllCompetitions();
+                    throw ioe;
+                }
+
                 if (match.IsFormSubmitted)
                 {
                     SubmissionStatus = SubmissionStatus.Edited;
@@ -228,16 +250,6 @@ namespace Scoresheet.Formatter
                 match.SubmissionEmail = Email;
                 match.SubmissionPhoneNumber = PhoneNumber;
                 match.SubmissionFullName = FullName;
-
-                // The csv file has several columns with individual items
-                // Join solo items from only two columns
-                for (int i = ItemsStartI; i <= ItemsEndI; i++)
-                {                    
-                    match.JoinCompetitions(Data[i].Split(';'), appendLevelToCode: true);
-                }
-
-                // Join group items
-                match.JoinCompetitions(Data[GroupItemsI].Split(';'));
             }
             else
             {
@@ -346,6 +358,7 @@ namespace Scoresheet.Formatter
 
     public enum SubmissionStatus
     {
+        Pending,
         Mismatch,
         Invalid,
         Edited,

@@ -134,6 +134,28 @@ namespace Scoresheet.Model
             }
         }
 
+        [RelayCommand]
+        public void AutomaticallyCreateGroupParticipants()
+        {
+            if (_ScoresheetFile == null) return;
+
+            foreach (Team team in _ScoresheetFile.Teams)
+            {
+                ObservableCollection<IndividualParticipant> individualParticipants = new(IndividualParticipants.Where(p => p.Team == team));
+                if (individualParticipants.Count != 0)
+                {
+                    GroupParticipant groupParticipant = new(_ScoresheetFile, individualParticipants)
+                    {
+                        Team = team,
+                        ChestNumber = GroupParticipants.Where(gp => gp.Team == team).LastOrDefault()?.ChestNumber + 1 ?? _ScoresheetFile?.GetChessNumberBase(null, team) ?? 1000,
+                        Leader = individualParticipants.FirstOrDefault(),
+                    };
+                    GroupParticipants.Add(groupParticipant);
+                }
+            }
+            _ScoresheetFile?.NotifyChange(this);
+        }
+
         public override void Initialize(ScoresheetFile scoresheetFile)
         {
             foreach (GroupParticipant participant in GroupParticipants) participant.Initialize(scoresheetFile);

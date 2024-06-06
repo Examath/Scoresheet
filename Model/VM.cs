@@ -357,7 +357,7 @@ namespace Scoresheet.Model
                 }
 
                 individualParticipant.UnjoinAllCompetitions();
-                individualParticipant.JoinCompetitions(EditableItemCodes.ToArray());
+                individualParticipant.JoinCompetitions(EditableItemCodes);
                 individualParticipant.SubmissionEmail = UserName;
                 individualParticipant.SubmissionFullName = individualParticipant.FullName;
                 individualParticipant.SubmissionTimeStamp = DateTime.Now;

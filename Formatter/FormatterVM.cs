@@ -5,7 +5,9 @@ using Scoresheet.Model;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Data;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -13,21 +15,37 @@ namespace Scoresheet.Formatter
 {
     public partial class FormatterVM : ObservableObject
     {
-        #region Properties
+        #region Basic Properties
 
+        private int _Progress = 0;
         /// <summary>
-        /// Set to true when the teams list is loaded into an unformatted scoresheet
+        /// Gets or sets the number of registrations processed
         /// </summary>
-        public bool IsLoaded { get; set; }
-
-        private double _Progress = 0;
-        /// <summary>
-        /// Gets or sets the progress whilst doing a task
-        /// </summary>
-        public double Progress
+        public int Progress
         {
             get => _Progress;
             private set => SetProperty(ref _Progress, value);
+        }
+
+        private List<FormSubmissionColumn> _DataColumns = new();
+        /// <summary>
+        /// Gets or sets the columns of the imported TSV document.
+        /// </summary>
+        public List<FormSubmissionColumn> DataColumns
+        {
+            get => _DataColumns;
+            set => SetProperty(ref _DataColumns, value);
+        }
+
+
+        private List<string[]> _Data = new();
+        /// <summary>
+        /// Gets or sets the lines of the loaded TSV file
+        /// </summary>
+        public List<string[]> Data
+        {
+            get => _Data;
+            set => SetProperty(ref _Data, value);
         }
 
         #endregion
@@ -40,99 +58,13 @@ namespace Scoresheet.Formatter
         }
 
         /// <summary>
-        /// Creates a new Formatter, and prompts the user to select a teams list if there are no participants.
+        /// Creates a new Formatter, with the specified <see cref="ScoresheetFile"/>,
+        /// and asks the user to select the TSV file to sync
         /// </summary>
         /// <param name="scoresheetFile"></param>
         public FormatterVM(ScoresheetFile scoresheetFile)
         {
             ScoresheetFile = scoresheetFile;
-
-            if (ScoresheetFile.IndividualParticipants.Count > 0)
-            {
-                IsLoaded = true;
-                return;
-            }
-
-            while (!IsLoaded)
-            {
-                OpenFileDialog openFileDialog = new()
-                {
-                    Title = "Open Teams List file",
-                    Filter = "Teams List (.sstl)|*.sstl|All|*.*",
-                };
-
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    try
-                    {
-                        List<IndividualParticipant> individualParticipants = new();
-                        string[] rdata = File.ReadAllLines(openFileDialog.FileName);
-                        string[] buffer = new string[3];
-
-                        int[,] chestNumberMatrix = getChestNumberMatrix();
-
-                        foreach (string line in rdata)
-                        {
-                            if (string.IsNullOrWhiteSpace(line)) continue;
-
-                            string[] entry = line.Split('\t');
-
-                            for (int i = 0; i < Math.Min(buffer.Length, entry.Length); i++)
-                            {
-                                if (!string.IsNullOrWhiteSpace(entry[i])) buffer[i] = entry[i];
-                            }
-
-                            if (!string.IsNullOrWhiteSpace(entry[0]))
-                            {
-                                individualParticipants.Add(new(buffer, chestNumberMatrix, ScoresheetFile));
-                            }
-                        }
-                        if (individualParticipants.Count < 1)
-                        {
-                            if (Messager.Out("Want to try loading the teams list again", "Teams list is empty", yesButtonText: "Try Again", isCancelButtonVisible: true) == DialogResult.Yes)
-                                continue;
-                            else
-                                return;
-                        }
-                        DialogResult dialogResult = Messager.Out($"Count: {individualParticipants.Count}\n\n{string.Join('\n', individualParticipants)}", $"Check Teams List",
-                        isCancelButtonVisible: true, noButtonText: "Try Again", yesButtonText: "Continue");
-                        switch (dialogResult)
-                        {
-                            case DialogResult.Yes:
-                                ScoresheetFile.IndividualParticipants = individualParticipants;
-                                IsLoaded = true;
-                                break;
-                            case DialogResult.No:
-                                continue;
-                            default:
-                                return;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        if (Messager.OutException(e, yesButtonText: "Try Again", isCancelButtonVisible: true) == DialogResult.Yes)
-                            continue;
-                        else
-                            return;
-                    }
-                }
-                else return;
-            }
-
-            int[,] getChestNumberMatrix()
-            {
-                int[,] chestNumberMatrix = new int[ScoresheetFile.LevelDefinitions.Count, ScoresheetFile.Teams.Count];
-
-                for (int levelIndex = 0; levelIndex < chestNumberMatrix.GetLength(0); levelIndex++)
-                {
-                    for (int teamIndex = 0; teamIndex < chestNumberMatrix.GetLength(1); teamIndex++)
-                    {
-                        chestNumberMatrix[levelIndex, teamIndex] = ScoresheetFile.GetChessNumberBase(levelIndex, teamIndex, scoresheetFile.Teams.Count);
-                    }
-                }
-
-                return chestNumberMatrix;
-            }
         }
 
         #endregion
@@ -143,34 +75,110 @@ namespace Scoresheet.Formatter
 
         #endregion
 
-        #region Importer
+        #region Import Form Submissions
 
-        [RelayCommand]
-        public async Task Import()
+        public bool ImportData(string fileLocation)
         {
-            Progress = 0.01;
-
-            OpenFileDialog openFileDialog = new()
+            try
             {
-                Title = "Open submissions from Google forms",
-                Filter = "csv|*.csv|All|*.*",
-            };
+                using StreamReader reader = new(fileLocation);
+                string? line;
 
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                string[] data = await File.ReadAllLinesAsync(openFileDialog.FileName);
-
-                Progress = 0.1;
-
-                for (int i = 1; i < data.Length; i++)
+                // Read header row
+                line = reader.ReadLine();
+                if (line == null)
                 {
-                    Progress = 0.9 * i / data.Length + 0.1;
-                    FormSubmission formSubmission = await FormSubmission.CreateFormSubmissionAndApplyMatch(data[i], ScoresheetFile);
+                    Messager.Out("Please open a .tsv file with the registrations.", "File is empty", messageStyle: ConsoleStyle.FormatBlockStyle);
+                    return false;
+                }
+                DataColumns = line.Split('\t').Select(s => new FormSubmissionColumn(s)).ToList();
+                if (DataColumns.Count <= 1)
+                {
+                    Messager.Out("Please open a Tab-Separated Value (.tsv) file with the registrations.", "File format not valid", messageStyle: ConsoleStyle.FormatBlockStyle);
+                    return false;
+                }
+
+                // Read all rows
+                while ((line = reader.ReadLine()) != null)
+                {
+                    string[] lineArray = line.Split('\t');
+                    if (DataColumns.Count != lineArray.Length)
+                    {
+                        Messager.Out($"Line {Data.Count + 1} does not have the same number of columns as the rest of the .tsv file", 
+                            "File format not valid", messageStyle: ConsoleStyle.FormatBlockStyle);
+                        return false;
+                    }
+                    // Preformat
+                    for (int i = 0; i < lineArray.Length; i++)
+                    {
+                        lineArray[i] = lineArray[i].Trim();
+                    }
+                    // Add
+                    Data.Add(lineArray);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Messager.OutException(ex, $"Importing the TSV, line {Data.Count + 1}");
+                return false;
+            }
+        }
+
+        #endregion
+
+        #region Synchronise
+
+        [RelayCommand()]
+        public async Task Synchronise()
+        {
+            // Read data first
+            for (int i = 0; i < Data.Count; i++)
+            {
+                try
+                {
+                    FormSubmission formSubmission = await Task.Run<FormSubmission>(() => new(Data[i], DataColumns, ScoresheetFile));
                     FormSubmissions.Add(formSubmission);
+                    Progress++;
+                }
+                catch (FormatException fe)
+                {
+                    Messager.OutException(fe, $"Reading submission #{i}");
+                    Progress = 0;
+                    FormSubmissions.Clear();
                 }
             }
 
             Progress = 0;
+
+            foreach (FormSubmission formSubmission in FormSubmissions)
+            {
+                // Apply match
+                if (formSubmission.Match != null && formSubmission.MatchScore >= 1)
+                {
+                    if (formSubmission.IsValidMatch(formSubmission.Match)) // Validity of Submission
+                    {
+                        try
+                        {
+                            formSubmission.ApplyMatch(formSubmission.Match, ScoresheetFile);
+                            Progress++;
+                        }
+                        catch (InvalidOperationException ioe)
+                        {
+                            Messager.OutException(ioe, $"Applying {formSubmission.Match.FullName}");
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        formSubmission.SubmissionStatus = SubmissionStatus.Invalid;
+                    }
+                }
+                else
+                {
+                    formSubmission.SubmissionStatus = SubmissionStatus.Mismatch;
+                }
+            }
         }
 
         private ObservableCollection<FormSubmission> _FormSubmissions = new();
@@ -237,7 +245,7 @@ namespace Scoresheet.Formatter
             {
                 if (SelectedParticipant.SubmissionTimeStamp == SelectedSubmission.TimeStamp) // Currently set
                 {
-                    UpdateFixState(false, "Applied");
+                    UpdateFixState(false, "Currently Applied");
                 }
                 else if (SelectedParticipant.SubmissionTimeStamp > SelectedSubmission.TimeStamp)
                 {
@@ -318,9 +326,12 @@ namespace Scoresheet.Formatter
                     }
                 }
 
+                // Add more conditions here
+
                 if (ok)
                 {
                     SelectedSubmission.ApplyMatch(SelectedParticipant, ScoresheetFile);
+                    if (SelectedSubmission.IsProcessed) Progress++;
                     SelectedParticipant_Changed();
 
                     // Find next mismatch to solve

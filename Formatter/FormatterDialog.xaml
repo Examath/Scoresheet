@@ -7,7 +7,9 @@
         xmlns:model="clr-namespace:Scoresheet.Model"
         xmlns:c="clr-namespace:Examath.Core.Controls;assembly=Examath.Core"
         mc:Ignorable="d"
-        Title="Formatter" Height="700" Width="1200" Style="{StaticResource ContrastWindowStyle}" Loaded="Window_Loaded" WindowState="Maximized">
+        Title="Formatter" Height="700" Width="1200" Style="{StaticResource ContrastWindowStyle}" 
+        Loaded="Window_Loaded" WindowState="Maximized"
+        IsEnabled="False" d:IsEnabled="True">
     <Window.DataContext>
         <local:FormatterVM/>
     </Window.DataContext>
@@ -29,113 +31,159 @@
     <Window.InputBindings>
         <KeyBinding Key="F" Command="{Binding FixCommand}"/>
     </Window.InputBindings>
-    <Grid Margin="6">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="1*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="7*"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="12*"/>
-        </Grid.ColumnDefinitions>
-        <ListBox Style="{StaticResource ControlPanelHorizontalListBoxStyle}">
-            <ItemsControl Tag="Teams" ItemsSource="{Binding ScoresheetFile.Teams}" Margin="4" 
+    <TabControl x:Name="RootTabControl" SelectionChanged="TabControl_SelectionChanged">
+        <TabItem x:Name="ImportTab" Header="Step 1: Define Import Query">
+            <Grid Margin="6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="7*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="12*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel x:Name="SynchroniseOptions">
+                    <GroupBox Header="Column Maping">
+                        <ItemsControl ItemsSource="{Binding DataColumns}" d:ItemsSource="{d:SampleData ItemCount=3}"
+                                      Grid.IsSharedSizeScope="True">
+                            <ItemsControl.Resources>
+                                <ObjectDataProvider x:Key="ColumnTypeEnum" ObjectType="{x:Type local:ColumnType}" MethodName="GetValues">
+                                    <ObjectDataProvider.MethodParameters>
+                                        <x:Type TypeName="local:ColumnType" />
+                                    </ObjectDataProvider.MethodParameters>
+                                </ObjectDataProvider>
+                            </ItemsControl.Resources>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type local:FormSubmissionColumn}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="ComboBox"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Label Style="{StaticResource OutputLabel}" Content="{Binding Header}"/>
+                                        <ComboBox SelectedItem="{Binding ColumnType}" ItemsSource="{Binding Source={StaticResource ColumnTypeEnum}}" Grid.Column="1"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </GroupBox>
+                    <!--<ListBox Style="{StaticResource ControlPanelListBoxStyle}">
+                </ListBox>-->
+                    <Button x:Name="SynchroniseButton" Content="Synchronise" Click="SynchroniseButton_Click" />
+                </StackPanel>
+                
+                <GridSplitter Grid.Column="1" Grid.RowSpan="3" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center" Margin="0,2,0,2"/>
+                <DataGrid x:Name="RawDataGrid" Grid.Column="2">
+                </DataGrid>
+            </Grid>
+        </TabItem>
+        <TabItem x:Name="FixTab" Header="Step 2: Synchronise and Fix">
+            <Grid Margin="6">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="7*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="12*"/>
+                </Grid.ColumnDefinitions>
+                <ListBox Style="{StaticResource ControlPanelHorizontalListBoxStyle}">
+                    <ItemsControl Tag="Teams" ItemsSource="{Binding ScoresheetFile.Teams}" Margin="4" 
                           d:ItemsSource="{d:SampleData ItemCount=2}"
                           ItemTemplate="{StaticResource TeamBox}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-            </ItemsControl>
-            <Button Content="Import .csv" ToolTip="Import Google forms results" Command="{Binding ImportCommand}"/>
-            <Button Tag="Fix (Press F)" Width="100" Content="{Binding FixSuggestion}" Command="{Binding FixCommand}" Foreground="{StaticResource NewColourKey}"/>
-            <Button x:Name="CreateButton" Content="Export" Click="CreateButton_Click" />
-        </ListBox>
-        <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Column="0" Grid.Row="1">
-            <WrapPanel Tag="Participant Details" DataContext="{Binding SelectedParticipant}" Style="{StaticResource ResourceKey=DetailsBox}">
-                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource ParticipantBox}"/>
-                <TextBlock Text="{Binding YearLevel, StringFormat={}y{0}, FallbackValue=y?}" Padding="8 0 4 0"/>
-                <TextBlock Text="{Binding FullName, FallbackValue=Name?}" Padding="4 0"/>
-                <ItemsControl ItemsSource="{Binding CompetitionItems}" d:ItemsSource="{d:SampleData ItemCount=2}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="model:CompetitionItem">
-                            <TextBlock Foreground="{StaticResource ForegroundMinorColourKey}" Text="{Binding ShortCode}" Padding="4,0" ToolTip="{Binding Code}" />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </WrapPanel>
-            <WrapPanel Tag="Submission Details" DataContext="{Binding SelectedSubmission}"  Style="{StaticResource ResourceKey=DetailsBox}">
-                <Border CornerRadius="4" Width="28">
-                    <Border.Background>
-                        <SolidColorBrush Color="{Binding Team.Colour,FallbackValue=Gray}"/>
-                    </Border.Background>
-                </Border>
-                <TextBlock Text="{Binding YearLevel, StringFormat={}y{0}, FallbackValue=y?}" Padding="8 0 4 0"/>
-                <TextBlock Text="{Binding FullName, FallbackValue=Name?}" Padding="4 0"/>
-                <TextBlock Text="{Binding Details, Mode=OneWay, FallbackValue=Items}" Padding="4 0"/>
-            </WrapPanel>
-        </ListBox>
-        <ListBox x:Name="ParticipantsListBox"
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                    <Button Tag="Fix (Press F)" Width="100" Content="{Binding FixSuggestion}" Command="{Binding FixCommand}" Foreground="{StaticResource NewColourKey}"/>
+                </ListBox>
+                <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Column="0" Grid.Row="1">
+                    <WrapPanel Tag="Participant Details" DataContext="{Binding SelectedParticipant}" Style="{StaticResource ResourceKey=DetailsBox}">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource ParticipantBox}"/>
+                        <TextBlock Text="{Binding YearLevel, StringFormat={}y{0}, FallbackValue=y?}" Padding="8 0 4 0"/>
+                        <TextBlock Text="{Binding FullName, FallbackValue=Name?}" Padding="4 0"/>
+                        <ItemsControl ItemsSource="{Binding CompetitionItems}" d:ItemsSource="{d:SampleData ItemCount=2}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="model:CompetitionItem">
+                                    <TextBlock Foreground="{StaticResource ForegroundMinorColourKey}" Text="{Binding ShortCode}" Padding="4,0" ToolTip="{Binding Code}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </WrapPanel>
+                    <WrapPanel Tag="Submission Details" DataContext="{Binding SelectedSubmission}"  Style="{StaticResource ResourceKey=DetailsBox}">
+                        <Border CornerRadius="4" Width="28">
+                            <Border.Background>
+                                <SolidColorBrush Color="{Binding Team.Colour,FallbackValue=Gray}"/>
+                            </Border.Background>
+                        </Border>
+                        <TextBlock Text="{Binding YearLevel, StringFormat={}y{0}, FallbackValue=y?}" Padding="8 0 4 0"/>
+                        <TextBlock Text="{Binding FullName, FallbackValue=Name?}" Padding="4 0"/>
+                        <TextBlock Text="{Binding Details, Mode=OneWay, FallbackValue=Items}" Padding="4 0"/>
+                    </WrapPanel>
+                </ListBox>
+                <ListBox x:Name="ParticipantsListBox"
                  Grid.Row="0" Grid.RowSpan="3" Grid.Column="2"
                  ItemsSource="{Binding Source={StaticResource IndividualParticipantsSource}}" d:ItemsSource="{d:SampleData ItemCount=50}" 
                  Style="{StaticResource ContrastListBoxStyle}"
                  SelectedItem="{Binding SelectedParticipant}" ItemTemplate="{StaticResource ParticipantItemsDataTemplate}"
                  ScrollViewer.VerticalScrollBarVisibility="Disabled">
-            <ListBox.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Select Match" Command="{Binding FindCurrentMatchingSubmissionCommand}"/>
-                </ContextMenu>
-            </ListBox.ContextMenu>
-            <ListBox.GroupStyle>
-                <GroupStyle>
-                    <GroupStyle.Panel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Vertical"/>
-                        </ItemsPanelTemplate>
-                    </GroupStyle.Panel>
-                    <GroupStyle.HeaderTemplate>
-                        <DataTemplate DataType="GroupItem">
-                            <Label Content="{Binding Name}" ContentStringFormat="Year {0}" TextElement.FontWeight="Bold" FontSize="16" />
-                        </DataTemplate>
-                    </GroupStyle.HeaderTemplate>
-                </GroupStyle>
-            </ListBox.GroupStyle>
-        </ListBox>
-        <GridSplitter Grid.Column="1" Grid.RowSpan="3" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center" Margin="0,2,0,2"/>
-        <ListView x:Name="FormsList" Grid.Row="2" Grid.Column="0"
+                    <ListBox.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Select Match" Command="{Binding FindCurrentMatchingSubmissionCommand}"/>
+                        </ContextMenu>
+                    </ListBox.ContextMenu>
+                    <ListBox.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.Panel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Vertical"/>
+                                </ItemsPanelTemplate>
+                            </GroupStyle.Panel>
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate DataType="GroupItem">
+                                    <Label Content="{Binding Name}" ContentStringFormat="Year {0}" TextElement.FontWeight="Bold" FontSize="16" />
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                        </GroupStyle>
+                    </ListBox.GroupStyle>
+                </ListBox>
+                <GridSplitter Grid.Column="1" Grid.RowSpan="3" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center" Margin="0,2,0,2"/>
+                <ListView x:Name="FormsList" Grid.Row="2" Grid.Column="0"
                  ItemsSource="{Binding Source={StaticResource FormSubmissionsSource}}"
                   SelectedItem="{Binding SelectedSubmission}" Margin="2,2,2,2">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="Year" DisplayMemberBinding="{Binding YearLevel}" Width="30"/>
-                    <GridViewColumn Header="Name" DisplayMemberBinding="{Binding FullName}"/>
-                    <GridViewColumn Header="Match" DisplayMemberBinding="{Binding Match.ChestNumber, StringFormat=#{0}}"/>
-                    <GridViewColumn Header="Email" DisplayMemberBinding="{Binding Email}"/>
-                    <GridViewColumn Header="Timestamp" DisplayMemberBinding="{Binding TimeStamp}"/>
-                </GridView>
-            </ListView.View>
-            <ListView.GroupStyle>
-                <GroupStyle>
-                    <GroupStyle.HeaderTemplate>
-                        <DataTemplate>
-                            <DockPanel Margin="2" Background="{StaticResource PanelColourKey}" LastChildFill="False">
-                                <Label Content="{Binding Name}" TextElement.FontWeight="Bold"/>
-                                <Label DockPanel.Dock="Right" Content="{Binding Items.Count}" ContentStringFormat="({0})"/>
-                            </DockPanel>
-                        </DataTemplate>
-                    </GroupStyle.HeaderTemplate>
-                </GroupStyle>
-            </ListView.GroupStyle>
-        </ListView>
-        <ProgressBar Grid.Row="3" Maximum="1" d:Value="0.3" Value="{Binding Progress, Mode=OneWay}" Grid.ColumnSpan="3" Margin="0,2,0,0"/>
-    </Grid>
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Year" DisplayMemberBinding="{Binding YearLevel}" Width="30"/>
+                            <GridViewColumn Header="Name" DisplayMemberBinding="{Binding FullName}"/>
+                            <GridViewColumn Header="Match" DisplayMemberBinding="{Binding Match.ChestNumber, StringFormat=#{0}}"/>
+                            <GridViewColumn Header="Email" DisplayMemberBinding="{Binding Email}"/>
+                            <GridViewColumn Header="Timestamp" DisplayMemberBinding="{Binding TimeStamp}"/>
+                        </GridView>
+                    </ListView.View>
+                    <ListView.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="2" Background="{StaticResource PanelColourKey}" LastChildFill="False">
+                                        <Label Content="{Binding Name}" TextElement.FontWeight="Bold"/>
+                                        <Label DockPanel.Dock="Right" Content="{Binding Items.Count}" ContentStringFormat="({0})"/>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                        </GroupStyle>
+                    </ListView.GroupStyle>
+                </ListView>
+                <ProgressBar Grid.Row="3" d:Maximum="20" Maximum="{Binding Data.Count}" 
+                             d:Value="10" Value="{Binding Progress, Mode=OneWay}" 
+                             Grid.ColumnSpan="3" Margin="0,2,0,0" Height="16"/>
+            </Grid>
+        </TabItem>
+    </TabControl>
 </Window>

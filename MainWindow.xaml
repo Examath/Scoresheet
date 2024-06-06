@@ -200,7 +200,7 @@
                     <ItemsControl Grid.Row="2" Foreground="{StaticResource ForegroundColourKey}"
                                 ItemsSource="{Binding Source={StaticResource CompetitionItemsSource}}" d:ItemsSource="{d:SampleData}"
                                 ItemTemplateSelector="{StaticResource CompetitionItemDataTemplateSelector}"
-                                >
+                                Margin="0,0,0,10">
                         <ItemsControl.GroupStyle>
                             <GroupStyle>
                                 <GroupStyle.Panel>
@@ -298,6 +298,7 @@
                                         <ListBox.ContextMenu>
                                             <ContextMenu>
                                                 <MenuItem Header="Create Group from Selected" Command="{Binding CreateGroupParticipantCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItems}"/>
+                                                <MenuItem Header="Automatically Split into Teams" Command="{Binding AutomaticallyCreateGroupParticipantsCommand}"/>
                                                 <MenuItem Header="Add to Group" Command="{Binding AddToExistingGroupParticipantCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItems}"/>
                                                 <Separator />
                                                 <MenuItem Header="Add Participant" Command="{Binding SearchAndAddParticipantCommand}">
