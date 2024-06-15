@@ -60,6 +60,19 @@ namespace Scoresheet.Model
         }
 
         /// <summary>
+        /// Sets <paramref name="participant"/> as the leader of this group
+        /// </summary>
+        /// <param name="participant"></param>
+        [RelayCommand]
+        public void SetAsLeader(IndividualParticipant? participant)
+        {
+            if (participant != null)
+            {
+                Leader = participant;
+            }
+        }
+
+        /// <summary>
         /// Removes <paramref name="participant"/> from this group, 
         /// including as leader if <paramref name="participant"/> is <see cref="Leader"/>
         /// </summary>

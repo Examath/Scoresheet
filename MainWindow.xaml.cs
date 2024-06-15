@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace Scoresheet
@@ -19,6 +20,7 @@ namespace Scoresheet
     {
         private VM? _VM;
         private readonly string _Version = System.Reflection.Assembly.GetExecutingAssembly()?.GetName()?.Version?.ToString(2) ?? "?";
+        private bool _IsLoaded = false;
 
         public MainWindow()
         {
@@ -95,12 +97,16 @@ namespace Scoresheet
                 Messager.OutException(e, "Loading",
                         yesButtonText: "Exit");
                 Close();
+                return;
             }
 
             if (_VM == null)
             {
                 Close();
+                return;
             }
+
+            _IsLoaded = true;
         }
 
 
@@ -393,6 +399,20 @@ namespace Scoresheet
                     _VM.UpdateIntersection();
                     ClearScoreButton.IsEnabled = false;
                 }
+            }
+        }
+
+        #endregion
+
+        #region Collection Views
+
+        private void ParticipantsViewSortComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_IsLoaded)
+            {
+                string newSortProperty = (ParticipantsViewSortComboBox.SelectedItem as ComboBoxItem)?.Tag.ToString() ?? "";
+                ParticipantsListBox.Items.SortDescriptions.Clear();
+                ParticipantsListBox.Items.SortDescriptions.Add(new SortDescription(newSortProperty, ListSortDirection.Ascending));
             }
         }
 

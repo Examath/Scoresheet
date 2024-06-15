@@ -155,8 +155,9 @@ namespace Scoresheet.Model
 
         #region ChestNumbers
 
-        // This should always be a power of 10
-        public const int CATEGORY_CAPACITY = 100;
+        // The number of chest numbers per category
+        public const int CATEGORY_CAPACITY = 50;
+        public const int CHEST_NUMBER_START = 100;
 
         /// <summary>
         /// Returns the valid starting index for chest numbers given the <paramref name="levelIndex"/> and <paramref name="teamIndex"/>
@@ -169,7 +170,7 @@ namespace Scoresheet.Model
         ///         (<paramref name="levelIndex"/> * <paramref name="teamCount"/> + <paramref name="teamIndex"/>) * <see cref="CATEGORY_CAPACITY"/>
         ///     </c>
         /// </returns>
-        public static int GetChessNumberBase(int levelIndex, int teamIndex, int teamCount) => (levelIndex * teamCount + teamIndex + 1) * CATEGORY_CAPACITY;
+        public static int GetChessNumberBase(int levelIndex, int teamIndex, int teamCount) => CHEST_NUMBER_START + (levelIndex * teamCount + teamIndex) * CATEGORY_CAPACITY;
 
         /// <summary>
         /// Returns the valid starting index for chest numbers given the <paramref name="level"/> and <paramref name="team"/>
@@ -188,6 +189,34 @@ namespace Scoresheet.Model
             return GetChessNumberBase(levelIndex, teamIndex, Teams.Count);
         }
 
+        /// <summary>
+        /// Returns a unique chest number for a group given the <paramref name="team"/>
+        /// </summary>
+        /// <param name="team">The team</param>
+        /// <returns><inheritdoc cref="GetChessNumberBase(int, int, int)"/></returns>
+        public int GetNextGroupChessNumber(Team? team)
+        {
+            int teamIndex = (team != null) ? Teams.IndexOf(team) : 0;
+            if (teamIndex == -1) teamIndex = 0;
+
+            int chestNumber = GetChessNumberBase(LevelDefinitions.Count, teamIndex, Teams.Count) + 1;
+
+            foreach (CompetitionItem competitionItem in CompetitionItems)
+            {
+                if (competitionItem is GroupItem groupItem)
+                {
+                    foreach (GroupParticipant groupParticipant in groupItem.GroupParticipants)
+                    {
+                        if (groupParticipant.Team == team && groupParticipant.ChestNumber >= chestNumber)
+                        {
+                            chestNumber = groupParticipant.ChestNumber + 1;
+                        }
+                    }
+                }
+            }
+
+            return chestNumber;
+        }
 
         #endregion
 

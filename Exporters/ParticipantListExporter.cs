@@ -20,14 +20,18 @@ namespace Scoresheet.Exporters
         public string SaveLocation { get; set; } = "C:\\temp\\doc.rtf";
         private FilePickerInput SaveLocationI;
 
+        public bool DisplayGroupLeader { get; set; } = true;
+        private CheckBoxInput DisplayGroupLeaderI;
+
         public bool AddChestNumbers { get; set; } = false;
         private CheckBoxInput AddChestNumbersI;
 
         public bool OpenAutomatically { get;set; } = true;
         private CheckBoxInput OpenAutomaticallyI;
 
-        public double TeamColumnWidth { get; set; } = 350;
-        private TextBoxInput TeamColumnWidthI;
+        public double TableWidth { get; set; } = 920;
+        private TextBoxInput TableWidthI;
+        private double TableColumnWidth => TableWidth / _ScoresheetFile.Teams.Count;
 
         private AskerOptions _AskerOptions = new("Export IndividualParticipant-Items List", canCancel: true);
 
@@ -35,14 +39,15 @@ namespace Scoresheet.Exporters
         {
             _ScoresheetFile = scoresheetFile;
             SaveLocationI = new(this, nameof(SaveLocation), "Location to Export to") { ExtensionFilter = "Rich Text Document|*.rtf", UseSaveFileDialog = true };
+            DisplayGroupLeaderI = new(this, nameof(DisplayGroupLeader), "Show Group Leader");
             AddChestNumbersI = new(this, nameof(AddChestNumbers), "Add chest numbers");
             OpenAutomaticallyI = new(this, nameof(OpenAutomatically), "Open file when complete");
-            TeamColumnWidthI = new(this, nameof(TeamColumnWidth), "Team column width");
+            TableWidthI = new(this, nameof(TableWidth), "Table width");
         }
 
         public void Export()
         {
-            if (Asker.Show(_AskerOptions, SaveLocationI, AddChestNumbersI, OpenAutomaticallyI, TeamColumnWidthI))
+            if (Asker.Show(_AskerOptions, SaveLocationI, DisplayGroupLeaderI, AddChestNumbersI, OpenAutomaticallyI, TableWidthI))
             {
                 FlowDocument flowDocument = new(new Paragraph(new Run("Generated at " + DateTime.Now.ToString())))
                 {
@@ -84,7 +89,7 @@ namespace Scoresheet.Exporters
 
                     foreach (Team team in _ScoresheetFile.Teams)
                     {
-                        table.Columns.Add(new TableColumn() { Width = new GridLength(TeamColumnWidth) });
+                        table.Columns.Add(new TableColumn() { Width = new GridLength(TableColumnWidth) });
                         headerRow.Cells.Add(new TableCell(new Paragraph(new Run(
                             team.ToString()
                             )
@@ -110,7 +115,7 @@ namespace Scoresheet.Exporters
 
                         if (notInGroup.Count > 0)
                         {
-                            Run note = new($"Not in group: {string.Join(", ", notInGroup.Select(p => (AddChestNumbers) ? p.ToString() : p.FullName).ToList())}")
+                            Run note = new($"Not in any group: {string.Join(", ", notInGroup.Select(p => (AddChestNumbers) ? p.ToString() : p.FullName).ToList())}")
                             {
                                 Foreground = Brushes.Tomato
                             };
@@ -171,7 +176,7 @@ namespace Scoresheet.Exporters
         {
             string participantRep = "Group";
             if (AddChestNumbers) participantRep += $" #{groupParticipant.ChestNumber}";
-            if (groupParticipant.Leader != null) participantRep += $" Leader: {groupParticipant.Leader.FullName}";
+            if (groupParticipant.Leader != null && DisplayGroupLeader) participantRep += $" Leader: {groupParticipant.Leader.FullName}";
             Run run = new Run(participantRep);
             run.FontWeight = FontWeights.Bold;
             return new Paragraph(run);

@@ -59,7 +59,7 @@ namespace Scoresheet.Model
             GroupParticipant groupParticipant = new(_ScoresheetFile, new ObservableCollection<IndividualParticipant>(individualParticipants))
             {
                 Team = team,
-                ChestNumber = GroupParticipants.Where(gp => gp.Team == team).LastOrDefault()?.ChestNumber + 1 ?? _ScoresheetFile?.GetChessNumberBase(null, team) ?? 1000,
+                ChestNumber = _ScoresheetFile?.GetNextGroupChessNumber(team) ?? 1000,
                 Leader = individualParticipants.FirstOrDefault(),
             };
 
@@ -137,23 +137,24 @@ namespace Scoresheet.Model
         [RelayCommand]
         public void AutomaticallyCreateGroupParticipants()
         {
-            if (_ScoresheetFile == null) return;
-
-            foreach (Team team in _ScoresheetFile.Teams)
+            if (_ScoresheetFile != null)
             {
-                ObservableCollection<IndividualParticipant> individualParticipants = new(IndividualParticipants.Where(p => p.Team == team));
-                if (individualParticipants.Count != 0)
+                foreach (Team team in _ScoresheetFile.Teams)
                 {
-                    GroupParticipant groupParticipant = new(_ScoresheetFile, individualParticipants)
+                    ObservableCollection<IndividualParticipant> individualParticipants = new(IndividualParticipants.Where(p => p.Team == team));
+                    if (individualParticipants.Count != 0)
                     {
-                        Team = team,
-                        ChestNumber = GroupParticipants.Where(gp => gp.Team == team).LastOrDefault()?.ChestNumber + 1 ?? _ScoresheetFile?.GetChessNumberBase(null, team) ?? 1000,
-                        Leader = individualParticipants.FirstOrDefault(),
-                    };
-                    GroupParticipants.Add(groupParticipant);
+                        GroupParticipant groupParticipant = new(_ScoresheetFile, individualParticipants)
+                        {
+                            Team = team,
+                            ChestNumber = _ScoresheetFile?.GetNextGroupChessNumber(team) ?? 1000,
+                            Leader = individualParticipants.FirstOrDefault(),
+                        };
+                        GroupParticipants.Add(groupParticipant);
+                    }
                 }
+                _ScoresheetFile?.NotifyChange(this);
             }
-            _ScoresheetFile?.NotifyChange(this);
         }
 
         public override void Initialize(ScoresheetFile scoresheetFile)

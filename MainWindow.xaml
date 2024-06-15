@@ -92,7 +92,7 @@
                 </Grid>
             </TabItem>
             <TabItem Header="Participants">
-                <Grid>
+                <Grid Grid.IsSharedSizeScope="True">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="1*"/>
@@ -102,10 +102,16 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="7*"/>
                     </Grid.ColumnDefinitions>
-                    <WrapPanel>
-                        <!--<Button Content="Add New Participant" Foreground="{StaticResource NewColourKey}"/>-->
-                        <Button Command="{Binding LoadParticipantListCommand}" Foreground="{StaticResource NewColourKey}">Load Participants List...</Button>
-                        <Button Command="{Binding FormatCommand}">Import Registrations...</Button>
+                    <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.IsSharedSizeScope="False">
+                        <WrapPanel>
+                            <!--<Button Content="Add New Participant" Foreground="{StaticResource NewColourKey}"/>-->
+                            <Button Command="{Binding LoadParticipantListCommand}" Foreground="{StaticResource NewColourKey}">Load Participants List...</Button>
+                            <Button Command="{Binding FormatCommand}">Import Registrations...</Button>
+                        </WrapPanel>
+                        <ComboBox x:Name="ParticipantsViewSortComboBox" Tag="Sort View By" SelectionChanged="ParticipantsViewSortComboBox_SelectionChanged">
+                            <ComboBoxItem IsSelected="True" Tag="ChestNumber">Chest Number</ComboBoxItem>
+                            <ComboBoxItem Tag="FullName">Full Name</ComboBoxItem>
+                        </ComboBox>
                         <Button Command="{Binding ExportCertificatesCommand}" CommandParameter="{Binding ElementName=ParticipantsListBox, Path=SelectedItems}"
                                 Content="{Binding ElementName=ParticipantsListBox, Path=SelectedItems.Count, FallbackValue='0'}" ContentStringFormat="Print Certificates of {0} Participants..." />
                         <Button Command="{Binding SearchParticipantCommand}">
@@ -113,8 +119,9 @@
                                 <Run Style="{StaticResource Glyph}">&#xE094;</Run> Find Participant by Name...
                             </TextBlock>
                         </Button>
-                    </WrapPanel>
-                    <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Row="1">
+                    </ListBox>
+
+                    <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Row="1" Grid.IsSharedSizeScope="False">
                         <TextBox FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" 
                                  Text="{Binding SelectedParticipant.FullName, FallbackValue=Name?}"/>
                         <ComboBox Tag="Team" ItemsSource="{Binding ScoresheetFile.Teams}" SelectedItem="{Binding SelectedParticipant.Team}" 
