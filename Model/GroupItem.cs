@@ -144,12 +144,14 @@ namespace Scoresheet.Model
                     ObservableCollection<IndividualParticipant> individualParticipants = new(IndividualParticipants.Where(p => p.Team == team));
                     if (individualParticipants.Count != 0)
                     {
+#pragma warning disable CS8604 // Possible null reference argument.
                         GroupParticipant groupParticipant = new(_ScoresheetFile, individualParticipants)
                         {
                             Team = team,
                             ChestNumber = _ScoresheetFile?.GetNextGroupChessNumber(team) ?? 1000,
                             Leader = individualParticipants.OrderByDescending(p => p.YearLevel).FirstOrDefault(),
                         };
+#pragma warning restore CS8604 // Possible null reference argument.
                         GroupParticipants.Add(groupParticipant);
                     }
                 }

@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Examath.Core.Environment;
+using Examath.Core.AutoForm;
 using Scoresheet.Model;
 using System.Diagnostics;
 using System.IO;
@@ -17,37 +18,31 @@ namespace Scoresheet.Exporters
     {
         private ScoresheetFile _ScoresheetFile { get; set; }
 
+        [FilePicker(Label = "Location to Export to", ExtensionFilter = "Rich Text Document|*.rtf", UseSaveFileDialog = true)]
         public string SaveLocation { get; set; } = "C:\\temp\\doc.rtf";
-        private FilePickerInput SaveLocationI;
 
+        [CheckBox(Content = "Show Group Leader")]
         public bool DisplayGroupLeader { get; set; } = true;
-        private CheckBoxInput DisplayGroupLeaderI;
 
+        [CheckBox(Content = "Add Chest Numbers", HelpText = "Print chest numbers along side participant names")]
         public bool AddChestNumbers { get; set; } = false;
-        private CheckBoxInput AddChestNumbersI;
 
-        public bool OpenAutomatically { get;set; } = true;
-        private CheckBoxInput OpenAutomaticallyI;
-
+        [TextBox(Label = "Table width")]
         public double TableWidth { get; set; } = 920;
-        private TextBoxInput TableWidthI;
         private double TableColumnWidth => TableWidth / _ScoresheetFile.Teams.Count;
 
-        private AskerOptions _AskerOptions = new("Export IndividualParticipant-Items List", canCancel: true);
+        [CheckBox(Content = "Open File When Complete")]
+        public bool OpenAutomatically { get;set; } = true;
 
         public ParticipantListExporter(ScoresheetFile scoresheetFile)
         {
             _ScoresheetFile = scoresheetFile;
-            SaveLocationI = new(this, nameof(SaveLocation), "Location to Export to") { ExtensionFilter = "Rich Text Document|*.rtf", UseSaveFileDialog = true };
-            DisplayGroupLeaderI = new(this, nameof(DisplayGroupLeader), "Show Group Leader");
-            AddChestNumbersI = new(this, nameof(AddChestNumbers), "Add chest numbers");
-            OpenAutomaticallyI = new(this, nameof(OpenAutomatically), "Open file when complete");
-            TableWidthI = new(this, nameof(TableWidth), "Table width");
         }
 
         public void Export()
         {
-            if (Asker.Show(_AskerOptions, SaveLocationI, DisplayGroupLeaderI, AddChestNumbersI, OpenAutomaticallyI, TableWidthI))
+            if (AutoForm.ShowDialog(this, "Export Participant List"))
+            //if (Asker.Show(_AskerOptions, SaveLocationI, DisplayGroupLeaderI, AddChestNumbersI, OpenAutomaticallyI, TableWidthI))
             {
                 FlowDocument flowDocument = new(new Paragraph(new Run("Generated at " + DateTime.Now.ToString())))
                 {
