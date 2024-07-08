@@ -148,7 +148,7 @@ namespace Scoresheet.Model
                         {
                             Team = team,
                             ChestNumber = _ScoresheetFile?.GetNextGroupChessNumber(team) ?? 1000,
-                            Leader = individualParticipants.FirstOrDefault(),
+                            Leader = individualParticipants.OrderByDescending(p => p.YearLevel).FirstOrDefault(),
                         };
                         GroupParticipants.Add(groupParticipant);
                     }

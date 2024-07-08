@@ -5,6 +5,7 @@ using Scoresheet.Properties;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Xml.Serialization;
 
@@ -20,7 +21,7 @@ namespace Scoresheet.Model
     {
         protected ScoresheetFile? _ScoresheetFile;
 
-        #region Details
+        #region Name
 
         private string _Code = "";
 
@@ -63,11 +64,31 @@ namespace Scoresheet.Model
         [XmlIgnore]
         public string ShortCode { get; private set; } = "";
 
+        #endregion
+
+        #region Timimg
+
+        private DateTime _Time = new();
+        /// <summary>
+        /// Gets or sets the date and time this competition is scheduled for
+        /// </summary>
+        [XmlAttribute]
+        public DateTime Time
+        {
+            get => _Time;
+            set => SetProperty(ref _Time, value);
+        }
+
+        private TimeSpan _Duration = new(0,5,0);
         /// <summary>
         /// Gets or sets the time limit (excluding changeover) for each attempt at this item
         /// </summary>
         [XmlIgnore]
-        public TimeSpan Duration { get; set; }
+        public TimeSpan Duration
+        {
+            get => _Duration;
+            set => SetProperty(ref _Duration, value);
+        }
 
         /// <summary>
         /// Gets or sets the time limit (excluding changeover) for each attempt at this item in whole minutes
@@ -83,11 +104,78 @@ namespace Scoresheet.Model
             set => Duration = new TimeSpan(0, value, 0);
         }
 
+        private bool _IsOnStage = false;
+        /// <summary>
+        /// Gets or sets whether this competition is done in series on a stage
+        /// </summary>
+        [XmlAttribute]
+        public bool IsOnStage
+        {
+            get => _IsOnStage;
+            set => SetProperty(ref _IsOnStage, value);
+        }
+
+        #endregion
+
+        #region Description and Scoring Criteria
+
+        private string _Description = string.Empty;
+        /// <summary>
+        /// Gets or sets the description text for this competition
+        /// </summary>
+        public string Description
+        {
+            get => _Description;
+            set => SetProperty(ref _Description, value);
+        }
+
+        /// <summary>
+        /// Gets the list of scoring criteria for this competition
+        /// </summary>
+        [XmlElement(elementName: "Criteria")]
+        public ObservableCollection<ScoringCriteria> ScoringCriteria { get; private set; } = new();
+
+        private bool CanAddRemoveScoringCriteria() => !_ScoresheetFile?.IsScoring ?? false;
+
+        [RelayCommand(CanExecute = nameof(CanAddRemoveScoringCriteria))]
+        private void AddScoringCriteria(ScoringCriteria? scoringCriteria = null)
+        {
+            scoringCriteria ??= new();
+            scoringCriteria.PropertyChanged += ScoringCriteria_PropertyChanged;
+            ScoringCriteria.Add(scoringCriteria);
+            _ScoresheetFile?.NotifyChange(this);
+        }
+
+        private void ScoringCriteria_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            _ScoresheetFile?.NotifyChange(sender);
+        }
+
+        [RelayCommand(CanExecute = nameof(CanAddRemoveScoringCriteria))]
+        private void RemoveScoringCriteria(ScoringCriteria? scoringCriteria)
+        {
+            if (scoringCriteria != null && ScoringCriteria.Count > 1)
+            {
+                scoringCriteria.PropertyChanged -= ScoringCriteria_PropertyChanged;
+                ScoringCriteria.Remove(scoringCriteria);
+                _ScoresheetFile?.NotifyChange(this);
+            }            
+        }
+
+        #endregion
+
+        #region Level
+
+        private LevelDefinition _Level = LevelDefinition.All;
         /// <summary>
         /// Gets the <see cref="LevelDefinition"/> of this item, if any.
         /// </summary>
         [XmlIgnore]
-        public LevelDefinition Level { get; set; } = LevelDefinition.All;
+        public LevelDefinition Level
+        {
+            get => _Level;
+            set => SetProperty(ref _Level, value);
+        }
 
         #endregion
 
@@ -157,10 +245,9 @@ namespace Scoresheet.Model
             return Scores.Where((s) => s.IsOf(participant)).FirstOrDefault();
         }
 
-        internal void AddScore(Participant participant, List<double> marks, string author)
+        internal void AddScore(Participant participant, Score newScore)
         {
             RemoveScoresOf(participant);
-            Score newScore = new(participant, marks, author);
             Scores.Add(newScore);
             ReCalculateWinners();
             ScoreChanged?.Invoke(this, new(this, participant, newScore));
@@ -273,12 +360,28 @@ namespace Scoresheet.Model
 
             foreach (Score score in Scores) score.Initialize(Participants);
             ReCalculateWinners();
+
+            // Scoring Criteria: Create a default if there isn't one already
+            if (ScoringCriteria.Count <= 0)
+            {
+                AddScoringCriteria(new() { Description = "Default" });
+            }
+            else
+            {
+                foreach (ScoringCriteria scoringCriteria in ScoringCriteria) scoringCriteria.PropertyChanged += ScoringCriteria_PropertyChanged;
+            }
         }
 
         /// <summary>
         /// Gets the <see cref="ShortCode"/> of this competition item
         /// </summary>
         public override string ToString() => ShortCode;
+
+        protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+        {
+            base.OnPropertyChanged(e);
+            _ScoresheetFile?.NotifyChange(this);
+        }
 
         #endregion
     }

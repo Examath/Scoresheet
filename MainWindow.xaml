@@ -51,7 +51,7 @@
                         <ColumnDefinition MaxWidth="400"/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <GroupBox Header="Basic Setup Procedure">
+                    <GroupBox Header="Basic Setup Procedure" Grid.Row="1">
                         <StackPanel>
                             <StackPanel.Resources>
                                 <Style TargetType="TextBlock">
@@ -60,7 +60,7 @@
                                 </Style>
                             </StackPanel.Resources>
                             <TextBlock>
-                                    <Bold>Step 1: </Bold> Define the teams, and the individual and group competitions.
+                                    <Bold>Step 1: </Bold> Define the teams, and the individual and group competitions, on this tab.
                             </TextBlock>
                             <TextBlock>
                                     <Bold>Step 2: </Bold> Define the elegible individual participants for this competition.
@@ -82,13 +82,71 @@
                             </TextBlock>
                         </StackPanel>
                     </GroupBox>
-                    <GroupBox Header="Settings" Grid.Column="1">
-                        <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Row="1">
-                            <TextBox Tag="Current Author Name" Text="{Binding UserName}"/>
-                            <controls:FilePicker Tag="Scoresheet Save Location" ToolTip="Change to save scoresheet to a different location"
+                    <StackPanel Grid.Column="1" Grid.Row="1">
+                        <GroupBox Header="Application Run">
+                            <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Row="1">
+                                <TextBox Tag="Current Author Name" Text="{Binding UserName}"/>
+                                <controls:FilePicker Tag="Scoresheet Save Location" ToolTip="Change to save scoresheet to a different location"
                                                  FileName="{Binding FileLocation}" UseSaveFileDialog="True" ExtensionFilter="Scoresheet File (*.ssf)|*.ssf|XML|*.xml"/>
-                        </ListBox>
-                    </GroupBox>
+                            </ListBox>
+                        </GroupBox>
+                        <GroupBox Header="Teams">
+                            <ListBox ItemsSource="{Binding ScoresheetFile.Teams}" Style="{StaticResource ContrastListBoxStyle}" ItemTemplate="{StaticResource TeamBox}">
+                            </ListBox>
+                        </GroupBox>
+                        <GroupBox Header="Level Definitions">
+                            <ListBox Grid.IsSharedSizeScope="True" ItemsSource="{Binding ScoresheetFile.LevelDefinitions}" Style="{StaticResource ContrastListBoxStyle}">
+                                <!--<ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition SharedSizeGroup="Code" Width="Auto"/>
+                                                <ColumnDefinition SharedSizeGroup="Name" Width="Auto"/>
+                                                <ColumnDefinition SharedSizeGroup="LowerBound" Width="Auto"/>
+                                                <ColumnDefinition SharedSizeGroup="UpperBound" Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Label Content="{Binding Code}" Foreground="{StaticResource ForegroundMinorColourKey}" Grid.Column="0"/>
+                                            <Label Content="{Binding}" Grid.Column="1"/>
+                                            <Label Content="{Binding LowerBound}" Grid.Column="2"/>
+                                            <Label Content="{Binding UpperBound}" Grid.Column="3"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>-->
+                            </ListBox>
+                        </GroupBox>
+                    </StackPanel>
+                    <ListBox Grid.Column="2" ItemsSource="{Binding ScoresheetFile.CompetitionItems}" Style="{StaticResource ContrastListBoxStyle}" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <GroupBox Header="{Binding Name}">
+                                    <GroupBox.InputBindings>
+                                        <KeyBinding Command="{Binding AddScoringCriteriaCommand}" Key="Insert"/>
+                                        <KeyBinding Command="{Binding RemoveScoringCriteriaCommand}" CommandParameter="{Binding ElementName=CriteriaListBox, Path=SelectedItem}" Key="Delete"/>
+                                    </GroupBox.InputBindings>
+                                    <DockPanel LastChildFill="False">
+                                        <ListBox x:Name="CriteriaListBox" ItemsSource="{Binding ScoringCriteria}" Style="{StaticResource CompactListBoxStyle}" DockPanel.Dock="Bottom" 
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel>
+                                                        <TextBox Text="{Binding MaximumScore}" Width="64" DockPanel.Dock="Right" VerticalAlignment="Top"/>
+                                                        <TextBlock Margin="12 6 8 6" Text="X /" VerticalAlignment="Top" DockPanel.Dock="Right" />
+                                                        <TextBox Text="{Binding Description}" TextWrapping="Wrap" AcceptsReturn="True"/>
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                        <Button Content="+ Scoring Criteria" HorizontalAlignment="Left" Command="{Binding AddScoringCriteriaCommand}" DockPanel.Dock="Bottom"/>
+                                        <TextBox Text="{Binding Description}" TextWrapping="Wrap" AcceptsReturn="True" DockPanel.Dock="Bottom" />
+                                        <Label Content="{Binding Level}" Style="{StaticResource OutputLabel}"/>
+                                        <TextBox Text="{Binding Time}" Margin="2" />
+                                        <TextBox Text="{Binding Duration}"/>
+                                        <CheckBox Content="Is On Stage" IsChecked="{Binding IsOnStage}"/>
+                                    </DockPanel>
+                                </GroupBox>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </Grid>
             </TabItem>
             <TabItem Header="Participants">
@@ -223,7 +281,7 @@
                                                 <ControlTemplate TargetType="{x:Type GroupItem}">
                                                     <DockPanel Margin="2">
                                                         <TextBlock FontWeight="Bold" Text="{Binding Path=Name}" Margin="5,0" DockPanel.Dock="Top" />
-                                                        <ItemsPresenter Margin="2" />
+                                                        <ItemsPresenter />
                                                     </DockPanel>
                                                 </ControlTemplate>
                                             </Setter.Value>
@@ -248,8 +306,8 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.Resources>
                             <DataTemplate x:Key="SoloItemTemplate" DataType="model:SoloItem">
-                                <StackPanel Background="{StaticResource PanelColourKey}" Margin="2">
-                                    <StackPanel.ContextMenu>
+                                <GroupBox Header="{Binding Name}">
+                                    <GroupBox.ContextMenu>
                                         <ContextMenu>
                                             <MenuItem Header="Add Participant" Command="{Binding SearchAndAddParticipantCommand}">
                                                 <MenuItem.Icon>
@@ -257,109 +315,107 @@
                                                 </MenuItem.Icon>
                                             </MenuItem>
                                         </ContextMenu>
-                                    </StackPanel.ContextMenu>
-                                    <Label Content="{Binding Name}" FontWeight="Bold"/>
+
+                                    </GroupBox.ContextMenu>
                                     <ListBox ItemsSource="{Binding IndividualParticipants}" d:ItemsSource="{d:SampleData}"
                                   Style="{StaticResource ContrastListBoxStyle}" >
-                                        <!--<ListBox.ItemTemplate>
-                                            <DataTemplate DataType="{x:Type model:IndividualParticipant}">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <ContentPresenter ContentTemplate="{StaticResource ParticipantBox}"/>
-                                                    <TextBlock Margin="8 0 2 0" Text="{Binding YearLevel, StringFormat=y{0}}" Foreground="{StaticResource ForegroundMinorColourKey}"/>
-                                                    <TextBlock Margin="2 0" Text="{Binding FullName}"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>-->
                                     </ListBox>
-                                </StackPanel>
+
+                                </GroupBox>
+                                <!--<StackPanel Background="{StaticResource PanelColourKey}" Margin="2">
+                                    <StackPanel.ContextMenu>
+                                    </StackPanel.ContextMenu>
+                                    <Label Content="{Binding Name}" FontWeight="Bold"/>
+                                </StackPanel>-->
                             </DataTemplate>
                             <DataTemplate x:Key="GroupItemTemplate" DataType="model:GroupItem">
-                                <DockPanel Background="{StaticResource PanelColourKey}" Margin="2" ToolTip="Right Click for Menu">
-                                    <DockPanel.Resources>
-                                        <CollectionViewSource x:Key="People" Source="{Binding IndividualParticipants}">
-                                            <CollectionViewSource.GroupDescriptions>
-                                                <PropertyGroupDescription PropertyName="Team"/>
-                                            </CollectionViewSource.GroupDescriptions>
-                                            <CollectionViewSource.SortDescriptions>
-                                                <componentmodel:SortDescription PropertyName="FullName"/>
-                                            </CollectionViewSource.SortDescriptions>
-                                        </CollectionViewSource>
-                                    </DockPanel.Resources>
-                                    <Label Content="{Binding Name}" FontWeight="Bold" DockPanel.Dock="Top"/>
-                                    <ListBox x:Name="GroupsListBox" ItemsSource="{Binding Source={StaticResource People}}" d:ItemsSource="{d:SampleData}" SelectionMode="Extended"
+                                <GroupBox Header="{Binding Name}" ToolTip="Right Click for Menu">
+                                    <DockPanel>
+                                        <DockPanel.Resources>
+                                            <CollectionViewSource x:Key="People" Source="{Binding IndividualParticipants}">
+                                                <CollectionViewSource.GroupDescriptions>
+                                                    <PropertyGroupDescription PropertyName="Team"/>
+                                                </CollectionViewSource.GroupDescriptions>
+                                                <CollectionViewSource.SortDescriptions>
+                                                    <componentmodel:SortDescription PropertyName="FullName"/>
+                                                </CollectionViewSource.SortDescriptions>
+                                            </CollectionViewSource>
+                                        </DockPanel.Resources>
+                                        <ListBox x:Name="GroupsListBox" ItemsSource="{Binding Source={StaticResource People}}" d:ItemsSource="{d:SampleData}" SelectionMode="Extended"
                                   Style="{StaticResource ContrastListBoxStyle}" >
-                                        <ListBox.GroupStyle>
-                                            <GroupStyle>
-                                                <GroupStyle.HeaderTemplate>
-                                                    <DataTemplate DataType="{x:Type GroupItem}">
-                                                        <Label Content="{Binding Name}"/>
-                                                    </DataTemplate>
-                                                </GroupStyle.HeaderTemplate>
-                                                <GroupStyle.Panel>
-                                                    <ItemsPanelTemplate>
-                                                        <StackPanel Orientation="Horizontal"/>
-                                                    </ItemsPanelTemplate>
-                                                </GroupStyle.Panel>
-                                            </GroupStyle>
-                                        </ListBox.GroupStyle>
-                                        <ListBox.ContextMenu>
-                                            <ContextMenu>
-                                                <MenuItem Header="Create Group from Selected" Command="{Binding CreateGroupParticipantCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItems}"/>
-                                                <MenuItem Header="Automatically Split into Teams" Command="{Binding AutomaticallyCreateGroupParticipantsCommand}"/>
-                                                <MenuItem Header="Add to Group" Command="{Binding AddToExistingGroupParticipantCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItems}"/>
-                                                <Separator />
-                                                <MenuItem Header="Add Participant" Command="{Binding SearchAndAddParticipantCommand}">
-                                                    <MenuItem.Icon>
-                                                        <TextBlock>&#xE094;</TextBlock>
-                                                    </MenuItem.Icon>
-                                                </MenuItem>
-                                            </ContextMenu>
-                                        </ListBox.ContextMenu>
-                                    </ListBox>
-                                    <ListBox x:Name="GroupParticipantsListBox" ItemsSource="{Binding GroupParticipants}" Style="{StaticResource ContrastListBoxStyle}" ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                                        <ListBox.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <WrapPanel Orientation="Vertical"/>
-                                            </ItemsPanelTemplate>
-                                        </ListBox.ItemsPanel>
-                                        <ListBox.ContextMenu>
-                                            <ContextMenu>
-                                                <MenuItem Header="Edit Group" Command="{Binding EditGroupParticipantCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
-                                                <MenuItem Header="Remove Group" Command="{Binding RemoveGroupParticipantCommand}" InputGestureText="Del" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
-                                                <Separator/>
-                                                <MenuItem Header="Add Participant" Command="{Binding SearchAndAddParticipantToGroupCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}">
-                                                    <MenuItem.Icon>
-                                                        <TextBlock>&#xE094;</TextBlock>
-                                                    </MenuItem.Icon>
-                                                </MenuItem>
-                                            </ContextMenu>
-                                        </ListBox.ContextMenu>
-                                        <ListBox.InputBindings>
-                                            <KeyBinding Command="{Binding RemoveGroupParticipantCommand}" CommandParameter="{Binding ElementName=GroupParticipantsListBox, Path=SelectedItem}" Key="Delete"/>
-                                        </ListBox.InputBindings>
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate DataType="{x:Type model:GroupParticipant}">
-                                                <DockPanel>
-                                                    <DockPanel.Background>
-                                                        <SolidColorBrush Opacity="0.2" Color="{Binding Team.Colour}"/>
-                                                    </DockPanel.Background>
-                                                    <ListBox x:Name="ParticipantsListBox" DockPanel.Dock="Bottom" Style="{StaticResource ContrastListBoxStyle}" ItemsSource="{Binding IndividualParticipants}">
-                                                        <ListBox.ContextMenu>
-                                                            <ContextMenu>
-                                                                <MenuItem Command="{Binding RemoveParticipantCommand}" InputGestureText="Del" Header="Remove Participant" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
-                                                            </ContextMenu>
-                                                        </ListBox.ContextMenu>
-                                                        <ListBox.InputBindings>
-                                                            <KeyBinding Command="{Binding RemoveParticipantCommand}" Key="Delete" CommandParameter="{Binding ElementName=ParticipantsListBox, Path=SelectedItem}"/>
-                                                        </ListBox.InputBindings>
-                                                    </ListBox>
-                                                    <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource ParticipantBox}" Margin="2" MinWidth="50" />
-                                                    <Label Content="{Binding Leader.FullName}" DockPanel.Dock="Top" />
-                                                </DockPanel>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
-                                    </ListBox>
-                                </DockPanel>
+                                            <ListBox.GroupStyle>
+                                                <GroupStyle>
+                                                    <GroupStyle.HeaderTemplate>
+                                                        <DataTemplate DataType="{x:Type GroupItem}">
+                                                            <Label Content="{Binding Name}"/>
+                                                        </DataTemplate>
+                                                    </GroupStyle.HeaderTemplate>
+                                                    <GroupStyle.Panel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal"/>
+                                                        </ItemsPanelTemplate>
+                                                    </GroupStyle.Panel>
+                                                </GroupStyle>
+                                            </ListBox.GroupStyle>
+                                            <ListBox.ContextMenu>
+                                                <ContextMenu>
+                                                    <MenuItem Header="Create Group from Selected" Command="{Binding CreateGroupParticipantCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItems}"/>
+                                                    <MenuItem Header="Automatically Split into Teams" Command="{Binding AutomaticallyCreateGroupParticipantsCommand}"/>
+                                                    <MenuItem Header="Add to Group" Command="{Binding AddToExistingGroupParticipantCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItems}"/>
+                                                    <Separator />
+                                                    <MenuItem Header="Add Participant" Command="{Binding SearchAndAddParticipantCommand}">
+                                                        <MenuItem.Icon>
+                                                            <TextBlock>&#xE094;</TextBlock>
+                                                        </MenuItem.Icon>
+                                                    </MenuItem>
+                                                </ContextMenu>
+                                            </ListBox.ContextMenu>
+                                        </ListBox>
+                                        <ListBox x:Name="GroupParticipantsListBox" ItemsSource="{Binding GroupParticipants}" Style="{StaticResource ContrastListBoxStyle}" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel Orientation="Vertical"/>
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
+                                            <ListBox.ContextMenu>
+                                                <ContextMenu>
+                                                    <MenuItem Header="Edit Group" Command="{Binding EditGroupParticipantCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                                                    <MenuItem Header="Remove Group" Command="{Binding RemoveGroupParticipantCommand}" InputGestureText="Del" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                                                    <Separator/>
+                                                    <MenuItem Header="Add Participant" Command="{Binding SearchAndAddParticipantToGroupCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}">
+                                                        <MenuItem.Icon>
+                                                            <TextBlock>&#xE094;</TextBlock>
+                                                        </MenuItem.Icon>
+                                                    </MenuItem>
+                                                </ContextMenu>
+                                            </ListBox.ContextMenu>
+                                            <ListBox.InputBindings>
+                                                <KeyBinding Command="{Binding RemoveGroupParticipantCommand}" CommandParameter="{Binding ElementName=GroupParticipantsListBox, Path=SelectedItem}" Key="Delete"/>
+                                            </ListBox.InputBindings>
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type model:GroupParticipant}">
+                                                    <DockPanel>
+                                                        <DockPanel.Background>
+                                                            <SolidColorBrush Opacity="0.2" Color="{Binding Team.Colour}"/>
+                                                        </DockPanel.Background>
+                                                        <ListBox x:Name="ParticipantsListBox" DockPanel.Dock="Bottom" Style="{StaticResource ContrastListBoxStyle}" ItemsSource="{Binding IndividualParticipants}">
+                                                            <ListBox.ContextMenu>
+                                                                <ContextMenu>
+                                                                    <MenuItem Command="{Binding RemoveParticipantCommand}" InputGestureText="Del" Header="Remove Participant" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}"/>
+                                                                </ContextMenu>
+                                                            </ListBox.ContextMenu>
+                                                            <ListBox.InputBindings>
+                                                                <KeyBinding Command="{Binding RemoveParticipantCommand}" Key="Delete" CommandParameter="{Binding ElementName=ParticipantsListBox, Path=SelectedItem}"/>
+                                                            </ListBox.InputBindings>
+                                                        </ListBox>
+                                                        <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource ParticipantBox}" Margin="2" MinWidth="50" />
+                                                        <Label Content="{Binding Leader.FullName}" DockPanel.Dock="Top" />
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </DockPanel>
+                                </GroupBox>
                             </DataTemplate>
                         </ItemsControl.Resources>
                     </ItemsControl>
@@ -369,88 +425,102 @@
             <TabItem x:Name="MarkingTab" Header="Marking">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="297*"/>
+                        <ColumnDefinition Width="400"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="300*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="350*"/>
                     </Grid.ColumnDefinitions>
-                    <ListBox x:Name="MarkingItemsListBox" Style="{StaticResource ContrastListBoxStyle}" 
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Grid.ColumnSpan="5">
+                        <Button Content="Lock Scoresheet and Start Marking..." Command="{Binding LockForScoringCommand}" HorizontalAlignment="Left" />
+                        <ComboBox x:Name="MarkingItemsComboBox"
                              ItemsSource="{Binding ScoresheetFile.CompetitionItems}" SelectedItem="{Binding MarkingCompetitionItem}" d:ItemsSource="{d:SampleData ItemCount=5}"
                              ItemTemplateSelector="{StaticResource CompetitionItemDataTemplateSelector}" Grid.IsSharedSizeScope="True">
-                        <ListBox.Resources>
-                            <Style TargetType="ProgressBar">
-                                <Setter Property="Background" Value="{StaticResource PanelFaintColourKey}"/>
-                                <Setter Property="Foreground" Value="#20f0"/>
-                                <Setter Property="BorderThickness" Value="0"/>
-                            </Style>
-                            <DataTemplate x:Key="SoloItemTemplate" DataType="{x:Type model:SoloItem}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Level"/>
-                                        <ColumnDefinition Width="*" SharedSizeGroup="Name"/>
-                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Count"/>
-                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Stage"/>
-                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Duration"/>
-                                    </Grid.ColumnDefinitions>
-                                    <ProgressBar Value="{Binding Scores.Count, Mode=OneWay}" Maximum="{Binding Participants.Count, Mode=OneWay}" Grid.Column="2" />
-                                    <Label Content="{Binding Level.Name}" Foreground="{StaticResource ForegroundMinorColourKey}" />
-                                    <Label Content="{Binding Name}" FontWeight="Bold" Grid.Column="1"/>
-                                    <Label Content="{Binding IndividualParticipants.Count}" ContentStringFormat="({0})" Grid.Column="2"/>
-                                    <Label Visibility="{Binding IsOnStage, Converter={StaticResource BooleanToVisibilityConverter}}" Content="Stage" Grid.Column="3"/>
-                                    <Label Content="{Binding DurationInMinutes}" ContentStringFormat="{}{0} min" Grid.Column="4" />
-                                </Grid>
-                            </DataTemplate>
-                            <DataTemplate x:Key="GroupItemTemplate" DataType="{x:Type GroupItem}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Level"/>
-                                        <ColumnDefinition Width="*" SharedSizeGroup="Name"/>
-                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Count"/>
-                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Stage"/>
-                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Duration"/>
-                                    </Grid.ColumnDefinitions>
-                                    <ProgressBar Value="{Binding Scores.Count, Mode=OneWay}" Maximum="{Binding Participants.Count, Mode=OneWay}" Grid.Column="2" />
-                                    <Label Content="Group" Foreground="CornflowerBlue" />
-                                    <Label Content="{Binding Name}" FontWeight="Bold" Grid.Column="1"/>
-                                    <Label Content="{Binding IndividualParticipants.Count}" ContentStringFormat="({0})" Grid.Column="2"/>
-                                    <Label Content="Stage" Grid.Column="3"/>
-                                    <Label Content="{Binding DurationInMinutes}" ContentStringFormat="{}{0} min" Grid.Column="4" />
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.Resources>
-                    </ListBox>
-                    <GridSplitter Grid.Column="1" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center"/>
+                            <ComboBox.Resources>
+                                <Style TargetType="ProgressBar">
+                                    <Setter Property="Background" Value="{StaticResource PanelFaintColourKey}"/>
+                                    <Setter Property="Foreground" Value="#20f0"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                </Style>
+                                <DataTemplate x:Key="SoloItemTemplate" DataType="{x:Type model:SoloItem}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="Level"/>
+                                            <ColumnDefinition Width="*" SharedSizeGroup="Name"/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="Count"/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="Stage"/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="Duration"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ProgressBar Value="{Binding Scores.Count, Mode=OneWay}" Maximum="{Binding Participants.Count, Mode=OneWay}" Grid.Column="2" />
+                                        <Label Content="{Binding Level.Name}" Foreground="{StaticResource ForegroundMinorColourKey}" />
+                                        <Label Content="{Binding Name}" FontWeight="Bold" Grid.Column="1"/>
+                                        <Label Content="{Binding IndividualParticipants.Count}" ContentStringFormat="({0})" Grid.Column="2"/>
+                                        <Label Visibility="{Binding IsOnStage, Converter={StaticResource BooleanToVisibilityConverter}}" Content="Stage" Grid.Column="3"/>
+                                        <Label Content="{Binding DurationInMinutes}" ContentStringFormat="{}{0} min" Grid.Column="4" />
+                                    </Grid>
+                                </DataTemplate>
+                                <DataTemplate x:Key="GroupItemTemplate" DataType="{x:Type GroupItem}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="Level"/>
+                                            <ColumnDefinition Width="*" SharedSizeGroup="Name"/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="Count"/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="Stage"/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="Duration"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ProgressBar Value="{Binding Scores.Count, Mode=OneWay}" Maximum="{Binding Participants.Count, Mode=OneWay}" Grid.Column="2" />
+                                        <Label Content="Group" Foreground="CornflowerBlue" />
+                                        <Label Content="{Binding Name}" FontWeight="Bold" Grid.Column="1"/>
+                                        <Label Content="{Binding IndividualParticipants.Count}" ContentStringFormat="({0})" Grid.Column="2"/>
+                                        <Label Content="Stage" Grid.Column="3"/>
+                                        <Label Content="{Binding DurationInMinutes}" ContentStringFormat="{}{0} min" Grid.Column="4" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ComboBox.Resources>
+                        </ComboBox>
+                    </DockPanel>
+                    <GridSplitter Grid.Column="1" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center" Grid.Row="1"/>
                     <ListBox x:Name="MarkingParticipantsListBox" ItemsSource="{Binding MarkingCompetitionItem.Participants}" SelectedItem="{Binding MarkingParticipant}"
-                             Style="{StaticResource CompactListBoxStyle}" Grid.Column="2" d:ItemsSource="{d:SampleData ItemCount=5}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             KeyUp="MarkingListBox_KeyUp">
+                             Style="{StaticResource CompactListBoxStyle}" d:ItemsSource="{d:SampleData ItemCount=5}"
+                             KeyUp="MarkingListBox_KeyUp" Grid.Row="1" Grid.ColumnSpan="3" Grid.Column="2" VerticalContentAlignment="Stretch">
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <WrapPanel Orientation="Horizontal"/>
+                                <StackPanel Orientation="Horizontal"/>
                             </ItemsPanelTemplate>
                         </ListBox.ItemsPanel>
                         <ListBox.ItemTemplate>
                             <DataTemplate DataType="{x:Type model:Participant}">
-                                <StackPanel Orientation="Horizontal" Margin="2">
+                                <StackPanel Margin="2">
                                     <StackPanel.Background>
-                                        <SolidColorBrush Color="{Binding UniqueColour}" Opacity="0.2"/>
+                                        <SolidColorBrush Color="{Binding UniqueColour, FallbackValue=Green}" Opacity="0.2"/>
                                     </StackPanel.Background>
                                     <TextBlock x:Name="PART_ChestNumberLabel" Text="{Binding ChestNumber, FallbackValue=---, StringFormat=#{0}}" d:Text="#000" Width="50" FontSize="16" FontWeight="Bold" Margin="2" Padding="4 2 2 2">
                                     </TextBlock>
-                                    <TextBlock x:Name="PART_Intersect" d:Text="00.0" Width="40" Foreground="{StaticResource NewColourKey}" FontSize="16" Margin="2" Padding="2 2 4 2">
-                                        <TextBlock.Text>
+                                    <StackPanel>
+                                        <StackPanel.DataContext>
                                             <MultiBinding Converter="{StaticResource IntersectConverter}">
                                                 <Binding ElementName="MarkingTab" Path="DataContext.ScoresRef"/>
                                                 <Binding/>
                                             </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
+                                        </StackPanel.DataContext>
+                                        <TextBlock x:Name="PART_Intersect" d:Text="00.0" Width="40" Foreground="{StaticResource NewColourKey}" FontSize="16" Margin="2" Padding="2 2 4 2" Text="{Binding AverageMarks}">
+                                        </TextBlock>
+                                        <ItemsControl ItemsSource="{Binding Marks}" d:ItemsSource="{d:SampleData ItemCount=3}" Padding="2">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <ItemsControl ItemsSource="{Binding}" d:ItemsSource="{d:SampleData ItemCount=3}"
+                                                                  Background="{StaticResource PanelColourKey}" Margin="2" Padding="2"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                    <GridSplitter Grid.Column="3" Width="4" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Center"/>
-                    <StackPanel Grid.Column="4" Margin="4" Grid.IsSharedSizeScope="True">
+                    <StackPanel Grid.Column="0" Margin="4" Grid.IsSharedSizeScope="True" Grid.Row="1">
                         <GroupBox Header="Search">
                             <DockPanel Margin="12">
                                 <ToggleButton x:Name="SearchMode" DockPanel.Dock="Right" Content="Kbd Focus"/>
@@ -474,15 +544,18 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto" SharedSizeGroup="Totals"/>
                                 </Grid.ColumnDefinitions>
-                                <Label Content="{Binding CurrentScoreIntersection, TargetNullValue='No score has been applied'}" Margin="8" />
+                                <Label Content="{Binding CurrentScoreIntersection, TargetNullValue='No score has been applied'}" VerticalContentAlignment="Center" Height="42" Margin="8" />
                                 <Label FontSize="16" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Content="{Binding CurrentScoreIntersection.AverageMarks, FallbackValue=0}" ContentStringFormat="= {0}"/>
                                 <Button x:Name="ClearScoreButton" Margin="8" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Center"
-                                        Content="Clear Score" Foreground="{StaticResource ErrorColourKey}" Click="ClearScoreButton_Click" IsEnabled="False" />
+                                        Content="Clear Score" Foreground="{StaticResource ErrorColourKey}"
+                                        Command="{Binding ClearScoreCommand}"/>
                             </Grid>
                         </GroupBox>
                         <GroupBox Header="New Score" Margin="6">
                             <Grid>
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
@@ -491,9 +564,12 @@
                                     <ColumnDefinition MinWidth="60" SharedSizeGroup="Totals"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="NewScoreTextBox" Margin="8" FontSize="16" Grid.Row="0" PreviewKeyDown="NewScoreTextBox_PreviewKeyDown" KeyUp="NewScoreTextBox_KeyUp" />
-                                <Label x:Name="NewTotalScoreLabel" FontSize="16" Grid.Column="1" VerticalAlignment="Center" Foreground="{StaticResource NewColourKey}" HorizontalAlignment="Right" ContentStringFormat="= {0}">0</Label>
-                                <Button x:Name="ApplyScoreButton" Margin="8" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Center"
-                                        Content="{Binding UserName}" ContentStringFormat="Apply Score as {0} [Enter]" Foreground="{StaticResource NewColourKey}" Click="ApplyScoreButton_Click" IsEnabled="False" />
+                                <Label x:Name="NewTotalScoreLabel" FontSize="16" Grid.Column="1" VerticalAlignment="Center" Content="{Binding EnteredScore.AverageMarks}" Foreground="{StaticResource NewColourKey}" HorizontalAlignment="Right" ContentStringFormat="= {0}" Grid.Row="0"/>
+                                <Label Content="{Binding EnteredScore}" Height="42"
+                                       Grid.Row="1" Margin="8 0" Foreground="{StaticResource NewColourKey}"/>
+                                <Button x:Name="ApplyScoreButton" Margin="8" Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Center"
+                                        Content="Apply Score" Foreground="{StaticResource NewColourKey}"
+                                        Command="{Binding ApplyScoreCommand}"/>
                             </Grid>
                         </GroupBox>
                     </StackPanel>

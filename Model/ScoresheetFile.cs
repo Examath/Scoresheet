@@ -21,6 +21,9 @@ namespace Scoresheet.Model
         [XmlAttribute]
         public double Version = 2.0;
 
+        /// <summary>
+        /// Gets or sets whether this Scoresheet File is locked for scoring
+        /// </summary>
         [XmlAttribute]
         public bool IsScoring { get; set; } = false;
 

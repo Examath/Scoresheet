@@ -37,9 +37,9 @@ namespace Scoresheet.Model
         public string Name { get;set; } = string.Empty;
 
         /// <summary>
-        /// Returns <see cref="Name"/>
+        /// Returns a string representation of this level
         /// </summary>
-        public override string ToString() => Name;
+        public override string ToString() => $"{Code}: {Name} (Year {LowerBound} - {UpperBound})";
 
         internal bool Within(int yearLevel)
         {

@@ -451,9 +451,12 @@ namespace Scoresheet.Model
         public Score? CurrentScoreIntersection
         {
             get => _CurrentScoreIntersection;
-            private set => SetProperty(ref _CurrentScoreIntersection, value);
+            private set { if (SetProperty(ref _CurrentScoreIntersection, value)) ClearScoreCommand.NotifyCanExecuteChanged(); }
         }
 
+        /// <summary>
+        /// Updates <see cref="CurrentScoreIntersection"/>
+        /// </summary>
         public void UpdateIntersection()
         {
             if (MarkingCompetitionItem != null && MarkingParticipant != null)
@@ -505,9 +508,12 @@ namespace Scoresheet.Model
             }
         }
 
+        public event EventHandler<ScoreChangedEventArgs>? ScoreChanged;
+
         private void ScoresheetFile_ScoreChanged(object? sender, ScoreChangedEventArgs e)
         {
             OnPropertyChanged(nameof(ScoresRef));
+            ScoreChanged?.Invoke(this, e);
             NotifyChange(e);
         }
 
@@ -520,6 +526,68 @@ namespace Scoresheet.Model
             }
 
             ScoresheetFile.UpdateTeamTotals();
+        }
+
+        private Score? _EnteredScore;
+        /// <summary>
+        /// Gets or sets the score that will be applied when the Apply Score command is used 
+        /// </summary>
+        public Score? EnteredScore
+        {
+            get => _EnteredScore;
+            set { if (SetProperty(ref _EnteredScore, value)) ApplyScoreCommand.NotifyCanExecuteChanged(); }
+        }
+
+        private bool _IsLastEnteredScoreValid = true;
+        /// <summary>
+        /// Gets or sets whether the last user input was valid
+        /// </summary>
+        public bool IsLastEnteredScoreValid
+        {
+            get => _IsLastEnteredScoreValid;
+            set { if (SetProperty(ref _IsLastEnteredScoreValid, value)) ApplyScoreCommand.NotifyCanExecuteChanged(); }
+        }
+
+        public bool CanApplyScore() => 
+            MarkingCompetitionItem != null && 
+            MarkingParticipant != null && 
+            _EnteredScore != null &&
+            IsLastEnteredScoreValid;
+
+        [RelayCommand(CanExecute = nameof(CanApplyScore))]
+        public void ApplyScore()
+        {
+            // Double check
+            if (MarkingCompetitionItem != null && MarkingParticipant != null && _EnteredScore != null)
+            {
+                // Apply the score
+                MarkingCompetitionItem.AddScore(MarkingParticipant, _EnteredScore);
+                UpdateIntersection();
+
+                // Reset
+                EnteredScore = null;
+            }
+        }
+
+        public bool CanClearScore() => 
+            MarkingCompetitionItem != null && 
+            MarkingParticipant != null && 
+            CurrentScoreIntersection != null;
+
+        [RelayCommand(CanExecute = nameof(CanClearScore))]
+        public void ClearScore()
+        {
+            // Double Check
+            if (MarkingCompetitionItem != null && MarkingParticipant != null && CurrentScoreIntersection != null)
+            {
+                // Triple Check
+                if (Messager.Out($"Are you sure you want to clear #{MarkingParticipant.ChestNumber}'s score in {MarkingCompetitionItem.Name}?", "Clear score", ConsoleStyle.WarningBlockStyle, isCancelButtonVisible: true, yesButtonText: "Yes")
+                    == System.Windows.Forms.DialogResult.Yes)
+                {
+                    MarkingCompetitionItem.ClearScore(MarkingParticipant);
+                    UpdateIntersection();
+                }
+            }
         }
 
         #endregion

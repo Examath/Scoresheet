@@ -120,18 +120,17 @@ namespace Scoresheet
 #endif
             DataContext = _VM;
             _VM.PropertyChanged += VM_PropertyChanged;
+            _VM.ScoreChanged += _VM_ScoreChanged;
+        }
+
+        private void _VM_ScoreChanged(object? sender, ScoreChangedEventArgs e)
+        {
+            ResetNewScore();
         }
 
         private void VM_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == "MarkingCompetitionItem" || e.PropertyName == "MarkingParticipant")
-            {
-                ApplyScoreButton.IsEnabled = CanApplyScore();
-            }
-            if (e.PropertyName == nameof(_VM.CurrentScoreIntersection))
-            {
-                ClearScoreButton.IsEnabled = _VM?.CurrentScoreIntersection != null;
-            }
+
         }
 
         #endregion
@@ -259,9 +258,13 @@ namespace Scoresheet
                 e.Handled = true;
                 int pos = NewScoreTextBox.SelectionStart;
 
-                if (IsKeyASeparator(e.Key) && pos >= 1 && NewScoreTextBox.Text[pos - 1] != ',')
+                if ((IsKeyAJudgeSeparator(e.Key) || IsKeyACriteriaSeparator(e.Key))
+                    && pos >= 1
+                    && NewScoreTextBox.Text[pos - 1] != ','
+                    && NewScoreTextBox.Text[pos - 1] != '+')
                 {
-                    NewScoreTextBox.Text = NewScoreTextBox.Text.Insert(NewScoreTextBox.SelectionStart, ",");
+                    NewScoreTextBox.Text = NewScoreTextBox.Text.Insert(NewScoreTextBox.SelectionStart,
+                        (IsKeyAJudgeSeparator(e.Key) ? "," : "+"));
                     NewScoreTextBox.SelectionStart = pos + 1;
                 }
             }
@@ -272,96 +275,39 @@ namespace Scoresheet
             return (key >= Key.D0 && key <= Key.D9) || (key == Key.OemPeriod) || (key >= Key.NumPad0 && key <= Key.NumPad9) || key == Key.Delete || key == Key.Back || key == Key.Left || key == Key.Right;
         }
 
-        private static bool IsKeyASeparator(Key key)
+        private static bool IsKeyAJudgeSeparator(Key key)
         {
-            return key == Key.Tab || key == Key.Space || key == Key.OemComma || key == Key.Add || key == Key.OemPlus;
+            return key == Key.Tab || key == Key.OemComma || key == Key.Divide;
         }
 
-        private double _NewScoreAverage = 0;
+        private static bool IsKeyACriteriaSeparator(Key key)
+        {
+            return key == Key.Add || key == Key.OemPlus || key == Key.OemMinus;
+        }
 
         private void NewScoreTextBox_KeyUp(object sender, KeyEventArgs e)
         {
-            string[] markStrings = NewScoreTextBox.Text.Split(',');
-            double total = 0;
-            int length = 0;
-
-            foreach (string markString in markStrings)
+            if (_VM != null && _VM.MarkingParticipant != null)
             {
-                if (string.IsNullOrWhiteSpace(markString)) continue;
-                else if (double.TryParse(markString.Trim(), out double mark))
+                Score? newScore = Score.TryParse(_VM.MarkingParticipant, NewScoreTextBox.Text, _VM.UserName);
+                if (newScore != null)
                 {
-                    total += mark;
-                    length++;
+                    _VM.EnteredScore = newScore;
+                    _VM.IsLastEnteredScoreValid = true;
                 }
                 else
                 {
-                    total = double.NaN;
-                    break;
-                }
-            }
+                    _VM.IsLastEnteredScoreValid = false;
+                }                
 
-            if (length == 0)
-            {
-                _NewScoreAverage = 0;
-                ApplyScoreButton.IsEnabled = false;
-            }
-            else
-            {
-                _NewScoreAverage = Math.Round(total / length, Settings.Default.MarksPrecision);
-                ApplyScoreButton.IsEnabled = CanApplyScore();
-            }
-            NewTotalScoreLabel.Content = _NewScoreAverage;
-
-            if (e.Key == Key.Enter && CanApplyScore())
-            {
-                ApplyScore();
-            }
-            else if (e.Key == Key.Escape)
-            {
-                ResetNewScore();
-            }
-        }
-
-        private bool CanApplyScore() =>
-            _VM != null &&
-            _VM.MarkingCompetitionItem != null &&
-            _VM.MarkingParticipant != null &&
-            !string.IsNullOrWhiteSpace(NewScoreTextBox.Text) &&
-            !double.IsNaN(_NewScoreAverage);
-
-        private void ApplyScoreButton_Click(object sender, RoutedEventArgs e)
-        {
-            ApplyScore();
-        }
-
-        private void ApplyScore()
-        {
-            if (_VM == null || _VM.MarkingCompetitionItem == null || _VM.MarkingParticipant == null || double.IsNaN(_NewScoreAverage)) return;
-
-            string[] markStrings = NewScoreTextBox.Text.Split(',');
-            List<double> marks = new();
-
-            foreach (string markString in markStrings)
-            {
-                if (string.IsNullOrWhiteSpace(markString)) continue;
-                else if (double.TryParse(markString.Trim(), out double mark))
+                if (e.Key == Key.Enter && _VM != null && _VM.CanApplyScore())
                 {
-                    marks.Add(mark);
-                }
-                else
-                {
-                    Messager.Out("Score should be expressed as numbers separated by '+' characters. The numbers may include decimals. Nothing has been applied", "Score format incorrect", ConsoleStyle.FormatBlockStyle);
-                    return;
+                    _VM.ApplyScore();
                 }
             }
 
-            if (marks.Count > 0)
+            if (e.Key == Key.Escape)
             {
-                _VM.MarkingCompetitionItem.AddScore(_VM.MarkingParticipant, marks, _VM.UserName);
-                _VM.UpdateIntersection();
-
-                ClearScoreButton.IsEnabled = true;
-
                 ResetNewScore();
             }
         }
@@ -369,8 +315,7 @@ namespace Scoresheet
         private void ResetNewScore()
         {
             NewScoreTextBox.Text = "";
-            NewTotalScoreLabel.Content = 0;
-            ApplyScoreButton.IsEnabled = false;
+            if (_VM != null) _VM.EnteredScore = null;
 
             if (SearchMode.IsChecked == false)
             {
@@ -384,21 +329,6 @@ namespace Scoresheet
             else
             {
                 SearchBox.Focus();
-            }
-        }
-
-        private void ClearScoreButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (_VM == null || _VM.MarkingCompetitionItem == null || _VM.MarkingParticipant == null || _VM.CurrentScoreIntersection == null) return;
-            else
-            {
-                if (Messager.Out($"Are you sure you want to clear #{_VM.MarkingParticipant.ChestNumber}'s score in {_VM.MarkingCompetitionItem.Name}?", "Clear score", ConsoleStyle.WarningBlockStyle, isCancelButtonVisible: true, yesButtonText: "Yes")
-                    == System.Windows.Forms.DialogResult.Yes)
-                {
-                    _VM.MarkingCompetitionItem.ClearScore(_VM.MarkingParticipant);
-                    _VM.UpdateIntersection();
-                    ClearScoreButton.IsEnabled = false;
-                }
             }
         }
 
