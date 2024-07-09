@@ -1,0 +1,92 @@
+﻿<Window x:Class="Scoresheet.Exporters.ExporterWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Scoresheet.Exporters" xmlns:controls="clr-namespace:Examath.Core.Controls;assembly=Examath.Core"
+        mc:Ignorable="d"
+        Title="{Binding Name, StringFormat='Export {0}'}" Height="600" Width="900"
+        Style="{StaticResource ContrastWindowStyle}">
+    <!--<d:Window.DataContext>
+        <local:ParticipantListExporter/>
+    </d:Window.DataContext>-->
+    <Grid Margin="6">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="350"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.IsSharedSizeScope="True">
+            <ContentPresenter Content="{Binding}">
+                <ContentPresenter.Resources>
+                    <DataTemplate DataType="{x:Type local:ParticipantListExporter}">
+                        <GroupBox Header="Participant List">
+                            <ListBox Style="{StaticResource ControlPanelListBoxStyle}">
+                                <CheckBox IsChecked="{Binding DisplayGroupLeader}" Content="Display Group Leader"/>
+                                <CheckBox IsChecked="{Binding AddChestNumbers}" Content="Add Chest Numbers"/>
+                            </ListBox>
+                        </GroupBox>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type local:CertificateExporter}">
+                        <GroupBox Header="Certificate">
+                            <ListBox Style="{StaticResource ControlPanelListBoxStyle}">
+                                <controls:FilePicker FileName="{Binding TemplateLocation}" 
+                                                     Tag="Template to use" 
+                                                     ExtensionFilter="Word Document (*.docx)|*.docx;*.dotx"
+                                                     ToolTip="Select a Word document with the generation code to use as a template for the certificates." />
+                                <CheckBox IsChecked="{Binding DisplayGroupLeader}" Content="Display Group Leader"/>
+                                <CheckBox IsChecked="{Binding AddChestNumbers}" Content="Add Chest Numbers"/>
+                            </ListBox>
+                        </GroupBox>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type local:ChestNumberExporter}">
+                        <GroupBox Header="Certificate">
+                            <ListBox Style="{StaticResource ControlPanelListBoxStyle}">
+                                <TextBox Text="{Binding ChestNumberFontSize}" Tag="Chest Number Font Size" />
+                                <TextBox Text="{Binding FooterFontSize}" Tag="Footer Font Size" />
+                                <TextBox Text="{Binding Footer}" Tag="Footer Content" AcceptsReturn="True" TextWrapping="Wrap" ToolTip="Use the placeholders" />
+                            </ListBox>
+                        </GroupBox>
+                    </DataTemplate>
+                </ContentPresenter.Resources>
+            </ContentPresenter>
+            <ContentPresenter Content="{Binding}">
+                <ContentPresenter.Resources>
+                    <DataTemplate DataType="{x:Type local:FlowDocumentExporter}">
+                        <GroupBox Header="Document Preview Options">
+                            <ListBox Style="{StaticResource ControlPanelListBoxStyle}">
+                                <!--<ComboBox x:Name="FontComboBox" Tag="Font" IsEditable="True" SelectedItem="{Binding FontFamily}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type FontFamily}">
+                                            <TextBlock Text="{Binding}" FontFamily="{Binding}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>-->
+                                <ComboBox x:Name="PaperSizeComboBox" Tag="Paper Size" ItemsSource="{Binding PaperSizes}" SelectedItem="{Binding PaperSize}"/>
+                                <TextBox Text="{Binding Columns}" Tag="Columns"/>
+                            </ListBox>
+                        </GroupBox>
+                    </DataTemplate>
+                </ContentPresenter.Resources>
+            </ContentPresenter>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" VerticalAlignment="Bottom" Margin="2">
+            <Label Content="Export to" Style="{StaticResource OutputLabel}" Margin="2 2 2 -2" Target="{Binding ElementName=SaveLocationFilePicker}" />
+            <controls:FilePicker x:Name="SaveLocationFilePicker" FileName="{Binding SaveLocation}" ExtensionFilter="{Binding FileFilter}" UseSaveFileDialog="True"  />
+            <CheckBox Content="Open file after exporting" IsChecked="{Binding OpenAfterExport}" />
+            <DockPanel Height="40">
+                <Button x:Name="CancelButton" Content="Cancel" Foreground="{StaticResource OldColourKey}" DockPanel.Dock="Right" Click="CancelButton_Click"/>
+                <Button Content="Export" Foreground="{StaticResource NewColourKey}" TextElement.FontWeight="Bold" Command="{Binding ExportCommand}"/>
+            </DockPanel>
+        </StackPanel>
+
+        <GridSplitter Width="4" Grid.Column="1" HorizontalAlignment="Center" Margin="4" Grid.RowSpan="2"/>
+
+        <FlowDocumentReader Foreground="Black" x:Name="DocumentReader" Grid.Column="2" Grid.RowSpan="2" MinZoom="20" Document="{Binding Document}" />
+    </Grid>
+</Window>

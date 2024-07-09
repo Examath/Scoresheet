@@ -13,157 +13,129 @@ using System.Linq;
 
 namespace Scoresheet.Exporters
 {
-    public class ParticipantListExporter
+    public sealed class ParticipantListExporter : FlowDocumentExporter
     {
-        private ScoresheetFile _ScoresheetFile { get; set; }
+        public override string Name { get => "Participant-Items List"; }
 
-        public string SaveLocation { get; set; } = "C:\\temp\\doc.rtf";
-        private FilePickerInput SaveLocationI;
-
-        public bool DisplayGroupLeader { get; set; } = true;
-        private CheckBoxInput DisplayGroupLeaderI;
-
-        public bool AddChestNumbers { get; set; } = false;
-        private CheckBoxInput AddChestNumbersI;
-
-        public bool OpenAutomatically { get;set; } = true;
-        private CheckBoxInput OpenAutomaticallyI;
-
-        public double TableWidth { get; set; } = 920;
-        private TextBoxInput TableWidthI;
-        private double TableColumnWidth => TableWidth / _ScoresheetFile.Teams.Count;
-
-        private AskerOptions _AskerOptions = new("Export IndividualParticipant-Items List", canCancel: true);
-
-        public ParticipantListExporter(ScoresheetFile scoresheetFile)
+        private bool _DisplayGroupLeader = true;
+        /// <summary>
+        /// Gets or sets whether to Show Group Leader
+        /// </summary>
+        public bool DisplayGroupLeader
         {
-            _ScoresheetFile = scoresheetFile;
-            SaveLocationI = new(this, nameof(SaveLocation), "Location to Export to") { ExtensionFilter = "Rich Text Document|*.rtf", UseSaveFileDialog = true };
-            DisplayGroupLeaderI = new(this, nameof(DisplayGroupLeader), "Show Group Leader");
-            AddChestNumbersI = new(this, nameof(AddChestNumbers), "Add chest numbers");
-            OpenAutomaticallyI = new(this, nameof(OpenAutomatically), "Open file when complete");
-            TableWidthI = new(this, nameof(TableWidth), "Table width");
+            get => _DisplayGroupLeader;
+            set { if (SetProperty(ref _DisplayGroupLeader, value)) UpdatePreview(); }
         }
 
-        public void Export()
+        private bool _AddChestNumbers = false;
+        /// <summary>
+        /// Gets or sets whether to add chest numbers
+        /// </summary>
+        public bool AddChestNumbers
         {
-            if (Asker.Show(_AskerOptions, SaveLocationI, DisplayGroupLeaderI, AddChestNumbersI, OpenAutomaticallyI, TableWidthI))
+            get => _AddChestNumbers;
+            set { if (SetProperty(ref _AddChestNumbers, value)) UpdatePreview(); }
+        }
+
+        public ParticipantListExporter():base(new())
+        {
+
+        }
+
+        public ParticipantListExporter(ScoresheetFile scoresheetFile):base(scoresheetFile)
+        {
+            
+        }
+
+        protected override FlowDocument GeneratePreview()
+        {
+            FlowDocument flowDocument = base.GeneratePreview();
+
+            foreach (CompetitionItem competitionItem in _ScoresheetFile.CompetitionItems)
             {
-                FlowDocument flowDocument = new(new Paragraph(new Run("Generated at " + DateTime.Now.ToString())))
+                Section section = new();
+                string subTitle = "";
+
+                if (competitionItem is SoloItem soloItem)
                 {
-                    FontFamily = new FontFamily("Arial"),
+                    subTitle = soloItem.Level.ToString() + ", " +
+                        (soloItem.IsOnStage ? "Stage" : "Non-Stage") + ": ";
+                }
+
+                Paragraph header = new(new Run(subTitle))
+                {
+                    Margin = new Thickness(0, 16, 0, 4),
                 };
 
-                foreach (CompetitionItem competitionItem in _ScoresheetFile.CompetitionItems)
+
+                header.Inlines.Add(new Run(competitionItem.Name) { FontWeight = FontWeights.Bold });
+                header.FontSize = 22;
+                section.Blocks.Add(header);
+
+                Table table = new() { };
+                TableRowGroup rowGroup = new TableRowGroup();
+
+                TableRow headerRow = new();
+                TableRow personsRow = new();
+
+                rowGroup.Rows.Add(headerRow);
+                rowGroup.Rows.Add(personsRow);
+                table.RowGroups.Add(rowGroup);
+
+                section.Blocks.Add(table);
+
+                double tableWidth = flowDocument.PageWidth / Columns - 200;
+
+                double tableColumnWidth = tableWidth / _ScoresheetFile.Teams.Count;
+
+                foreach (Team team in _ScoresheetFile.Teams)
                 {
-                    Section section = new();
-                    string subTitle = "";
+                    table.Columns.Add(new TableColumn() { Width = new GridLength(tableColumnWidth) });
+                    headerRow.Cells.Add(new TableCell(new Paragraph(new Run(
+                        team.ToString()
+                        )
+                    { FontWeight = FontWeights.Bold })));
+                    personsRow.Cells.Add(new TableCell());
+                }
 
-                    if (competitionItem is SoloItem soloItem)
+                if (competitionItem is GroupItem groupItem)
+                {
+                    System.Collections.Generic.List<IndividualParticipant> notInGroup = groupItem.IndividualParticipants.ToList();
+
+                    foreach (GroupParticipant groupParticipant in groupItem.GroupParticipants)
                     {
-                        subTitle = soloItem.Level.ToString() + ", " +
-                            (soloItem.IsOnStage ? "Stage" : "Non-Stage") + ": ";
-                    }
+                        int teamIndex = (groupParticipant.Team != null) ? _ScoresheetFile.Teams.IndexOf(groupParticipant.Team) : 0;
+                        personsRow.Cells[teamIndex].Blocks.Add(ExportParticipant(groupParticipant));
 
-                    Paragraph header = new(new Run(subTitle))
-                    {
-                        Margin = new Thickness(0, 16, 0, 4),
-                    };
-
-
-                    header.Inlines.Add(new Run(competitionItem.Name) { FontWeight = FontWeights.Bold });
-                    header.FontSize = 22;
-                    section.Blocks.Add(header);
-
-                    Table table = new() { };
-                    TableRowGroup rowGroup = new TableRowGroup();
-
-                    TableRow headerRow = new();
-                    TableRow personsRow = new();
-
-                    rowGroup.Rows.Add(headerRow);
-                    rowGroup.Rows.Add(personsRow);
-                    table.RowGroups.Add(rowGroup);
-
-                    section.Blocks.Add(table);
-
-                    foreach (Team team in _ScoresheetFile.Teams)
-                    {
-                        table.Columns.Add(new TableColumn() { Width = new GridLength(TableColumnWidth) });
-                        headerRow.Cells.Add(new TableCell(new Paragraph(new Run(
-                            team.ToString()
-                            )
-                        { FontWeight = FontWeights.Bold })));
-                        personsRow.Cells.Add(new TableCell());
-                    }
-
-                    if (competitionItem is GroupItem groupItem)
-                    {
-                        System.Collections.Generic.List<IndividualParticipant> notInGroup = groupItem.IndividualParticipants.ToList();
-
-                        foreach (GroupParticipant groupParticipant in groupItem.GroupParticipants)
+                        foreach (IndividualParticipant individualParticipant in groupParticipant.IndividualParticipants)
                         {
-                            int teamIndex = (groupParticipant.Team != null) ? _ScoresheetFile.Teams.IndexOf(groupParticipant.Team) : 0;
-                            personsRow.Cells[teamIndex].Blocks.Add(ExportParticipant(groupParticipant));
-
-                            foreach (IndividualParticipant individualParticipant in groupParticipant.IndividualParticipants)
-                            {
-                                notInGroup.Remove(individualParticipant);
-                                personsRow.Cells[teamIndex].Blocks.Add(ExportParticipant(individualParticipant));
-                            }
-                        }
-
-                        if (notInGroup.Count > 0)
-                        {
-                            Run note = new($"Not in any group: {string.Join(", ", notInGroup.Select(p => (AddChestNumbers) ? p.ToString() : p.FullName).ToList())}")
-                            {
-                                Foreground = Brushes.Tomato
-                            };
-                            section.Blocks.Add(new Paragraph(note));
-                        }
-                    }
-                    else // Slo Item {
-                    {
-                        foreach (IndividualParticipant individualParticipant in competitionItem.IndividualParticipants)
-                        {
-                            int teamIndex = (individualParticipant.Team != null) ? _ScoresheetFile.Teams.IndexOf(individualParticipant.Team) : 0;
+                            notInGroup.Remove(individualParticipant);
                             personsRow.Cells[teamIndex].Blocks.Add(ExportParticipant(individualParticipant));
                         }
                     }
 
-                    flowDocument.Blocks.Add(section);
+                    if (notInGroup.Count > 0)
+                    {
+                        Run note = new($"Not in any group: {string.Join(", ", notInGroup.Select(p => (AddChestNumbers) ? p.ToString() : p.FullName).ToList())}")
+                        {
+                            Foreground = Brushes.Tomato
+                        };
+                        section.Blocks.Add(new Paragraph(note));
+                    }
+                }
+                else // Slo Item {
+                {
+                    foreach (IndividualParticipant individualParticipant in competitionItem.IndividualParticipants)
+                    {
+                        int teamIndex = (individualParticipant.Team != null) ? _ScoresheetFile.Teams.IndexOf(individualParticipant.Team) : 0;
+                        personsRow.Cells[teamIndex].Blocks.Add(ExportParticipant(individualParticipant));
+                    }
                 }
 
-                try
-                {
-                    using FileStream fileStream = new(SaveLocation, FileMode.Create);
-                    TextRange textRange = new(flowDocument.ContentStart, flowDocument.ContentEnd);
-                    textRange.Save(fileStream, System.Windows.DataFormats.Rtf);
-                }
-                catch (Exception ee)
-                {
-                    Messager.OutException(ee, "Saving Document");
-                    return;
-                }
-                
-                if (OpenAutomatically)
-                {
-                    ProcessStartInfo processStartInfo = new()
-                    {
-                        UseShellExecute = true,
-                        FileName = SaveLocation,
-                    };
-                    try
-                    {
-                        Process.Start(processStartInfo);
-                    }
-                    catch (Exception ee)
-                    {
-                        Messager.OutException(ee, "Opening Document");
-                    }
-                }              
-
+                flowDocument.Blocks.Add(section);
             }
+
+            return flowDocument;
         }
 
         public Paragraph ExportParticipant(IndividualParticipant individualParticipant)
@@ -181,7 +153,5 @@ namespace Scoresheet.Exporters
             run.FontWeight = FontWeights.Bold;
             return new Paragraph(run);
         }
-
-
     }
 }

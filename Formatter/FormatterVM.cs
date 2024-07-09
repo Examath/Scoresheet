@@ -346,7 +346,7 @@ namespace Scoresheet.Formatter
             }
         }
 
-        private bool CanFindCurrentMatchingSubmission() => SelectedParticipant != null && SelectedParticipant.IsFormSubmitted;
+        private bool CanFindCurrentMatchingSubmission() => SelectedParticipant != null && SelectedParticipant.IsRegistered;
 
         /// <summary>
         /// Selects the curent matching submission of the current selected <see cref="IndividualParticipant"/>
@@ -354,7 +354,7 @@ namespace Scoresheet.Formatter
         [RelayCommand(CanExecute = nameof(CanFindCurrentMatchingSubmission))]
         public void FindCurrentMatchingSubmission()
         {
-            if (SelectedParticipant != null && SelectedParticipant.IsFormSubmitted) // Then find matching submission
+            if (SelectedParticipant != null && SelectedParticipant.IsRegistered) // Then find matching submission
             {
                 if (SelectedSubmission == null || SelectedSubmission.Match != SelectedParticipant) // Only if match not selected already
                 {

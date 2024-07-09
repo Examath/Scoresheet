@@ -32,7 +32,30 @@ namespace Scoresheet.Model
 
         [XmlAttribute]
         public string LastAuthor { get; set; } = "Null";
-        
+
+        private string _CompetitionName = "Untitled";
+        /// <summary>
+        /// Gets or sets the name of the competition
+        /// </summary>
+        public string CompetitionName
+        {
+            get => _CompetitionName;
+            set { if (SetProperty(ref _CompetitionName, value)) NotifyChange("Comp Name"); }
+        }
+
+
+        private string _Organization = "";
+        /// <summary>
+        /// Gets or sets the organisation name
+        /// </summary>
+        [XmlAttribute]
+        public string Organization
+        {
+            get => _Organization;
+            set { if (SetProperty(ref _Organization, value)) NotifyChange("Org Name"); }
+        }
+
+
         #region Exports
 
         private string _TemplateLocation =  "C:\\temp\\doc.docx";

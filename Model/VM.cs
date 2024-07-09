@@ -65,6 +65,7 @@ namespace Scoresheet.Model
             ScoresheetFile = new ScoresheetFile();
             _ParticipantListExporter = new(ScoresheetFile);
             _CertificateExporter = new(ScoresheetFile);
+            _ChestNumberExporter = new(ScoresheetFile);
 
             _UserNameI = new(this, nameof(UserName), label: "Editor Name") { IsFocused = true, HelpText = "Enter your name (or initials) for tracing purposes" };
         }
@@ -78,6 +79,7 @@ namespace Scoresheet.Model
             _FileLocation = fileLocation;
             _ParticipantListExporter = new(ScoresheetFile);
             _CertificateExporter = new(ScoresheetFile);
+            _ChestNumberExporter = new(ScoresheetFile);
             _UserNameI = new(this, nameof(UserName), label: "Editor Name") { IsFocused = true, HelpText = "Enter your name (or initials) for tracing purposes" };
         }
 
@@ -268,22 +270,44 @@ namespace Scoresheet.Model
 
         #region Exporters
 
-        private ParticipantListExporter _ParticipantListExporter;
+        private readonly ParticipantListExporter _ParticipantListExporter;
 
         [RelayCommand]
         public void ExportParticipantList()
         {
-            _ParticipantListExporter.Export();
+            ExporterWindow exporter = new(_ParticipantListExporter)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+            exporter.Show();
         }
 
-        private CertificateExporter _CertificateExporter;
+        private readonly CertificateExporter _CertificateExporter;
 
         [RelayCommand]
-        public async Task ExportCertificates(object param)
+        public void ExportCertificates(object param)
         {
             System.Collections.IList items = (System.Collections.IList)param;
-            List<IndividualParticipant> individualParticipants = items.Cast<IndividualParticipant>().ToList();
-            await _CertificateExporter.Export(individualParticipants);
+            _CertificateExporter.SelectedParticipants = items.Cast<IndividualParticipant>().ToList();
+            ExporterWindow exporter = new(_CertificateExporter)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+            exporter.Show();
+        }
+
+        private readonly ChestNumberExporter _ChestNumberExporter;
+
+        [RelayCommand]
+        public void ExportChestNumbers(object param)
+        {
+            System.Collections.IList items = (System.Collections.IList)param;
+            _ChestNumberExporter.SelectedParticipants = items.Cast<IndividualParticipant>().OrderBy(p => p.ChestNumber).ToList();
+            ExporterWindow exporter = new(_ChestNumberExporter)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+            exporter.Show();
         }
 
         #endregion

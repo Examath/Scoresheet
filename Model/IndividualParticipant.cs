@@ -112,14 +112,14 @@ namespace Scoresheet.Model
         public DateTime SubmissionTimeStamp
         {
             get => _SubmissionTimeStamp;
-            set { if (SetProperty(ref _SubmissionTimeStamp, value)) OnPropertyChanged(nameof(IsFormSubmitted)); }
+            set { if (SetProperty(ref _SubmissionTimeStamp, value)) OnPropertyChanged(nameof(IsRegistered)); }
         }
 
         /// <summary>
         /// Gets or sets whether any form has been applied
         /// </summary>
         [XmlIgnore]
-        public bool IsFormSubmitted { get => SubmissionTimeStamp != default; }
+        public bool IsRegistered { get => SubmissionTimeStamp != default; }
 
         private string _SubmissionEmail = "";
         /// <summary>

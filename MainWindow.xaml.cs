@@ -298,7 +298,7 @@ namespace Scoresheet
                 else
                 {
                     _VM.IsLastEnteredScoreValid = false;
-                }                
+                }
 
                 if (e.Key == Key.Enter && _VM != null && _VM.CanApplyScore())
                 {
@@ -335,6 +335,21 @@ namespace Scoresheet
         #endregion
 
         #region Collection Views
+
+        private void SelectRegisteredParticipantsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_VM != null)
+            {
+                foreach (IndividualParticipant individualParticipant in _VM.ScoresheetFile.IndividualParticipants)
+                {
+                    if (individualParticipant.IsRegistered && !ParticipantsListBox.SelectedItems.Contains(individualParticipant))
+                    {
+                        ParticipantsListBox.SelectedItems.Add(individualParticipant);
+                    }
+                }
+            }
+
+        }
 
         private void ParticipantsViewSortComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

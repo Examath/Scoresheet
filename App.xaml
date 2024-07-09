@@ -109,7 +109,7 @@
                     <TextBlock Text="{Binding CompetitionItems.Count, FallbackValue=0, StringFormat=({0})}" Foreground="{StaticResource ForegroundMinorColourKey}" Padding="4 0 4 0"/>
                 </WrapPanel>
                 <DataTemplate.Triggers>
-                    <DataTrigger Binding="{Binding IsFormSubmitted}" Value="false">
+                    <DataTrigger Binding="{Binding IsRegistered}" Value="false">
                         <Setter TargetName="PART_Root" Property="Opacity" Value="0.3"/>
                     </DataTrigger>
                 </DataTemplate.Triggers>

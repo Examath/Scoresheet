@@ -82,20 +82,29 @@
                             </TextBlock>
                         </StackPanel>
                     </GroupBox>
-                    <StackPanel Grid.Column="1" Grid.Row="1">
+                    <StackPanel Grid.Column="1" Grid.Row="1" Grid.IsSharedSizeScope="True">
                         <GroupBox Header="Application Run">
-                            <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Row="1">
+                            <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Row="1" Grid.IsSharedSizeScope="False">
                                 <TextBox Tag="Current Author Name" Text="{Binding UserName}"/>
                                 <controls:FilePicker Tag="Scoresheet Save Location" ToolTip="Change to save scoresheet to a different location"
                                                  FileName="{Binding FileLocation}" UseSaveFileDialog="True" ExtensionFilter="Scoresheet File (*.ssf)|*.ssf|XML|*.xml"/>
                             </ListBox>
                         </GroupBox>
+                        <GroupBox Header="Scoresheet Details">
+                            <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.IsSharedSizeScope="False">
+                                <Label Tag="Version" Content="{Binding ScoresheetFile.Version}"/>
+                                <Label Tag="Last Saved Time" Content="{Binding ScoresheetFile.LastSavedTime}"/>
+                                <Label Tag="Last Saved By" Content="{Binding ScoresheetFile.LastAuthor}"/>
+                                <TextBox Tag="Competition Name" Text="{Binding ScoresheetFile.CompetitionName}" />
+                                <TextBox Tag="Organization Name" Text="{Binding ScoresheetFile.Organization}" />
+                            </ListBox>
+                        </GroupBox>
                         <GroupBox Header="Teams">
-                            <ListBox ItemsSource="{Binding ScoresheetFile.Teams}" Style="{StaticResource ContrastListBoxStyle}" ItemTemplate="{StaticResource TeamBox}">
+                            <ListBox ItemsSource="{Binding ScoresheetFile.Teams}" d:ItemsSource="{d:SampleData}" Style="{StaticResource ContrastListBoxStyle}" ItemTemplate="{StaticResource TeamBox}">
                             </ListBox>
                         </GroupBox>
                         <GroupBox Header="Level Definitions">
-                            <ListBox Grid.IsSharedSizeScope="True" ItemsSource="{Binding ScoresheetFile.LevelDefinitions}" Style="{StaticResource ContrastListBoxStyle}">
+                            <ListBox Grid.IsSharedSizeScope="True" ItemsSource="{Binding ScoresheetFile.LevelDefinitions}" d:ItemsSource="{d:SampleData}" Style="{StaticResource ContrastListBoxStyle}">
                                 <!--<ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Grid>
@@ -171,12 +180,15 @@
                             <ComboBoxItem Tag="FullName">Full Name</ComboBoxItem>
                         </ComboBox>
                         <Button Command="{Binding ExportCertificatesCommand}" CommandParameter="{Binding ElementName=ParticipantsListBox, Path=SelectedItems}"
-                                Content="{Binding ElementName=ParticipantsListBox, Path=SelectedItems.Count, FallbackValue='0'}" ContentStringFormat="Print Certificates of {0} Participants..." />
+                                Content="{Binding ElementName=ParticipantsListBox, Path=SelectedItems.Count, FallbackValue='0'}" ContentStringFormat="Export Certificates of {0} Participants..." />
+                        <Button Content="Export Chest Numbers..."
+                                Command="{Binding ExportChestNumbersCommand}" CommandParameter="{Binding ElementName=ParticipantsListBox, Path=SelectedItems}"/>
                         <Button Command="{Binding SearchParticipantCommand}">
                             <TextBlock>
                                 <Run Style="{StaticResource Glyph}">&#xE094;</Run> Find Participant by Name...
                             </TextBlock>
                         </Button>
+                        <Button x:Name="SelectRegisteredParticipantsButton" Content="Select Registered Participants" Click="SelectRegisteredParticipantsButton_Click" />
                     </ListBox>
 
                     <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.Row="1" Grid.IsSharedSizeScope="False">
@@ -199,10 +211,10 @@
                             </Label>
                         </DockPanel>
                         <Separator/>
-                        <Label Tag="Form Submitted at" Content="{Binding SelectedParticipant.SubmissionTimeStamp, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
-                        <Label Tag="Form Submitted by" Content="{Binding SelectedParticipant.SubmissionEmail, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
-                        <Label Tag="Contact Phone Number" Content="{Binding SelectedParticipant.SubmissionPhoneNumber, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
-                        <Label Tag="Name as given in form" Content="{Binding SelectedParticipant.SubmissionFullName, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsFormSubmitted}"/>
+                        <Label Tag="Form Submitted at" Content="{Binding SelectedParticipant.SubmissionTimeStamp, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsRegistered}"/>
+                        <Label Tag="Form Submitted by" Content="{Binding SelectedParticipant.SubmissionEmail, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsRegistered}"/>
+                        <Label Tag="Contact Phone Number" Content="{Binding SelectedParticipant.SubmissionPhoneNumber, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsRegistered}"/>
+                        <Label Tag="Name as given in form" Content="{Binding SelectedParticipant.SubmissionFullName, FallbackValue=?}" IsEnabled="{Binding SelectedParticipant.IsRegistered}"/>
                         <ItemsControl x:Name="SelectedParticipantItemsControl" Tag="Items" ItemsSource="{Binding SelectedParticipant.CompetitionItems}" d:ItemsSource="{d:SampleData ItemCount=2}" Grid.IsSharedSizeScope="True">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="model:CompetitionItem">
@@ -238,11 +250,6 @@
                         Style="{StaticResource ContrastListBoxStyle}"
                         SelectedItem="{Binding SelectedParticipant}" ItemTemplate="{StaticResource ParticipantItemsDataTemplate}" SelectionMode="Extended"
                         ScrollViewer.VerticalScrollBarVisibility="Disabled" Grid.RowSpan="2">
-                        <ListBox.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="Select Match" Command="{Binding FindCurrentMatchingSubmissionCommand}"/>
-                            </ContextMenu>
-                        </ListBox.ContextMenu>
                         <ListBox.GroupStyle>
                             <GroupStyle>
                                 <GroupStyle.Panel>

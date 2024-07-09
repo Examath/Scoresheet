@@ -234,7 +234,7 @@ namespace Scoresheet.Formatter
                     throw ioe;
                 }
 
-                if (match.IsFormSubmitted)
+                if (match.IsRegistered)
                 {
                     SubmissionStatus = SubmissionStatus.Edited;
                     match.UnjoinAllCompetitions();
