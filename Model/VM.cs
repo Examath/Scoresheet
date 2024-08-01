@@ -544,12 +544,7 @@ namespace Scoresheet.Model
         [RelayCommand]
         public void RefreshScore()
         {
-            foreach (CompetitionItem competitionItem in ScoresheetFile.CompetitionItems)
-            {
-                competitionItem.ReCalculateWinners();
-            }
-
-            ScoresheetFile.UpdateTeamTotals();
+            ScoresheetFile.RefreshScore();
         }
 
         private Score? _EnteredScore;

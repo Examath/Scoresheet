@@ -38,11 +38,22 @@ namespace Scoresheet.Model
         /// </remarks>
         public int? Place { get; private set; }
 
+        /// <summary>
+        /// Gets the grade (! not fully implemented)
+        /// </summary>
+        public string Grade { get; private set; }
+
         public ScoreRecord(CompetitionItem competitionItem, Score score)
         {
             CompetitionItem = competitionItem;
             Marks = score.AverageMarks;
             Place = score.Place;
+
+            double relativeScore = Marks / competitionItem.MaximumScore;
+
+            if (relativeScore >= 0.8) Grade = "A";
+            else if (relativeScore >= 0.6) Grade = "B";
+            else Grade = "C";
         }
     }
 }

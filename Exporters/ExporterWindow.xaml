@@ -38,8 +38,6 @@
                                                      Tag="Template to use" 
                                                      ExtensionFilter="Word Document (*.docx)|*.docx;*.dotx"
                                                      ToolTip="Select a Word document with the generation code to use as a template for the certificates." />
-                                <CheckBox IsChecked="{Binding DisplayGroupLeader}" Content="Display Group Leader"/>
-                                <CheckBox IsChecked="{Binding AddChestNumbers}" Content="Add Chest Numbers"/>
                             </ListBox>
                         </GroupBox>
                     </DataTemplate>

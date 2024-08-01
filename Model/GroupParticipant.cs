@@ -114,6 +114,7 @@ namespace Scoresheet.Model
         /// Initialises the individualParticipants making up this group and their leader
         /// and finally <inheritdoc/>
         /// </summary>
+        /// <exception cref="Examath.Core.Model.ObjectLinkingException"></exception>
         public override void Initialize(ScoresheetFile scoresheetFile)
         {
             base.Initialize(scoresheetFile);
@@ -132,6 +133,10 @@ namespace Scoresheet.Model
                     if (individualParticipant != null) { 
                         IndividualParticipants.Add(individualParticipant);
                         if (individualParticipant.ChestNumber == leaderChestNumber) Leader = individualParticipant;
+                    }
+                    else
+                    {
+                        throw new Examath.Core.Model.ObjectLinkingException(this, chestNumber, typeof(IndividualParticipant));
                     }
                 }
             }

@@ -157,6 +157,11 @@ namespace Scoresheet.Model
             }
         }
 
+        /// <summary>
+        /// <inheritdoc/>, and the <see cref="GroupParticipants"/>
+        /// </summary>
+        /// <param name="scoresheetFile"></param>
+        /// <exception cref="Examath.Core.Model.ObjectLinkingException"></exception>
         public override void Initialize(ScoresheetFile scoresheetFile)
         {
             foreach (GroupParticipant participant in GroupParticipants) participant.Initialize(scoresheetFile);

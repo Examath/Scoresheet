@@ -22,7 +22,9 @@ namespace Scoresheet.Exporters
 
         private const string NAME_FIELD = "${Name}";
         private const string YEAR_LEVEL_FIELD = "${YearLevel}";
-        private const string ITEMS_FIELD = "${Items}";
+        private const string ITEMS_NAME_FIELD = "${Items}";
+        private const string PLACE_FIELD = "${Place}";
+        private const string GRADE_FIELD = "${Grade}";
 
         /// <summary>
         /// Gets or sets the location of the certificate template
@@ -85,66 +87,73 @@ namespace Scoresheet.Exporters
                 if (gen?.MainDocumentPart?.Document.Body is Body body)
                 {
                     // Name
-                    Text? name = body.Descendants<Text>().FirstOrDefault(t => t.Text.Contains(NAME_FIELD));
-                    if (name == null)
+                    Text? nameTemplate = body.Descendants<Text>().FirstOrDefault(t => t.Text.Contains(NAME_FIELD));
+                    if (nameTemplate == null)
                     {
                         Messager.Out($"{NAME_FIELD} could not be found in template. Check that it exists and formatting has been cleared.", "Template error", ConsoleStyle.FormatBlockStyle);
                         return;
                     }
-                    string nameFormat = name.Text;
+                    string nameFormat = nameTemplate.Text;
 
                     // Year
-                    Text? year = body.Descendants<Text>().FirstOrDefault(t => t.Text.Contains(YEAR_LEVEL_FIELD));
-                    string yearFormat = year?.Text ?? "";
+                    Text? yearTemplate = body.Descendants<Text>().FirstOrDefault(t => t.Text.Contains(YEAR_LEVEL_FIELD));
+                    string yearFormat = yearTemplate?.Text ?? "";
 
                     // Items
-                    Paragraph? itemTemplate = body.Descendants<Paragraph>().FirstOrDefault(p => p.InnerText.Contains(ITEMS_FIELD));
+                    Paragraph? itemTemplate = body.Descendants<Paragraph>().FirstOrDefault(p => p.InnerText.Contains(ITEMS_NAME_FIELD));
                     if (itemTemplate == null)
                     {
-                        Messager.Out($"{ITEMS_FIELD} paragraph not found in template.", "Template error", ConsoleStyle.WarningBlockStyle);
-                        return;
-                    }
-
-                    ParagraphStyleId? itemStyle = itemTemplate.ParagraphProperties?.ParagraphStyleId;
-                    if (itemStyle == null)
-                    {
-                        Messager.Out($"{ITEMS_FIELD} paragraph does not have a style attached. Define a new paragraph style and assign it to the paragraph", "Template error", ConsoleStyle.WarningBlockStyle);
+                        Messager.Out($"{ITEMS_NAME_FIELD} paragraph not found in template.", "Template error", ConsoleStyle.WarningBlockStyle);
                         return;
                     }
 
                     // Other Blocks
-                    List<OpenXmlElement> source = body.ChildElements.ToList();
+                    List<OpenXmlElement> templateElements = body.ChildElements.ToList();
                     body.RemoveAllChildren();
 
                     foreach (CertificateData certificateData in _CertificateData)
                     {
                         // Set Name
-                        name.Text = nameFormat.Replace(NAME_FIELD, certificateData.IndividualParticipant.FullName);
+                        nameTemplate.Text = nameFormat.Replace(NAME_FIELD, certificateData.IndividualParticipant.FullName);
 
                         // Set Year
-                        if (year != null) year.Text = yearFormat.Replace(YEAR_LEVEL_FIELD, certificateData.IndividualParticipant.YearLevel.ToString());
+                        if (yearTemplate != null) yearTemplate.Text = yearFormat.Replace(YEAR_LEVEL_FIELD, certificateData.IndividualParticipant.YearLevel.ToString());
 
-                        foreach (var item in source)
+                        foreach (var templateElement in templateElements)
                         {
-                            if (item != itemTemplate)
+                            if (templateElement != itemTemplate)
                             {
-                                OpenXmlElement element = (OpenXmlElement)item.Clone();
+                                OpenXmlElement element = (OpenXmlElement)templateElement.Clone();
                                 body.AppendChild(element);
                             }
                             else
                             {
                                 foreach (ScoreRecord scoreRecord in certificateData.Items)
                                 {
-                                    Paragraph element = body.AppendChild(new Paragraph());
-                                    ParagraphProperties paragraphProperties = element.PrependChild(new ParagraphProperties());
-                                    paragraphProperties.ParagraphStyleId = new ParagraphStyleId() { Val = itemStyle.Val };
+                                    Paragraph item = (Paragraph)(itemTemplate?.Clone() ?? new Paragraph());
 
-                                    Run run = element.AppendChild(new Run());
-                                    Text text = run.AppendChild(new Text(scoreRecord.CompetitionItem.Name));
-                                    if (scoreRecord.Place <= PlaceEnumeration.Count)
+                                    Text? itemNameTemplate = item?.Descendants<Text>().FirstOrDefault(t => t.Text.Contains(ITEMS_NAME_FIELD));
+                                    if (itemNameTemplate != null) 
+                                        itemNameTemplate.Text = itemNameTemplate.Text.Replace(ITEMS_NAME_FIELD, scoreRecord.CompetitionItem.Name);
+
+                                    Text? itemPlaceTemplate = item?.Descendants<Text>().FirstOrDefault(t => t.Text.Contains(PLACE_FIELD));
+                                    if (itemPlaceTemplate != null)
                                     {
-                                        text.Text += $" ({PlaceEnumeration[scoreRecord.Place - 1 ?? 0]})";
+                                        string placeText = string.Empty;                                    
+                                        if (scoreRecord.Place <= PlaceEnumeration.Count)
+                                        {
+                                            placeText = " (" + PlaceEnumeration[scoreRecord.Place - 1 ?? 0] + ")";
+                                        }
+                                        itemPlaceTemplate.Text = itemPlaceTemplate.Text.Replace(PLACE_FIELD,placeText);
+                                    }                                       
+
+                                    Text? itemGradeTemplate = item?.Descendants<Text>().FirstOrDefault(t => t.Text.Contains(GRADE_FIELD));
+                                    if (itemGradeTemplate != null)
+                                    {
+                                        itemGradeTemplate.Text = itemGradeTemplate.Text.Replace(GRADE_FIELD, scoreRecord.Grade);
                                     }
+
+                                    body.AppendChild(item);
                                 }
                             }
                         }

@@ -143,6 +143,10 @@ namespace Scoresheet.Model
         public void Initialize(IEnumerable<Participant> participants)
         {
             Participant = participants.Where((p) => p.ChestNumber == ParticipantChestNumber).FirstOrDefault();
+            if (Participant == null)
+            {
+                throw new Examath.Core.Model.ObjectLinkingException(this, ParticipantChestNumber, typeof(Participant));
+            }
         }
 
         #endregion

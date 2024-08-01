@@ -163,9 +163,9 @@ namespace Scoresheet.Formatter
                             formSubmission.ApplyMatch(formSubmission.Match, ScoresheetFile);
                             Progress++;
                         }
-                        catch (InvalidOperationException ioe)
+                        catch (Examath.Core.Model.ObjectLinkingException ole)
                         {
-                            Messager.OutException(ioe, $"Applying {formSubmission.Match.FullName}");
+                            Messager.OutException(ole, $"Applying {formSubmission.Match.FullName}");
                             break;
                         }
                     }
@@ -330,7 +330,16 @@ namespace Scoresheet.Formatter
 
                 if (ok)
                 {
-                    SelectedSubmission.ApplyMatch(SelectedParticipant, ScoresheetFile);
+                    try
+                    {
+                        SelectedSubmission.ApplyMatch(SelectedParticipant, ScoresheetFile);
+                    }
+                    catch (Examath.Core.Model.ObjectLinkingException ole)
+                    {
+                        Messager.OutException(ole, $"Applying {SelectedSubmission.Match?.FullName}");
+                        return;
+                    }
+
                     if (SelectedSubmission.IsProcessed) Progress++;
                     SelectedParticipant_Changed();
 

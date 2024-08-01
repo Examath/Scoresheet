@@ -26,7 +26,7 @@ namespace Scoresheet.Exporters
             set { if (SetProperty(ref _Footer, value)) UpdatePreview(); }
         }
 
-        private double _ChestNumberFontSize = 72;
+        private double _ChestNumberFontSize = 100;
         /// <summary>
         /// Gets or sets the font size of the chest number
         /// </summary>
@@ -75,6 +75,8 @@ namespace Scoresheet.Exporters
 
                 foreach (IndividualParticipant individualParticipant in SelectedParticipants)
                 {
+                    flowDocument.Blocks.Add(new Paragraph());
+
                     Paragraph chestNumber = new(new Run(individualParticipant.ChestNumber.ToString()))
                     {
                         FontSize = ChestNumberFontSize,

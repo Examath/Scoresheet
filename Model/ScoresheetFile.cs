@@ -16,7 +16,9 @@ namespace Scoresheet.Model
     [Serializable]
     public partial class ScoresheetFile : ObservableObject
     {
-        public const string Extension = ".ssf";
+        public const string EXTENSION = ".ssf";
+
+        #region Basic Properties
 
         [XmlAttribute]
         public double Version = 2.0;
@@ -55,6 +57,7 @@ namespace Scoresheet.Model
             set { if (SetProperty(ref _Organization, value)) NotifyChange("Org Name"); }
         }
 
+        #endregion
 
         #region Exports
 
@@ -148,12 +151,53 @@ namespace Scoresheet.Model
 
         #region Scoring
 
+        private bool _IsPointsCalculatedByWinners = false;
+        /// <summary>
+        /// Gets or sets whether to award points to teams based on the winners, as opposed to direct marks-to-points
+        /// </summary>
+        public bool IsPointsCalculatedByWinners
+        {
+            get => _IsPointsCalculatedByWinners;
+            set { if (SetProperty(ref _IsPointsCalculatedByWinners, value)) RefreshScore(); }
+        }
+
+
+        private double _GroupParticipantScoreWeight = 50;
+        /// <summary>
+        /// Gets or sets the factor to multiply a score obtained by a group participant to get team points
+        /// </summary>
+        public double GroupParticipantScoreWeight
+        {
+            get => _GroupParticipantScoreWeight;
+            set { if (SetProperty(ref _GroupParticipantScoreWeight, value) && !IsPointsCalculatedByWinners) RefreshScore(); }
+        }
+
+        private double _IndividualParticipantScoreWeight = 10;
+        /// <summary>
+        /// Gets or sets the factor to multiply a score obtained by an individual participant to get team points
+        /// </summary>
+        public double IndividualParticipantScoreWeight
+        {
+            get => _IndividualParticipantScoreWeight;
+            set { if (SetProperty(ref _IndividualParticipantScoreWeight, value) && !IsPointsCalculatedByWinners) RefreshScore(); }
+        }
+
         public event EventHandler<ScoreChangedEventArgs>? ScoreChanged;
 
         private void CompetitionItem_ScoreChanged(object? sender, ScoreChangedEventArgs e)
         {
             UpdateTeamTotals();
             ScoreChanged?.Invoke(this, e);
+        }
+
+        public void RefreshScore()
+        {
+            foreach (CompetitionItem competitionItem in CompetitionItems)
+            {
+                competitionItem.ReCalculateWinners();
+            }
+
+            UpdateTeamTotals();
         }
 
         public void UpdateTeamTotals()

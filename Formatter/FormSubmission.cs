@@ -215,7 +215,8 @@ namespace Scoresheet.Formatter
         /// <remarks>
         /// This only applies if this <see cref="FormSubmission"/> is newer than the curent
         /// <see cref="IndividualParticipant.SubmissionTimeStamp"/>
-        /// </remarks>
+        /// </remarks>        /// 
+        /// <exception cref="Examath.Core.Model.ObjectLinkingException"></exception>
         public void ApplyMatch(IndividualParticipant match, ScoresheetFile scoresheetFile)
         {
             if (match.SubmissionTimeStamp < TimeStamp)
@@ -228,10 +229,10 @@ namespace Scoresheet.Formatter
                     // Join group items
                     match.JoinCompetitions(_GroupItemCodes, appendLevelToCode: false);
                 }
-                catch (InvalidOperationException ioe)
+                catch (Examath.Core.Model.ObjectLinkingException ole)
                 {
                     match.UnjoinAllCompetitions();
-                    throw ioe;
+                    throw ole;
                 }
 
                 if (match.IsRegistered)

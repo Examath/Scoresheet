@@ -69,10 +69,18 @@ namespace Scoresheet.Model
         /// Find the participant's <see cref="Team"/> from <paramref name="teams"/>
         /// </summary>
         /// <param name="teams"></param>
+        /// <exception cref="Examath.Core.Model.ObjectLinkingException"></exception>
         public virtual void Initialize(ScoresheetFile scoresheetFile)
         {
             _ScoresheetFile = scoresheetFile;
-            Team = scoresheetFile.Teams.Find((x) => x.Name == Team_Name);
+            if (!string.IsNullOrEmpty(Team_Name))
+            {
+                Team = scoresheetFile.Teams.Find((x) => x.Name == Team_Name);
+                if (Team == null)
+                {
+                    throw new Examath.Core.Model.ObjectLinkingException(this, Team_Name, typeof(Team));
+                }
+            }            
         }
 
         protected override void OnPropertyChanged(PropertyChangedEventArgs e)

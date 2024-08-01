@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Examath.Core.Environment;
 using Scoresheet.Properties;
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -148,7 +149,16 @@ namespace Scoresheet.Model
 
         private void ScoringCriteria_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            OnPropertyChanged(nameof(MaximumScore));
             _ScoresheetFile?.NotifyChange(sender);
+            if (_ScoresheetFile != null 
+                && !_ScoresheetFile.IsPointsCalculatedByWinners 
+                && Scores.FirstOrDefault()?.Participant is Participant participant) // This condition is fluff. Score changed event args requires it
+            {
+                ReCalculateWinners();
+                ScoreChanged?.Invoke(this, new(this, participant, null));
+            }
+            
         }
 
         [RelayCommand(CanExecute = nameof(CanAddRemoveScoringCriteria))]
@@ -160,6 +170,11 @@ namespace Scoresheet.Model
                 ScoringCriteria.Remove(scoringCriteria);
                 _ScoresheetFile?.NotifyChange(this);
             }            
+        }
+
+        public double MaximumScore
+        {
+            get => ScoringCriteria.Sum(s => s.MaximumScore);
         }
 
         #endregion
@@ -297,6 +312,11 @@ namespace Scoresheet.Model
                     // Add participant to (current) lowest place
                     if (place <= Settings.Default.NumberOfPlaces) winners.Last().Participants.Add(score.Participant);
                 }
+                else
+                {
+                    Messager.Out($"Score {score} in competition {Name} assigned to a null participant. Scoring may be invalid",
+                        "Problem calculating winners", ConsoleStyle.WarningBlockStyle);
+                }
             }
             Winners = winners;
 
@@ -304,13 +324,29 @@ namespace Scoresheet.Model
 
             double[] points = new double[_ScoresheetFile.Teams.Count];
 
-            foreach (Place placeW in winners)
+            if (_ScoresheetFile.IsPointsCalculatedByWinners)
             {
-                foreach (Participant participant in placeW.Participants)
+                foreach (Place placeW in winners)
                 {
-                    if (participant.Team != null) points[_ScoresheetFile.Teams.IndexOf(participant.Team)] += GetPlacePoints(placeW);
+                    foreach (Participant participant in placeW.Participants)
+                    {
+                        if (participant.Team != null) points[_ScoresheetFile.Teams.IndexOf(participant.Team)] += GetPlacePoints(placeW);
+                    }
                 }
             }
+            else
+            {
+                foreach (Score score in Scores)
+                {
+                    if (score.Participant?.Team is Team team)
+                    {
+                        points[_ScoresheetFile.Teams.IndexOf(team)] += Math.Ceiling(
+                            (score.Participant is IndividualParticipant ? _ScoresheetFile.IndividualParticipantScoreWeight : _ScoresheetFile.GroupParticipantScoreWeight)
+                            * score.AverageMarks / MaximumScore);
+                    }
+                }
+            }
+
 
             PointsRoundUp = points;
         }
@@ -348,6 +384,7 @@ namespace Scoresheet.Model
         /// <summary>
         /// Initialises <see cref="Level"/> and <see cref="Scores"/>
         /// </summary>
+        /// <exception cref="Examath.Core.Model.ObjectLinkingException"></exception>
         public virtual void Initialize(ScoresheetFile scoresheetFile)
         {
             _ScoresheetFile = scoresheetFile;
@@ -355,7 +392,15 @@ namespace Scoresheet.Model
 
             if (codeParameters.Length >= 2)
             {
-                Level = _ScoresheetFile.LevelDefinitions.Find((x) => x.Code == codeParameters[1]) ?? LevelDefinition.All;
+                LevelDefinition? level = _ScoresheetFile.LevelDefinitions.Find((x) => x.Code == codeParameters[1]);
+                if (level != null)
+                {
+                    Level = level;
+                }
+                else
+                {
+                    throw new Examath.Core.Model.ObjectLinkingException(this, codeParameters[1], typeof(LevelDefinition));
+                }
             }
 
             foreach (Score score in Scores) score.Initialize(Participants);

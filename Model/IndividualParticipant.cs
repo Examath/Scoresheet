@@ -207,7 +207,7 @@ namespace Scoresheet.Model
         /// Initialises the <see cref="CompetitionItems"/> list
         /// </summary>
         /// <param name="codes">Codes for each unique <see cref="CompetitionItem"/></param>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="Examath.Core.Model.ObjectLinkingException"></exception>
         public void JoinCompetitions(System.Collections.Generic.List<string> codes, bool appendLevelToCode = false)
         {
             if (Level == null || _ScoresheetFile == null) throw new InvalidOperationException("Level or Scoresheet parent is null");
@@ -218,7 +218,7 @@ namespace Scoresheet.Model
                 string lvlCode = (appendLevelToCode) ? code + "/" + Level.Code : code; // Codes in .csv don't have level abbreviations
                 CompetitionItem? competitionItem = _ScoresheetFile.CompetitionItems.Find((x) => x.Code == lvlCode);
                 if (competitionItem != null) JoinCompetition(competitionItem);
-                else throw new InvalidOperationException($"Could not find a competition coded '{lvlCode}' for '{FullName}' to join.");
+                else throw new Examath.Core.Model.ObjectLinkingException(this, code, typeof(CompetitionItem));
             }
         }
 
@@ -280,6 +280,7 @@ namespace Scoresheet.Model
         /// <inheritdoc/> then finds the matching <see cref="Level"/> and joins needed competitions
         /// </summary>
         /// <param name="scoresheetFile"></param>
+        /// <exception cref="Examath.Core.Model.ObjectLinkingException"></exception>
         public override void Initialize(ScoresheetFile scoresheetFile)
         {
             base.Initialize(scoresheetFile);

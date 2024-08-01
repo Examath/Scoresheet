@@ -99,6 +99,29 @@
                                 <TextBox Tag="Organization Name" Text="{Binding ScoresheetFile.Organization}" />
                             </ListBox>
                         </GroupBox>
+                        <GroupBox Header="Point Scoring Method">
+                            <ListBox Style="{StaticResource ControlPanelListBoxStyle}" Grid.IsSharedSizeScope="False">
+                                <CheckBox IsChecked="{Binding ScoresheetFile.IsPointsCalculatedByWinners}">
+                                    <TextBlock TextWrapping="Wrap">
+                                        <Run FontWeight="Bold">Compute team points using winners</Run>
+                                        <LineBreak/>
+                                        Award for individual winners: 10pt for 1st place, 8pt for 2nd, 5pt for 3rd.
+                                        Award for group winners: 50pt for 1st place, 20pt for 2nd, 10pt for 3rd.
+                                        Zero points awarded for all other places.
+                                    </TextBlock>
+                                </CheckBox>
+                                <CheckBox IsChecked="{Binding ScoresheetFile.IsPointsCalculatedByWinners, Converter={StaticResource NotConverter}}">
+                                    <TextBlock TextWrapping="Wrap">
+                                        <Run FontWeight="Bold">Compute team points propotionaly from marks</Run>
+                                        <LineBreak/>
+                                        Scale the percentage (Average Marks Earned / Total Marks Available), by the following factors depending on whether
+                                        an individual or group:                                        
+                                    </TextBlock>
+                                </CheckBox>
+                                <TextBox Tag="Individual Score Weight" Text="{Binding ScoresheetFile.IndividualParticipantScoreWeight}"/>
+                                <TextBox Tag="Group Score Weight" Text="{Binding ScoresheetFile.GroupParticipantScoreWeight}"/>
+                            </ListBox>
+                        </GroupBox>
                         <GroupBox Header="Teams">
                             <ListBox ItemsSource="{Binding ScoresheetFile.Teams}" d:ItemsSource="{d:SampleData}" Style="{StaticResource ContrastListBoxStyle}" ItemTemplate="{StaticResource TeamBox}">
                             </ListBox>
@@ -124,7 +147,9 @@
                             </ListBox>
                         </GroupBox>
                     </StackPanel>
-                    <ListBox Grid.Column="2" ItemsSource="{Binding ScoresheetFile.CompetitionItems}" Style="{StaticResource ContrastListBoxStyle}" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox Grid.Column="2" ItemsSource="{Binding ScoresheetFile.CompetitionItems}" d:ItemsSource="{d:SampleData ItemCount=2}"
+                             Style="{StaticResource ContrastListBoxStyle}" 
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <GroupBox Header="{Binding Name}">
@@ -133,6 +158,11 @@
                                         <KeyBinding Command="{Binding RemoveScoringCriteriaCommand}" CommandParameter="{Binding ElementName=CriteriaListBox, Path=SelectedItem}" Key="Delete"/>
                                     </GroupBox.InputBindings>
                                     <DockPanel LastChildFill="False">
+                                        <DockPanel DockPanel.Dock="Bottom">
+                                            <TextBlock Margin="7 6 10 6" Text="{Binding MaximumScore}" Width="55" DockPanel.Dock="Right" VerticalAlignment="Top"/>
+                                            <TextBlock Margin="12 6 8 6" Text="X /" VerticalAlignment="Top" DockPanel.Dock="Right" />
+                                            <Button Content="+ Scoring Criteria" HorizontalAlignment="Left" Command="{Binding AddScoringCriteriaCommand}" DockPanel.Dock="Bottom" Margin="6,2,2,2"/>
+                                        </DockPanel>
                                         <ListBox x:Name="CriteriaListBox" ItemsSource="{Binding ScoringCriteria}" Style="{StaticResource CompactListBoxStyle}" DockPanel.Dock="Bottom" 
                                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled">
                                             <ListBox.ItemTemplate>
@@ -140,13 +170,12 @@
                                                     <DockPanel>
                                                         <TextBox Text="{Binding MaximumScore}" Width="64" DockPanel.Dock="Right" VerticalAlignment="Top"/>
                                                         <TextBlock Margin="12 6 8 6" Text="X /" VerticalAlignment="Top" DockPanel.Dock="Right" />
-                                                        <TextBox Text="{Binding Description}" TextWrapping="Wrap" AcceptsReturn="True"/>
+                                                        <TextBox Text="{Binding Description}" Style="{StaticResource MultiLineTextBox}"/>
                                                     </DockPanel>
                                                 </DataTemplate>
                                             </ListBox.ItemTemplate>
                                         </ListBox>
-                                        <Button Content="+ Scoring Criteria" HorizontalAlignment="Left" Command="{Binding AddScoringCriteriaCommand}" DockPanel.Dock="Bottom"/>
-                                        <TextBox Text="{Binding Description}" TextWrapping="Wrap" AcceptsReturn="True" DockPanel.Dock="Bottom" />
+                                        <TextBox Text="{Binding Description}" Style="{StaticResource MultiLineTextBox}" DockPanel.Dock="Bottom" Height="32" />
                                         <Label Content="{Binding Level}" Style="{StaticResource OutputLabel}"/>
                                         <TextBox Text="{Binding Time}" Margin="2" />
                                         <TextBox Text="{Binding Duration}"/>
@@ -178,6 +207,11 @@
                         <ComboBox x:Name="ParticipantsViewSortComboBox" Tag="Sort View By" SelectionChanged="ParticipantsViewSortComboBox_SelectionChanged">
                             <ComboBoxItem IsSelected="True" Tag="ChestNumber">Chest Number</ComboBoxItem>
                             <ComboBoxItem Tag="FullName">Full Name</ComboBoxItem>
+                        </ComboBox>
+                        <ComboBox x:Name="ParticipantsViewGroupComboBox" Tag="Group View By" SelectionChanged="ParticipantsViewGroupComboBox_SelectionChanged">
+                            <ComboBoxItem IsSelected="True" Tag="YearLevel">Year Level</ComboBoxItem>
+                            <ComboBoxItem Tag="Level">Level</ComboBoxItem>
+                            <ComboBoxItem Tag="Team">Team</ComboBoxItem>
                         </ComboBox>
                         <Button Command="{Binding ExportCertificatesCommand}" CommandParameter="{Binding ElementName=ParticipantsListBox, Path=SelectedItems}"
                                 Content="{Binding ElementName=ParticipantsListBox, Path=SelectedItems.Count, FallbackValue='0'}" ContentStringFormat="Export Certificates of {0} Participants..." />
@@ -277,7 +311,7 @@
                             <GroupStyle>
                                 <GroupStyle.Panel>
                                     <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal"/>
+                                        <StackPanel Orientation="Vertical"/>
                                     </ItemsPanelTemplate>
                                 </GroupStyle.Panel>
                                 <GroupStyle.ContainerStyle>
@@ -300,15 +334,15 @@
                         <ItemsControl.Template>
                             <ControlTemplate TargetType="{x:Type ItemsControl}">
                                 <ScrollViewer Focusable="false" Padding="{TemplateBinding Padding}"
-                                      HorizontalScrollBarVisibility="Visible"
-                                          VerticalScrollBarVisibility="Disabled">
+                                      HorizontalScrollBarVisibility="Disabled"
+                                          VerticalScrollBarVisibility="Visible">
                                     <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
                                 </ScrollViewer>
                             </ControlTemplate>
                         </ItemsControl.Template>
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <WrapPanel Orientation="Vertical"/>
+                                <WrapPanel Orientation="Horizontal"/>
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.Resources>
@@ -348,7 +382,7 @@
                                                 </CollectionViewSource.SortDescriptions>
                                             </CollectionViewSource>
                                         </DockPanel.Resources>
-                                        <ListBox x:Name="GroupsListBox" ItemsSource="{Binding Source={StaticResource People}}" d:ItemsSource="{d:SampleData}" SelectionMode="Extended"
+                                        <ListBox DockPanel.Dock="Top" x:Name="GroupsListBox" ItemsSource="{Binding Source={StaticResource People}}" d:ItemsSource="{d:SampleData}" SelectionMode="Extended"
                                   Style="{StaticResource ContrastListBoxStyle}" >
                                             <ListBox.GroupStyle>
                                                 <GroupStyle>
@@ -378,10 +412,11 @@
                                                 </ContextMenu>
                                             </ListBox.ContextMenu>
                                         </ListBox>
-                                        <ListBox x:Name="GroupParticipantsListBox" ItemsSource="{Binding GroupParticipants}" Style="{StaticResource ContrastListBoxStyle}" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                        <ListBox x:Name="GroupParticipantsListBox" ItemsSource="{Binding GroupParticipants}" Style="{StaticResource ContrastListBoxStyle}"
+                                                 VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                             <ListBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
-                                                    <WrapPanel Orientation="Vertical"/>
+                                                    <WrapPanel Orientation="Horizontal"/>
                                                 </ItemsPanelTemplate>
                                             </ListBox.ItemsPanel>
                                             <ListBox.ContextMenu>
@@ -401,10 +436,16 @@
                                             </ListBox.InputBindings>
                                             <ListBox.ItemTemplate>
                                                 <DataTemplate DataType="{x:Type model:GroupParticipant}">
-                                                    <DockPanel>
-                                                        <DockPanel.Background>
+                                                    <GroupBox>
+                                                        <GroupBox.Background>
                                                             <SolidColorBrush Opacity="0.2" Color="{Binding Team.Colour}"/>
-                                                        </DockPanel.Background>
+                                                        </GroupBox.Background>
+                                                        <GroupBox.Header>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource ParticipantBox}" Margin="2" MinWidth="50" />
+                                                                <Label Content="{Binding Leader.FullName}" DockPanel.Dock="Top" />
+                                                            </StackPanel>
+                                                        </GroupBox.Header>
                                                         <ListBox x:Name="ParticipantsListBox" DockPanel.Dock="Bottom" Style="{StaticResource ContrastListBoxStyle}" ItemsSource="{Binding IndividualParticipants}">
                                                             <ListBox.ContextMenu>
                                                                 <ContextMenu>
@@ -415,9 +456,7 @@
                                                                 <KeyBinding Command="{Binding RemoveParticipantCommand}" Key="Delete" CommandParameter="{Binding ElementName=ParticipantsListBox, Path=SelectedItem}"/>
                                                             </ListBox.InputBindings>
                                                         </ListBox>
-                                                        <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource ParticipantBox}" Margin="2" MinWidth="50" />
-                                                        <Label Content="{Binding Leader.FullName}" DockPanel.Dock="Top" />
-                                                    </DockPanel>
+                                                    </GroupBox>
                                                 </DataTemplate>
                                             </ListBox.ItemTemplate>
                                         </ListBox>
@@ -528,7 +567,7 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
                     <StackPanel Grid.Column="0" Margin="4" Grid.IsSharedSizeScope="True" Grid.Row="1">
-                        <GroupBox Header="Search">
+                        <GroupBox Header="Search and Select by Chest Number">
                             <DockPanel Margin="12">
                                 <ToggleButton x:Name="SearchMode" DockPanel.Dock="Right" Content="Kbd Focus"/>
                                 <TextBox x:Name="SearchBox" KeyUp="SearchBox_KeyUp" />
@@ -578,6 +617,24 @@
                                         Content="Apply Score" Foreground="{StaticResource NewColourKey}"
                                         Command="{Binding ApplyScoreCommand}"/>
                             </Grid>
+                        </GroupBox>
+                        <GroupBox Header="Competition Details">
+                            <StackPanel Margin="12">
+                                <TextBox Style="{StaticResource MultiLineTextBox}" Text="{Binding MarkingCompetitionItem.Description}" ToolTip="Description"/>
+                                <TextBlock FontWeight="Bold" Margin="2 4 2 2">Criteria:</TextBlock>
+                                <ItemsControl ItemsSource="{Binding MarkingCompetitionItem.ScoringCriteria}" d:ItemsSource="{d:SampleData ItemCount=3}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Background="{StaticResource PanelColourKey}" Margin="2">
+                                                <TextBlock Text="{Binding MaximumScore}" Margin="2" Width="64" DockPanel.Dock="Right" VerticalAlignment="Top"/>
+                                                <TextBlock Margin="12 2 8 2" Text="X /" VerticalAlignment="Top" DockPanel.Dock="Right" />
+                                                <TextBlock Margin="2" Text="{Binding Description}"/>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock HorizontalAlignment="Right" Margin="4 4 12 4">Total Score: <Run FontWeight="Bold" Text="{Binding MarkingCompetitionItem.MaximumScore, Mode=OneWay}" /></TextBlock>
+                            </StackPanel>
                         </GroupBox>
                     </StackPanel>
                 </Grid>

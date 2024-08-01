@@ -361,6 +361,16 @@ namespace Scoresheet
             }
         }
 
+        private void ParticipantsViewGroupComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_IsLoaded)
+            {
+                string newGroupProperty = (ParticipantsViewGroupComboBox.SelectedItem as ComboBoxItem)?.Tag.ToString() ?? "";
+                ParticipantsListBox.Items.GroupDescriptions.Clear();
+                ParticipantsListBox.Items.GroupDescriptions.Add(new PropertyGroupDescription(newGroupProperty));
+            }
+        }
+
         #endregion
     }
 }
