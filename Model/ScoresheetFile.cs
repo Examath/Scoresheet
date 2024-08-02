@@ -39,6 +39,7 @@ namespace Scoresheet.Model
         /// <summary>
         /// Gets or sets the name of the competition
         /// </summary>
+        [XmlAttribute]
         public string CompetitionName
         {
             get => _CompetitionName;
@@ -155,6 +156,7 @@ namespace Scoresheet.Model
         /// <summary>
         /// Gets or sets whether to award points to teams based on the winners, as opposed to direct marks-to-points
         /// </summary>
+        [XmlAttribute]
         public bool IsPointsCalculatedByWinners
         {
             get => _IsPointsCalculatedByWinners;
@@ -162,10 +164,11 @@ namespace Scoresheet.Model
         }
 
 
-        private double _GroupParticipantScoreWeight = 50;
+        private double _GroupParticipantScoreWeight = 40;
         /// <summary>
         /// Gets or sets the factor to multiply a score obtained by a group participant to get team points
         /// </summary>
+        [XmlAttribute]
         public double GroupParticipantScoreWeight
         {
             get => _GroupParticipantScoreWeight;
@@ -176,6 +179,7 @@ namespace Scoresheet.Model
         /// <summary>
         /// Gets or sets the factor to multiply a score obtained by an individual participant to get team points
         /// </summary>
+        [XmlAttribute]
         public double IndividualParticipantScoreWeight
         {
             get => _IndividualParticipantScoreWeight;

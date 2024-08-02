@@ -46,7 +46,7 @@ namespace Scoresheet.Exporters
 
         private List<CertificateData> _CertificateData = new();
 
-        public List<string> PlaceEnumeration { get; set; } = new() { "First Place", "Second Place", "Third Place" };
+        public List<string> PlaceEnumeration { get; set; } = new() { "1st Place", "2nd Place", "3rd Place" };
 
         public CertificateExporter(ScoresheetFile scoresheetFile) : base(scoresheetFile)
         {

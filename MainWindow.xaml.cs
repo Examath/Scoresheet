@@ -1,15 +1,14 @@
 ﻿using Examath.Core.Environment;
 using Examath.Core.Utils;
 using Scoresheet.Model;
-using Scoresheet.Properties;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Media;
 
 namespace Scoresheet
 {
@@ -222,6 +221,17 @@ namespace Scoresheet
         }
         #endregion
 
+        #region Sounds
+
+        private readonly SoundPlayer _ApplySound = new(Properties.Resources.ApplySound);
+        private readonly SoundPlayer _CommaSound = new(Properties.Resources.CommaSound);
+        private readonly SoundPlayer _InSound = new(Properties.Resources.InSound);
+        private readonly SoundPlayer _KeySound = new(Properties.Resources.KeySound);
+        private readonly SoundPlayer _OutSound = new(Properties.Resources.OutSound);
+        private readonly SoundPlayer _PlusSound = new(Properties.Resources.PlusSound);
+
+        #endregion
+
         #region Marking Tab Input
 
         private void SearchBox_KeyUp(object sender, KeyEventArgs e)
@@ -248,12 +258,13 @@ namespace Scoresheet
             {
                 NewScoreTextBox.SelectAll();
                 NewScoreTextBox.Focus();
+                _InSound.Play();
             }
         }
 
         private void NewScoreTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (!IsKeyADigit(e.Key) && !(e.Key == Key.Escape))
+            if (!IsKeyAValidKey(e.Key) && !(e.Key == Key.Escape))
             {
                 e.Handled = true;
                 int pos = NewScoreTextBox.SelectionStart;
@@ -263,16 +274,36 @@ namespace Scoresheet
                     && NewScoreTextBox.Text[pos - 1] != ','
                     && NewScoreTextBox.Text[pos - 1] != '+')
                 {
-                    NewScoreTextBox.Text = NewScoreTextBox.Text.Insert(NewScoreTextBox.SelectionStart,
-                        (IsKeyAJudgeSeparator(e.Key) ? "," : "+"));
+                    if (IsKeyAJudgeSeparator(e.Key))
+                    {
+                        NewScoreTextBox.Text = NewScoreTextBox.Text.Insert(NewScoreTextBox.SelectionStart, ",");
+                        _CommaSound.Play();
+                    }
+                    else
+                    {
+                        NewScoreTextBox.Text = NewScoreTextBox.Text.Insert(NewScoreTextBox.SelectionStart, "+");
+                        _PlusSound.Play();
+                    }
                     NewScoreTextBox.SelectionStart = pos + 1;
+                }
+            }
+            else
+            {
+                if (IsKeyADigit(e.Key))
+                {                    
+                    _KeySound.Play();
                 }
             }
         }
 
+        private static bool IsKeyAValidKey(Key key)
+        {
+            return IsKeyADigit(key) || key == Key.Delete || key == Key.Back || key == Key.Left || key == Key.Right;
+        }
+
         private static bool IsKeyADigit(Key key)
         {
-            return (key >= Key.D0 && key <= Key.D9) || (key == Key.OemPeriod) || (key >= Key.NumPad0 && key <= Key.NumPad9) || key == Key.Delete || key == Key.Back || key == Key.Left || key == Key.Right;
+            return (key >= Key.D0 && key <= Key.D9) || (key == Key.OemPeriod) || (key >= Key.NumPad0 && key <= Key.NumPad9);
         }
 
         private static bool IsKeyAJudgeSeparator(Key key)
@@ -303,12 +334,14 @@ namespace Scoresheet
                 if (e.Key == Key.Enter && _VM != null && _VM.CanApplyScore())
                 {
                     _VM.ApplyScore();
+                    _ApplySound.Play();
                 }
             }
 
             if (e.Key == Key.Escape)
             {
                 ResetNewScore();
+                _OutSound.Play();
             }
         }
 

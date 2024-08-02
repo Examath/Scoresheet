@@ -10,7 +10,7 @@
         xmlns:model="clr-namespace:Scoresheet.Model"
         xmlns:view="clr-namespace:Scoresheet.View"
         mc:Ignorable="d"
-        Title="{Binding FileName, StringFormat=Scoresheet v2.0 | {0}}" 
+        Title="{Binding FileName, StringFormat=Scoresheet v2.6 | {0}}" 
         Height="600" Width="1200" Style="{StaticResource ContrastWindowStyle}" 
         WindowState="Maximized"
         Loaded="Window_Loaded">
@@ -152,7 +152,10 @@
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <GroupBox Header="{Binding Name}">
+                                <GroupBox>
+                                    <GroupBox.Header>
+                                        <TextBlock Text="{Binding Name}" FontSize="20"/>
+                                    </GroupBox.Header>
                                     <GroupBox.InputBindings>
                                         <KeyBinding Command="{Binding AddScoringCriteriaCommand}" Key="Insert"/>
                                         <KeyBinding Command="{Binding RemoveScoringCriteriaCommand}" CommandParameter="{Binding ElementName=CriteriaListBox, Path=SelectedItem}" Key="Delete"/>
@@ -165,6 +168,12 @@
                                         </DockPanel>
                                         <ListBox x:Name="CriteriaListBox" ItemsSource="{Binding ScoringCriteria}" Style="{StaticResource CompactListBoxStyle}" DockPanel.Dock="Bottom" 
                                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                            <ListBox.ContextMenu>
+                                                <ContextMenu>
+                                                    <MenuItem Header="Add Criteria"  Command="{Binding AddScoringCriteriaCommand}" InputGestureText="Insert" />
+                                                    <MenuItem Header="Delete Selected Criteria" Command="{Binding RemoveScoringCriteriaCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=ContextMenu}, Path=PlacementTarget.SelectedItem}" InputGestureText="Del"/>
+                                                </ContextMenu>
+                                            </ListBox.ContextMenu>
                                             <ListBox.ItemTemplate>
                                                 <DataTemplate>
                                                     <DockPanel>
@@ -175,7 +184,7 @@
                                                 </DataTemplate>
                                             </ListBox.ItemTemplate>
                                         </ListBox>
-                                        <TextBox Text="{Binding Description}" Style="{StaticResource MultiLineTextBox}" DockPanel.Dock="Bottom" Height="32" />
+                                        <TextBox Text="{Binding Description}" Style="{StaticResource MultiLineTextBox}" DockPanel.Dock="Bottom" MinHeight="32" />
                                         <Label Content="{Binding Level}" Style="{StaticResource OutputLabel}"/>
                                         <TextBox Text="{Binding Time}" Margin="2" />
                                         <TextBox Text="{Binding Duration}"/>

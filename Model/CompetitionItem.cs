@@ -147,20 +147,6 @@ namespace Scoresheet.Model
             _ScoresheetFile?.NotifyChange(this);
         }
 
-        private void ScoringCriteria_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            OnPropertyChanged(nameof(MaximumScore));
-            _ScoresheetFile?.NotifyChange(sender);
-            if (_ScoresheetFile != null 
-                && !_ScoresheetFile.IsPointsCalculatedByWinners 
-                && Scores.FirstOrDefault()?.Participant is Participant participant) // This condition is fluff. Score changed event args requires it
-            {
-                ReCalculateWinners();
-                ScoreChanged?.Invoke(this, new(this, participant, null));
-            }
-            
-        }
-
         [RelayCommand(CanExecute = nameof(CanAddRemoveScoringCriteria))]
         private void RemoveScoringCriteria(ScoringCriteria? scoringCriteria)
         {
@@ -175,6 +161,20 @@ namespace Scoresheet.Model
         public double MaximumScore
         {
             get => ScoringCriteria.Sum(s => s.MaximumScore);
+        }
+
+        private void ScoringCriteria_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(MaximumScore));
+            _ScoresheetFile?.NotifyChange(sender);
+            if (_ScoresheetFile != null 
+                && !_ScoresheetFile.IsPointsCalculatedByWinners 
+                && Scores.FirstOrDefault()?.Participant is Participant participant) // This condition is fluff. Score changed event args requires it
+            {
+                ReCalculateWinners();
+                ScoreChanged?.Invoke(this, new(this, participant, null));
+            }
+            
         }
 
         #endregion
