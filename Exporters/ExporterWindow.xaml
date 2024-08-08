@@ -28,6 +28,7 @@
                             <ListBox Style="{StaticResource ControlPanelListBoxStyle}">
                                 <CheckBox IsChecked="{Binding DisplayGroupLeader}" Content="Display Group Leader"/>
                                 <CheckBox IsChecked="{Binding AddChestNumbers}" Content="Add Chest Numbers"/>
+                                <CheckBox IsChecked="{Binding DisplayGrades}" Content="Display Grades"/>
                             </ListBox>
                         </GroupBox>
                     </DataTemplate>

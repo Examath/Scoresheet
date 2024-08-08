@@ -26,6 +26,7 @@ namespace Scoresheet
             // Crash Handler
             AppDomain currentDomain = AppDomain.CurrentDomain;
             currentDomain.UnhandledException += new UnhandledExceptionEventHandler(CrashHandler);
+            Title = "Scoresheet v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(2) ?? "";
             InitializeComponent();
         }
 
@@ -120,6 +121,10 @@ namespace Scoresheet
             DataContext = _VM;
             _VM.PropertyChanged += VM_PropertyChanged;
             _VM.ScoreChanged += _VM_ScoreChanged;
+
+
+            // Set title
+            Title += " | " + _VM.FileName;
         }
 
         private void _VM_ScoreChanged(object? sender, ScoreChangedEventArgs e)

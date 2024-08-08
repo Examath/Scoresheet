@@ -10,7 +10,6 @@
         xmlns:model="clr-namespace:Scoresheet.Model"
         xmlns:view="clr-namespace:Scoresheet.View"
         mc:Ignorable="d"
-        Title="{Binding FileName, StringFormat=Scoresheet v2.6 | {0}}" 
         Height="600" Width="1200" Style="{StaticResource ContrastWindowStyle}" 
         WindowState="Maximized"
         Loaded="Window_Loaded">

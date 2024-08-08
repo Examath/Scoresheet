@@ -44,7 +44,6 @@ namespace Scoresheet.Model
             {
                 if (SetProperty(ref _FileLocation, value))
                 {
-                    FileName = Path.GetFileNameWithoutExtension(value);
                     OnPropertyChanged(nameof(FileName));
                     NotifyChange("Save Location");
                     BackupDirectory = $"{Path.GetDirectoryName(value)}\\{FileName} Backups";
@@ -52,7 +51,7 @@ namespace Scoresheet.Model
             }
         }
 
-        public string FileName { get; private set; } = "Empty";
+        public string FileName { get => Path.GetFileNameWithoutExtension(FileLocation); }
 
         public string? BackupDirectory { get; private set; }
 

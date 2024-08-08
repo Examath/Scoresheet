@@ -37,6 +37,16 @@ namespace Scoresheet.Exporters
             set { if (SetProperty(ref _AddChestNumbers, value)) UpdatePreview(); }
         }
 
+        private bool _DisplayGrades = false;
+        /// <summary>
+        /// Gets or sets whether grades are displayed (! incomplete)
+        /// </summary>
+        public bool DisplayGrades
+        {
+            get => _DisplayGrades;
+            set { if (SetProperty(ref _DisplayGrades, value)) UpdatePreview(); }
+        }
+
         public ParticipantListExporter():base(new())
         {
 
@@ -110,7 +120,7 @@ namespace Scoresheet.Exporters
                         foreach (IndividualParticipant individualParticipant in groupParticipant.IndividualParticipants)
                         {
                             notInGroup.Remove(individualParticipant);
-                            personsRow.Cells[teamIndex].Blocks.Add(ExportParticipant(individualParticipant));
+                            personsRow.Cells[teamIndex].Blocks.Add(ExportParticipant(individualParticipant, competitionItem));
                         }
                     }
 
@@ -128,7 +138,7 @@ namespace Scoresheet.Exporters
                     foreach (IndividualParticipant individualParticipant in competitionItem.IndividualParticipants)
                     {
                         int teamIndex = (individualParticipant.Team != null) ? _ScoresheetFile.Teams.IndexOf(individualParticipant.Team) : 0;
-                        personsRow.Cells[teamIndex].Blocks.Add(ExportParticipant(individualParticipant));
+                        personsRow.Cells[teamIndex].Blocks.Add(ExportParticipant(individualParticipant, competitionItem));
                     }
                 }
 
@@ -138,10 +148,26 @@ namespace Scoresheet.Exporters
             return flowDocument;
         }
 
-        public Paragraph ExportParticipant(IndividualParticipant individualParticipant)
+        public Paragraph ExportParticipant(IndividualParticipant individualParticipant, CompetitionItem competitionItem)
         {
-            string participantRep = (AddChestNumbers) ? individualParticipant.ToString() : individualParticipant.FullName;
-            return new Paragraph(new Run(participantRep));
+            Paragraph paragraph = new();
+            if (AddChestNumbers) paragraph.Inlines.Add($"#{individualParticipant.ChestNumber} ");
+            if (DisplayGrades)
+            {
+                Score? score = competitionItem.GetIntersection(individualParticipant);
+                if (score != null)
+                {
+                    ScoreRecord scoreRecord = new(competitionItem, score);
+                    paragraph.Inlines.Add(new Run($" {scoreRecord.Grade}  ") { Foreground = Brushes.Blue });
+                }
+                else
+                {
+                    paragraph.Inlines.Add(" -  ");
+                }
+            }
+            paragraph.Inlines.Add(individualParticipant.FullName);
+
+            return paragraph;
         }
 
         public Paragraph ExportParticipant(GroupParticipant groupParticipant)
