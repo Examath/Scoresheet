@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ScoresheetFile IsFormatted="false" IsOpen="false" Hash="">
+	<Teams>
+		<Team Name="Red" Colour="#FFFF0000"/>
+		<Team Name="Yellow" Colour="#FFD0D000"/>
+		<Team Name="Green" Colour="#FF00FF00"/>
+		<Team Name="Blue" Colour="#FF0000FF"/>
+	</Teams>
+	<LevelDefinitions>
+		<LevelDefinition Code="J" Name="Junior" LowerBound="1" UpperBound="6" />
+		<LevelDefinition Code="S" Name="Senior" LowerBound="7" UpperBound="12" />
+	</LevelDefinitions>
+	<CompetitionItems>		
+		<SoloItem IsOnStage="false" Duration="45" Code="Painting/J"/>
+		<SoloItem IsOnStage="false" Code="Essay Writing/J" Duration="45"/>
+		
+		<SoloItem IsOnStage="true" Code="Solo Dance/J" Duration="7"/>
+		<SoloItem IsOnStage="true" Code="Speech/J" Duration="3"/>
+
+		<SoloItem IsOnStage="false" Code="Pencil Drawing/S" Duration="45"/>
+		<SoloItem IsOnStage="false" Code="Essay Writing/S" Duration="45"/>
+
+		<SoloItem IsOnStage="true" Code="Solo Song/S" Duration="7"/>
+		<SoloItem IsOnStage="true" Code="Speech/S" Duration="3"/>
+		
+		<GroupItem Code="Group Dance" Duration="7"/>
+		<GroupItem Code="Group Song" Duration="7"/>
+	</CompetitionItems>
+</ScoresheetFile>
