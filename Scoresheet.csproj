@@ -10,6 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Examples\**" />
+    <EmbeddedResource Remove="Examples\**" />
+    <None Remove="Examples\**" />
+    <Page Remove="Examples\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Resources\Sounds\Apply.wav" />
     <None Remove="Resources\Sounds\Comma.wav" />
     <None Remove="Resources\Sounds\InSound.wav" />

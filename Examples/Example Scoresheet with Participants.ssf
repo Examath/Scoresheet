@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ScoresheetFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="1.2" IsScoring="false" LastSavedTime="2024-07-09T07:39:14.356838+09:30" LastAuthor="DEBUG EXCEMPTED">
+  <TemplateLocation>C:\temp\doc.docx</TemplateLocation>
+  <Teams>
+    <Team Name="Red" Colour="#FFFF0000" />
+    <Team Name="Yellow" Colour="#FFD0D000" />
+    <Team Name="Green" Colour="#FF00FF00" />
+    <Team Name="Blue" Colour="#FF0000FF" />
+  </Teams>
+  <LevelDefinitions>
+    <LevelDefinition LowerBound="1" UpperBound="6" Code="J" Name="Junior" />
+    <LevelDefinition LowerBound="7" UpperBound="12" Code="S" Name="Senior" />
+  </LevelDefinitions>
+  <CompetitionItems>
+    <SoloItem Code="Painting/J" Time="0001-01-01T00:00:00" Duration="45" IsOnStage="false">
+      <Description>The library i'm working on has a very formal class structure and i didn't wan't extra stuff in there effectively for the privilege of recording two 'related' ints.
+
+Relies on the programmer entering only a 2 item array but as it's not a common item i think it works.</Description>
+      <Criteria MaximumScore="10">Alpha
+Multiline</Criteria>
+      <Criteria MaximumScore="20">Bets</Criteria>
+      <Criteria MaximumScore="20">Gamma</Criteria>
+    </SoloItem>
+    <SoloItem Code="Essay Writing/J" Time="0001-01-01T00:00:00" Duration="45" IsOnStage="false">
+      <Description />
+      <Criteria MaximumScore="1">Prime</Criteria>
+    </SoloItem>
+    <SoloItem Code="Solo Dance/J" Time="0001-01-01T00:00:00" Duration="7" IsOnStage="true">
+      <Description />
+      <Criteria MaximumScore="1">Default</Criteria>
+    </SoloItem>
+    <SoloItem Code="Speech/J" Time="0001-01-01T00:00:00" Duration="3" IsOnStage="true">
+      <Description />
+      <Criteria MaximumScore="1">Default</Criteria>
+    </SoloItem>
+    <SoloItem Code="Pencil Drawing/S" Time="0001-01-01T00:00:00" Duration="45" IsOnStage="false">
+      <Description />
+      <Criteria MaximumScore="1">Default</Criteria>
+    </SoloItem>
+    <SoloItem Code="Essay Writing/S" Time="0001-01-01T00:00:00" Duration="45" IsOnStage="false">
+      <Description />
+      <Criteria MaximumScore="1">Default</Criteria>
+    </SoloItem>
+    <SoloItem Code="Solo Song/S" Time="0001-01-01T00:00:00" Duration="7" IsOnStage="true">
+      <Description />
+      <Criteria MaximumScore="1">Default</Criteria>
+    </SoloItem>
+    <SoloItem Code="Speech/S" Time="0001-01-01T00:00:00" Duration="3" IsOnStage="true">
+      <Description />
+      <Criteria MaximumScore="1">Default</Criteria>
+    </SoloItem>
+    <GroupItem Code="Group Dance" Time="0001-01-01T00:00:00" Duration="7" IsOnStage="false">
+      <Description />
+      <Criteria MaximumScore="1">Default</Criteria>
+      <GroupParticipant ChestNumber="501" Team_Name="Red" Participants="101,502" Leader="101" />
+      <GroupParticipant ChestNumber="551" Team_Name="Yellow" Participants="201,601" Leader="201" />
+      <GroupParticipant ChestNumber="601" Team_Name="Green" Participants="701" Leader="701" />
+      <GroupParticipant ChestNumber="651" Team_Name="Blue" Participants="402,405,802,803" Leader="402" />
+    </GroupItem>
+    <GroupItem Code="Group Song" Time="0001-01-01T00:00:00" Duration="7" IsOnStage="false">
+      <Description />
+      <Criteria MaximumScore="1">Grop Crita</Criteria>
+      <GroupParticipant ChestNumber="502" Team_Name="Red" Participants="101,502" Leader="101" />
+      <GroupParticipant ChestNumber="552" Team_Name="Yellow" Participants="201,601" Leader="201" />
+      <GroupParticipant ChestNumber="602" Team_Name="Green" Participants="301" Leader="301" />
+      <GroupParticipant ChestNumber="652" Team_Name="Blue" Participants="402,405,802,803" Leader="402" />
+    </GroupItem>
+  </CompetitionItems>
+  <IndividualParticipants>
+    <IndividualParticipant ChestNumber="101" Team_Name="Red" FullName="Evelyn Turner" YearLevel="4" SubmissionTimeStamp="2024-07-08T09:01:34.6442515+09:30" SubmissionEmail="DEBUG EXCEMPTED" SubmissionPhoneNumber="" SubmissionFullName="Evelyn Turner" CompetitionItems="Painting/J,Speech/J,Essay Writing/J,Group Dance,Group Song" />
+    <IndividualParticipant ChestNumber="102" Team_Name="Red" FullName="Liam Parker" YearLevel="4" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="103" Team_Name="Red" FullName="Sophia Adams" YearLevel="4" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="104" Team_Name="Red" FullName="Noah Bennett" YearLevel="4" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="201" Team_Name="Yellow" FullName="Isabella Foster" YearLevel="4" SubmissionTimeStamp="2024-07-08T09:02:16.1540042+09:30" SubmissionEmail="DEBUG EXCEMPTED" SubmissionPhoneNumber="" SubmissionFullName="Isabella Foster" CompetitionItems="Painting/J,Speech/J,Essay Writing/J,Solo Dance/J,Group Dance,Group Song" />
+    <IndividualParticipant ChestNumber="202" Team_Name="Yellow" FullName="Oliver Mitchell" YearLevel="4" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="203" Team_Name="Yellow" FullName="Emma Hayes" YearLevel="4" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="204" Team_Name="Yellow" FullName="Aiden Cooper" YearLevel="4" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="301" Team_Name="Green" FullName="Ava Richardson" YearLevel="4" SubmissionTimeStamp="2024-07-08T09:02:09.8067547+09:30" SubmissionEmail="DEBUG EXCEMPTED" SubmissionPhoneNumber="" SubmissionFullName="Ava Richardson" CompetitionItems="Painting/J,Speech/J,Group Song" />
+    <IndividualParticipant ChestNumber="302" Team_Name="Green" FullName="Elijah Brooks" YearLevel="4" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="303" Team_Name="Green" FullName="Mia Campbell" YearLevel="4" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="401" Team_Name="Blue" FullName="William Gray" YearLevel="4" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="402" Team_Name="Blue" FullName="Charlotte Reed" YearLevel="4" SubmissionTimeStamp="2024-07-08T09:02:25.581339+09:30" SubmissionEmail="DEBUG EXCEMPTED" SubmissionPhoneNumber="" SubmissionFullName="Charlotte Reed" CompetitionItems="Painting/J,Speech/J,Solo Dance/J,Group Dance,Group Song" />
+    <IndividualParticipant ChestNumber="403" Team_Name="Blue" FullName="Jameson Price" YearLevel="4" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="105" Team_Name="Red" FullName="Grace Simmons" YearLevel="5" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="106" Team_Name="Red" FullName="Benjamin Hughes" YearLevel="5" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="205" Team_Name="Yellow" FullName="Scarlett Ward" YearLevel="5" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="206" Team_Name="Yellow" FullName="Henry Foster" YearLevel="5" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="304" Team_Name="Green" FullName="Zoe Peterson" YearLevel="5" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="305" Team_Name="Green" FullName="Alexander Wells" YearLevel="5" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="306" Team_Name="Green" FullName="Lucy Morgan" YearLevel="5" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="404" Team_Name="Blue" FullName="Daniel Brooks" YearLevel="5" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="405" Team_Name="Blue" FullName="Chloe Adams" YearLevel="5" SubmissionTimeStamp="2024-07-08T09:02:41.7023994+09:30" SubmissionEmail="DEBUG EXCEMPTED" SubmissionPhoneNumber="" SubmissionFullName="Chloe Adams" CompetitionItems="Group Dance,Group Song" />
+    <IndividualParticipant ChestNumber="406" Team_Name="Blue" FullName="Samuel Turner" YearLevel="5" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="107" Team_Name="Red" FullName="Ella Parker" YearLevel="6" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="108" Team_Name="Red" FullName="Michael Bennett" YearLevel="6" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="207" Team_Name="Yellow" FullName="Lily Foster" YearLevel="6" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="208" Team_Name="Yellow" FullName="Matthew Mitchell" YearLevel="6" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="307" Team_Name="Green" FullName="Aria Hayes" YearLevel="6" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="308" Team_Name="Green" FullName="David Cooper" YearLevel="6" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="407" Team_Name="Blue" FullName="Emily Richardson" YearLevel="6" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="408" Team_Name="Blue" FullName="Joseph Brooks" YearLevel="6" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="409" Team_Name="Blue" FullName="Madison Campbell" YearLevel="6" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="501" Team_Name="Red" FullName="Andrew Gray" YearLevel="7" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="502" Team_Name="Red" FullName="Abigail Reed" YearLevel="7" SubmissionTimeStamp="2024-07-08T09:04:32.0001757+09:30" SubmissionEmail="DEBUG EXCEMPTED" SubmissionPhoneNumber="" SubmissionFullName="Abigail Reed" CompetitionItems="Pencil Drawing/S,Essay Writing/S,Solo Song/S,Group Dance,Group Song" />
+    <IndividualParticipant ChestNumber="601" Team_Name="Yellow" FullName="Christopher Price" YearLevel="7" SubmissionTimeStamp="2024-07-08T09:04:22.3166765+09:30" SubmissionEmail="DEBUG EXCEMPTED" SubmissionPhoneNumber="" SubmissionFullName="Christopher Price" CompetitionItems="Pencil Drawing/S,Speech/S,Essay Writing/S,Solo Song/S,Group Dance,Group Song" />
+    <IndividualParticipant ChestNumber="602" Team_Name="Yellow" FullName="Harper Simmons" YearLevel="7" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="603" Team_Name="Yellow" FullName="Nicholas Hughes" YearLevel="7" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="701" Team_Name="Green" FullName="Avery Ward" YearLevel="7" SubmissionTimeStamp="2024-07-08T09:04:39.1129128+09:30" SubmissionEmail="DEBUG EXCEMPTED" SubmissionPhoneNumber="" SubmissionFullName="Avery Ward" CompetitionItems="Pencil Drawing/S,Speech/S,Essay Writing/S,Solo Song/S,Group Dance" />
+    <IndividualParticipant ChestNumber="801" Team_Name="Blue" FullName="Joshua Foster" YearLevel="7" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="503" Team_Name="Red" FullName="Victoria Peterson" YearLevel="8" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="604" Team_Name="Yellow" FullName="Logan Wells" YearLevel="8" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="702" Team_Name="Green" FullName="Elizabeth Morgan" YearLevel="8" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="802" Team_Name="Blue" FullName="Caleb Brooks" YearLevel="8" SubmissionTimeStamp="2024-07-08T09:04:48.9603907+09:30" SubmissionEmail="DEBUG EXCEMPTED" SubmissionPhoneNumber="" SubmissionFullName="Caleb Brooks" CompetitionItems="Solo Song/S,Group Dance,Group Song" />
+    <IndividualParticipant ChestNumber="605" Team_Name="Yellow" FullName="Gabriel Turner" YearLevel="9" SubmissionTimeStamp="0001-01-01T00:00:00" SubmissionEmail="" SubmissionPhoneNumber="" SubmissionFullName="" CompetitionItems="" />
+    <IndividualParticipant ChestNumber="803" Team_Name="Blue" FullName="Sofia Parker" YearLevel="9" SubmissionTimeStamp="2024-07-08T09:04:58.9527149+09:30" SubmissionEmail="DEBUG EXCEMPTED" SubmissionPhoneNumber="" SubmissionFullName="Sofia Parker" CompetitionItems="Solo Song/S,Group Dance,Group Song" />
+  </IndividualParticipants>
+</ScoresheetFile>
